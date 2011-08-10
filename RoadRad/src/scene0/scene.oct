@@ -1,4 +1,0 @@
-#?RADIANCE
-oconv /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene0/materials.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene0/road.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene0/lights_s.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene0/night_sky.rad
-FORMAT=Radiance_octree
-
