@@ -1,0 +1,3 @@
+<Poles>
+	<Pole PoleHeight="30" PoleSpacing="240" IsStaggered="True"></Pole>
+	<Pole PoleHeight="40" PoleSpacing="240" IsStaggered="False"></Pole></Poles>

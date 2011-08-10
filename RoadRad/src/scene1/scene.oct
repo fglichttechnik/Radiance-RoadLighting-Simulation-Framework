@@ -1,0 +1,4 @@
+#?RADIANCE
+oconv /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene1/materials.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene1/road.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene1/lights_s.rad /Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scene1/night_sky.rad
+FORMAT=Radiance_octree
+
