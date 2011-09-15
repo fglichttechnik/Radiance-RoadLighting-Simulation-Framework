@@ -1,4 +1,3 @@
 <Scenes>
-	<Scene PavementLength="2400" PavementWidth="48" SidewalkWidth="6" GrassfieldWidth="500" NumLanes="4"></Scene>
-	<Scene PavementLength="2400" PavementWidth="96" SidewalkWidth="6" GrassfieldWidth="500" NumLanes="6"></Scene>
+	<Scene PavementLength="2400" PavementWidth="24" SidewalkWidth="6" GrassfieldWidth="500" NumLanes="2"></Scene>
 </Scenes>

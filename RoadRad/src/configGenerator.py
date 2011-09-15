@@ -14,16 +14,16 @@ class configGenerator:
         self.rootDirPath = workingDir
         self.dirIndex = []
         
-        dirList = os.listdir( self.rootDirPath )
-        for entry in dirList:
-            if( os.path.isdir( entry ) ):
-                if( "scene" in entry ):
-                    self.dirIndex.append( self.rootDirPath + '/' + entry )
-                    print "Found: " + entry
+        #dirList = os.listdir( self.rootDirPath )
+        #for entry in dirList:
+        #    if( os.path.isdir( entry ) ):
+        #        if( "scene" in entry ):
+        #            self.dirIndex.append( self.rootDirPath + '/' + entry )
+        #            print "Found: " + entry
         
         self.xmlConfigsPrefix = '/configs/'
         
-        self.sceneDirPrefix = '/scene'
+        self.sceneDirPrefix = '/scenes/scene'
         
         self.roadFileName = 'road.xml'
         self.poleFileName = 'poles.xml'
@@ -118,18 +118,20 @@ class configGenerator:
             
             if( not os.path.isdir( self.rootDirPath + self.sceneDirPrefix + str( i ) ) ):
                 os.mkdir( self.rootDirPath + self.sceneDirPrefix + str( i ) )
+                
+            self.dirIndex.append( self.rootDirPath + self.sceneDirPrefix + str( i ) )
             
             f = open( self.rootDirPath + self.sceneDirPrefix + str( i ) + '/road.rad', "w" )
     
             f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
             f.write( "%d -%d %d\n" % ( 0, self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "%d -%d %d\n" % ( self.numLanes[ i ], self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "%d %d %d\n" % ( self.numLanes[ i ], self.sceneLengths[ i ] / 2, 0 ) )
+            f.write( "%d -%d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
+            f.write( "%d %d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
             f.write( "%d %d %d\n\n" % ( 0, self.sceneLengths[ i ] / 2, 0 ) )
             f.write( "!genbox concrete curb1 6 %d .5 | xform -e -t -6 -%d 0\n" % ( self.sceneLengths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "!genbox concrete curb2 6 %d .5 | xform -e -t %d -%d 0\n" % ( self.sceneLengths[ i ], self.numLanes[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %ssolid_yellow.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-            f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 2 -t 24 0 0 %sdashed_white.rad\n\n" % ( self.sceneLengths[ i ], self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
+            f.write( "!genbox concrete curb2 6 %d .5 | xform -e -t %d -%d 0\n" % ( self.sceneLengths[ i ], self.pavementWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
+            f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 1 -t 24 0 0 %sdashed_white.rad\n\n" % ( self.sceneLengths[ i ], self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
     
             f.write( 'grass polygon lawn1\n0\n0\n12\n' )
             f.write( "-%d -%d .5\n" % ( 6, self.sceneLengths[ i ] / 2 ) )
@@ -138,10 +140,10 @@ class configGenerator:
             f.write( "-%d -%d .5\n\n\n" % ( 506, self.sceneLengths[ i ] / 2 ) )
     
             f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-            f.write( "%d -%d .5\n" % ( 54, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( 54, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( 554, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d -%d .5\n" % ( 554, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d -%d .5\n" % ( 30, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d %d .5\n" % ( 30, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d %d .5\n" % ( 530, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d -%d .5\n" % ( 530, self.sceneLengths[ i ] / 2 ) )
         return
         
     def printDashedWhiteRad(self):
@@ -200,8 +202,8 @@ class configGenerator:
         for entry in self.dirIndex:
             f = open( entry + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
-            f.write( "!xform -e -t -1 -1200 0 -a 11 -t 0 240 0 " + entry + "/light_pole.rad\n" )
-            f.write( "!xform -e -rz -180 -t 49 -1080 0 -a 10 -t 0 240 0 " + entry + "/light_pole.rad\n" )
+            f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + entry + "/light_pole.rad\n" )
+            f.write( "!xform -e -rz -180 -t 25 -240 0 -a 10 -t 0 240 0 " + entry + "/light_pole.rad\n" )
             f.close( )
         return
     
@@ -210,7 +212,7 @@ class configGenerator:
             f = open( entry + "/luminaire.rad", "w" )
             f.write( "######luminaire.rad######\n" )
             f.write( "void brightdata ex2_dist\n" )
-            f.write( "6 corr "+ entry + "/ex2.dat source.cal src_phi2 src_theta -my\n" )
+            f.write( "6 corr " + entry + "/ex2.dat source.cal src_phi2 src_theta -my\n" )
             f.write( "0\n" )
             f.write( "1 1\n" )
             f.write( "ex2_dist light ex2_light\n\n" )
@@ -297,16 +299,19 @@ class configGenerator:
         for entry in self.dirIndex:
             f = open( entry + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( "!genbox 20%_gray stv_target .58 .1667 .58\n" )
+            f.write( "!genbox 20%_gray stv_target 2 2 2\n" )
             f.close( )
         return
     
     def printTargets( self ):
         for entry in self.dirIndex:
-            f = open( entry + '/target_0.rad', "w" )
-            f.write( "######target_0.rad######\n")
-            f.write( "!xform -e -t 2.71 6 0 " + entry + "/target.rad\n" )
-            f.close( )
+            dist = 0
+            for i in range( 14 ):
+                f = open( entry + '/target_' + str( i ) + '.rad', "w" )
+                f.write( "######target_0.rad######\n")
+                f.write( "!xform -e -t 17 " + str( dist ) + " 0 " + entry + "/target.rad\n" )
+                f.close( )
+                dist = dist + 24
         return
         
         

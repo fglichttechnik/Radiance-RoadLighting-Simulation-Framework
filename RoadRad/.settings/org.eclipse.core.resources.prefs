@@ -1,5 +1,6 @@
-#Wed Aug 10 12:03:21 CEST 2011
+#Thu Sep 15 08:42:59 CEST 2011
 eclipse.preferences.version=1
+encoding//src/EnvVarSetter.py=utf-8
 encoding//src/RoadRad.py=utf-8
 encoding//src/configGenerator.py=utf-8
 encoding//src/simulator.py=utf-8

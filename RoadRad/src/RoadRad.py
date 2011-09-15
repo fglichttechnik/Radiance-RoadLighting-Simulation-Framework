@@ -3,14 +3,17 @@
 
 import os
 from optparse import OptionParser
+import sys
 
 import configGenerator
 import simulator
+import EnvVarSetter;
 
 usage = "usage: %prog [options]"
 version = "%prog 0.1"
 
 oparser = OptionParser( )
+oparser.add_option( "--setEnv", action="store", type="string", dest="setEnv" )
 oparser.add_option( "--skip-configs", action="store_true", dest="skipConfigs" )
 oparser.add_option( "--skip-roads", action="store_true", dest="skipRoads" )
 oparser.add_option( "--skip-dashed", action="store_true", dest="skipDashed" )
@@ -25,6 +28,13 @@ oparser.add_option( "--skip-targets", action="store_true", dest="skipTargets" )
 oparser.add_option( "--skip-target", action="store_true", dest="skipTarget" )
 
 ( options, args ) = oparser.parse_args()
+
+if( options.setEnv ):
+    envtest = EnvVarSetter.EnvVarSetter( options.setEnv )
+    if( not envtest.testRadianceInstall( ) ):
+            print "Radiance not installed properly. Adding path"
+            envtest.addRadianceEnv()
+            sys.exit()
 
 if( not options.skipConfigs ):
     configGen = configGenerator.configGenerator( os.getcwd( ) )
