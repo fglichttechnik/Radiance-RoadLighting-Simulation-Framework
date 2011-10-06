@@ -31,6 +31,7 @@ class simulator:
         for entry in self.dirIndex:
             for i in range( 14 ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {0}/scene{1}.oct'.format( entry, i )
+                #cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/target_{1}.rad {0}/night_sky.rad > {0}/scene{1}.oct'.format( entry, i )
                 os.system(cmd)
                 print 'generated oct# ' + str( i )
         return
@@ -40,7 +41,7 @@ class simulator:
             for i in range( 14 ):
                 print 'generating pic# ' + str( i )
                 starttime = datetime.datetime.now()
-                cmd0 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh 25 -vv 12.5 {0}/scene{1}.oct | pfilt -r .6 -e 5 > {0}/out_hr{1}.pic'.format( entry, i )
+                cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh 25 -vv 12.5 {0}/scene{1}.oct | pfilt -r .6 -e 5 > {0}/out_hr{1}.pic'.format( entry, i )
                 os.system( cmd0 )
                 print 'done.'
                 print datetime.datetime.now() - starttime

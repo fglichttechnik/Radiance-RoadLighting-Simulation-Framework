@@ -128,22 +128,22 @@ class configGenerator:
             f.write( "%d -%d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
             f.write( "%d %d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
             f.write( "%d %d %d\n\n" % ( 0, self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "!genbox concrete curb1 6 %d .5 | xform -e -t -6 -%d 0\n" % ( self.sceneLengths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "!genbox concrete curb2 6 %d .5 | xform -e -t %d -%d 0\n" % ( self.sceneLengths[ i ], self.pavementWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ], self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ], self.pavementWidths[ i ], self.sceneLengths[ i ] / 2 ) )
             #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
             f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 1 -t 24 0 0 %sdashed_white.rad\n\n" % ( self.sceneLengths[ i ], self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
     
             f.write( 'grass polygon lawn1\n0\n0\n12\n' )
-            f.write( "-%d -%d .5\n" % ( 6, self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d %d .5\n" % ( 6, self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d %d .5\n" % ( 506, self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d -%d .5\n\n\n" % ( 506, self.sceneLengths[ i ] / 2 ) )
+            f.write( "-%d -%d .5\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "-%d %d .5\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "-%d %d .5\n" % ( 55506, self.sceneLengths[ i ] / 2 ) )
+            f.write( "-%d -%d .5\n\n\n" % ( 55506, self.sceneLengths[ i ] / 2 ) )
     
             f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-            f.write( "%d -%d .5\n" % ( 30, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( 30, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( 530, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d -%d .5\n" % ( 530, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d -%d .5\n" % ( self.pavementWidths[ i ] + self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d %d .5\n" % ( self.pavementWidths[ i ] + self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d %d .5\n" % ( 1140, self.sceneLengths[ i ] / 2 ) )
+            f.write( "%d -%d .5\n" % ( 1140, self.sceneLengths[ i ] / 2 ) )
         return
         
     def printDashedWhiteRad(self):
@@ -203,7 +203,7 @@ class configGenerator:
             f = open( entry + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
             f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + entry + "/light_pole.rad\n" )
-            f.write( "!xform -e -rz -180 -t 25 -240 0 -a 10 -t 0 240 0 " + entry + "/light_pole.rad\n" )
+            f.write( "!xform -e -rz -180 -t 21 -240 0 -a 10 -t 0 240 0 " + entry + "/light_pole.rad\n" )
             f.close( )
         return
     
@@ -238,6 +238,8 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "4 1e-5 8e-6 5e-6 0\n\n" )
+            #here for ref image
+            #f.write( "4 1 1 1 0\n\n" )
             f.write( "ground_glow source ground\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -246,6 +248,8 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "4 2e-6 2e-6 1e-5  0\n\n" )
+            #here for ref image
+            #f.write( "4 0 0 0  0\n\n" )
             f.write( "sky_glow source sky\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -284,7 +288,11 @@ class configGenerator:
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( "5 .2 .2 .2 .05 .05\n" )
+            f.write( "5 .2 .2 .2 .05 .05\n\n" )
+            #f.write( "void glow self_box\n" )
+            #f.write( "0\n" )
+            #f.write( "0\n" )
+            #f.write( "4 1 1 1 0\n\n" )
         f.close( )
     
     def printRView( self ):
@@ -299,6 +307,8 @@ class configGenerator:
         for entry in self.dirIndex:
             f = open( entry + '/target.rad', "w" )
             f.write( "######target.rad######\n")
+            #Here for ref image
+            #f.write( "!genbox self_box stv_target 2 2 2\n" )
             f.write( "!genbox 20%_gray stv_target 2 2 2\n" )
             f.close( )
         return
@@ -309,7 +319,7 @@ class configGenerator:
             for i in range( 14 ):
                 f = open( entry + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t 17 " + str( dist ) + " 0 " + entry + "/target.rad\n" )
+                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + entry + "/target.rad\n" )
                 f.close( )
                 dist = dist + 24
         return

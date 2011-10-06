@@ -5,6 +5,8 @@ import os
 from optparse import OptionParser
 import sys
 
+import Image
+
 import configGenerator
 import simulator
 import EnvVarSetter;
@@ -73,4 +75,6 @@ if( not options.skipConfigs ):
         configGen.printTarget( )
     
 sim = simulator.simulator( os.getcwd( ) )
+
+im = Image.load("/Users/sahilsachdeva/pro/Radiance2/RoadRad/src/scenes/scene0/out_hr.pic")
     
