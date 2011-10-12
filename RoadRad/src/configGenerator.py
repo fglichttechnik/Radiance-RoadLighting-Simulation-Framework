@@ -1,17 +1,17 @@
 # This Python file uses the following encoding: utf-8
 
 import os
-import sys
 from xml.dom.minidom import parse
+import Scene
+import Pole
 
 class configGenerator:
     
-    def __init__( self, workingDir ):
+    def __init__( self, path ):
         #retrieve working directory info
-        self.rootDirPath = workingDir
-        print 'Working Directory: ' + self.rootDirPath
+        self.workingDirPath = path
+        print 'Working Directory: ' + self.workingDirPath
         
-        self.rootDirPath = workingDir
         self.dirIndex = []
         
         #dirList = os.listdir( self.rootDirPath )
@@ -21,134 +21,132 @@ class configGenerator:
         #            self.dirIndex.append( self.rootDirPath + '/' + entry )
         #            print "Found: " + entry
         
-        self.xmlConfigsPrefix = '/configs/'
+        self.sceneDecriptor = "/SceneDescription.xml"
+        self.radDirPrefix = "/Rads"
+        self.scene = Scene.Scene
         
-        self.sceneDirPrefix = '/scenes/scene'
+        if( self.performFileAndDirChecks( ) ):
+            self.parseConfig( )
+            self.printRoadRads( )
+            self.printDashedWhiteRad( )
+            self.printSolidYellowRad( )
+            self.printPoleConfig( )
+            self.printLightsRad( )
+            self.printLuminaireRad( )
+            self.printNightSky( )
+            self.printMaterialsRad( )
+            self.printRView( )
+            self.printTarget( )
+            self.printTargets( )
+            
+
+    def parseConfig( self ):
+        print 'Begining to parse XML Config.'
+        configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
+        dom = parse( configfile )
+        configfile.close( )
         
-        self.roadFileName = 'road.xml'
-        self.poleFileName = 'poles.xml'
+        roadDesc = dom.getElementsByTagName( 'Road' )
+        if( roadDesc[0].attributes ):
+            self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
+            self.scene.Length = int( roadDesc[0].attributes["LaneLength"].value )
+            self.scene.LaneWidth = int( roadDesc[0].attributes["LaneWidth"].value )
+            self.scene.SidewalkWidth = int( roadDesc[0].attributes["SidewalkWidth"].value )
+            self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
         
-        self.sceneLengths = [ ]
-        self.pavementWidths = [ ]
-        self.sidewalkWidths = [ ]
-        self.grassWidths = [ ]
-        self.numLanes = [ ]
+        backgroundDesc = dom.getElementsByTagName( 'Background' )
+        if( backgroundDesc[0].attributes ):
+            self.scene.Background = backgroundDesc[0].attributes["Context"].value
         
-        self.poleHeight = [ ]
-        self.isStaggered = [ ]
-        self.poleSpacing = [ ]
+        viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
+        if( viewpointDesc[0].attributes ):
+            self.scene.ViewpointDistance = float( viewpointDesc[0].attributes["Distance"].value )
+            self.scene.ViewpointHeight = float( viewpointDesc[0].attributes["Height"].value )
+            self.scene.ViewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
         
+        targetDesc = dom.getElementsByTagName( 'Target' )
+        if( targetDesc[0].attributes ):
+            self.scene.TargetSize = float( targetDesc[0].attributes["Size"].value )
+            self.scene.TargetReflectency = float( targetDesc[0].attributes["Reflectancy"].value )
+            self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
+            self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
+        
+        LDCDesc = dom.getElementsByTagName( 'LDC' )
+        if( LDCDesc[0].attributes ):
+            self.scene.LDCName = LDCDesc[0].attributes["Name"].value
+            self.scene. LDCLightSource = LDCDesc[0].attributes["LightSource"].value
+            self.scene.LCDTag = LDCDesc[0].attributes["Tag"].value
+            
+        poleDesc = dom.getElementsByTagName( 'Poles' )
+        for pole in poleDesc[0].childNodes:
+            if( pole.attributes ):
+                tempPole = Pole.Pole
+                if( pole.nodeName == "PoleSingle" ):
+                    tempPole.isSingle = True
+                    tempPole.PolePositionX = int( pole.attributes["PositionX"].value )
+                    tempPole.PoleSide = pole.attributes["Side"].value
+                else:
+                    tempPole.PoleSpacing = int( pole.attributes["PoleSpacing"].value )
+                    tempPole.IsStaggered = bool( pole.attributes["IsStaggered"].value)
+                
+                tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
+                tempPole.PoleLDC = pole.attributes["LDC"].value
+        
+        print 'Sucessfully Parsed.'
+
     
-    def parseRoads( self ):
-        if( not self.performFileAndDirChecks( self.roadFileName ) ):
+    
+    
+    def performFileAndDirChecks( self ):
+        print 'Attempting to locate configuration in: ' + self.workingDirPath + self.sceneDecriptor
+        
+        if( not os.path.isdir( self.workingDirPath ) ):
+            print 'Scene directory not found in the working directory, Quitting'
             return False
         
-        print 'Attempting to parse road scenes'
-        if( not self.parseRoadScenes( self.rootDirPath + self.xmlConfigsPrefix + self.roadFileName ) ):
-            print 'Error parsing road.xml, check syntax'
+        if( not os.path.isfile( self.workingDirPath + self.sceneDecriptor ) ):
+            print 'No config found, Quitting'
             return False
         
-        self.printRoadRads( )
+        print 'Found: ' + self.sceneDecriptor
+        
+        if( not os.path.isdir( self.workingDirPath + self.radDirPrefix ) ):
+            os.mkdir( self.workingDirPath + self.radDirPrefix )
+            print 'Made directory Rads to output the Rad configs.'
+        
         return True
-        
-    def parsePoles( self ):
-        if( not self.performFileAndDirChecks( self.poleFileName ) ):
-            return False
-        
-        print 'Attempting to parse pole configs'
-        if( not self.parsePoleConfigs( self.rootDirPath + self.xmlConfigsPrefix + self.poleFileName ) ):
-            print 'Error parsing road.xml, check syntax'
-            return False
-        
-        print self.printPoleConfig( )
-        return False
-    
-    def performFileAndDirChecks( self, prefix ):
-        print 'Attempting to locate XML config files in: ' + self.rootDirPath + self.xmlConfigsPrefix
-        
-        if( not os.path.isdir( self.rootDirPath + self.xmlConfigsPrefix ) ):
-            print 'Config directory not found in the working directory, Quitting'
-            return False
-        
-        if( not os.path.isfile( self.rootDirPath + self.xmlConfigsPrefix + prefix ) ):
-            print prefix + ': File not found, Quitting'
-            return False
-        
-        return True
-    
-    def parseRoadScenes( self, path ):
-        file = open( path, 'r' )
-        dom = parse( file )
-        file.close( )
-        
-        scenesList = dom.getElementsByTagName( 'Scenes' )
-        
-        for scene in scenesList:
-            for child in scene.childNodes:
-                if( child.attributes ):
-                    self.sceneLengths.append( int( child.attributes[ "PavementLength" ].value ) )
-                    self.pavementWidths.append( int( child.attributes[ "PavementWidth" ].value ) )
-                    self.sidewalkWidths.append( int( child.attributes[ "SidewalkWidth" ].value ) )
-                    self.grassWidths.append( int( child.attributes[ "GrassfieldWidth" ].value ) )
-                    self.numLanes.append( int( child.attributes[ "NumLanes" ].value ) )
-        
-        print 'Successfully parsed ' + str( len( self.sceneLengths ) ) + ' scenes.'
-        return True
-    
-    def parsePoleConfigs( self, path ):
-            file = open( path, 'r' )
-            dom = parse( file )
-            file.close( )
-        
-            polesList = dom.getElementsByTagName( 'Poles' )
-        
-            for pole in polesList:
-                for child in pole.childNodes:
-                    if( child.attributes ):
-                        self.poleHeight.append( int( child.attributes[ "PoleHeight" ].value ) )
-                        self.poleSpacing.append( int( child.attributes[ "PoleSpacing" ].value ) )
-                        self.isStaggered.append( bool( child.attributes[ "IsStaggered" ].value ) )
-        
-            print 'Successfully parsed ' + str( len( self.poleHeight ) ) + ' pole configs.'
-            return True
     
     def printRoadRads( self ):
+        print 'Generating: road.rad'
+        f = open( self.workingDirPath + self.radDirPrefix + '/road.rad', "w" )
+    
+        f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
+        f.write( "%d -%d %d\n" % ( 0, self.scene.Length / 2, 0 ) )
+        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
+        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
+        f.write( "%d %d %d\n\n" % ( 0, self.scene.Length / 2, 0 ) )
+        f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.SidewalkWidth, self.scene.Length / 2 ) )
+        f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2 ) )
+        #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
+        f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 1 -t 24 0 0 %s/dashed_white.rad\n\n" % ( self.scene.Length, self.workingDirPath + self.radDirPrefix ) )
+
+        f.write( 'grass polygon lawn1\n0\n0\n12\n' )
+        f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
+        f.write( "-%d %d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
+        f.write( "-%d %d .5\n" % ( 55506, self.scene.Length / 2 ) )
+        f.write( "-%d -%d .5\n\n\n" % ( 55506, self.scene.Length / 2 ) )
+    
+        f.write( 'grass polygon lawn2\n0\n0\n12\n' )
+        f.write( "%d -%d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
+        f.write( "%d %d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
+        f.write( "%d %d .5\n" % ( 1140, self.scene.Length / 2 ) )
+        f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
-        for i in range( 0, len( self.sceneLengths ) ):
-            
-            if( not os.path.isdir( self.rootDirPath + self.sceneDirPrefix + str( i ) ) ):
-                os.mkdir( self.rootDirPath + self.sceneDirPrefix + str( i ) )
-                
-            self.dirIndex.append( self.rootDirPath + self.sceneDirPrefix + str( i ) )
-            
-            f = open( self.rootDirPath + self.sceneDirPrefix + str( i ) + '/road.rad', "w" )
-    
-            f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
-            f.write( "%d -%d %d\n" % ( 0, self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "%d -%d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "%d %d %d\n" % ( self.pavementWidths[ i ], self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "%d %d %d\n\n" % ( 0, self.sceneLengths[ i ] / 2, 0 ) )
-            f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ], self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ], self.pavementWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-            f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 1 -t 24 0 0 %sdashed_white.rad\n\n" % ( self.sceneLengths[ i ], self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-    
-            f.write( 'grass polygon lawn1\n0\n0\n12\n' )
-            f.write( "-%d -%d .5\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d %d .5\n" % ( self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d %d .5\n" % ( 55506, self.sceneLengths[ i ] / 2 ) )
-            f.write( "-%d -%d .5\n\n\n" % ( 55506, self.sceneLengths[ i ] / 2 ) )
-    
-            f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-            f.write( "%d -%d .5\n" % ( self.pavementWidths[ i ] + self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( self.pavementWidths[ i ] + self.sidewalkWidths[ i ], self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d %d .5\n" % ( 1140, self.sceneLengths[ i ] / 2 ) )
-            f.write( "%d -%d .5\n" % ( 1140, self.sceneLengths[ i ] / 2 ) )
-        return
+        f.close()
         
     def printDashedWhiteRad(self):
-        for entry in self.dirIndex:
-            f = open( entry + '/dashed_white.rad', "w" )
+            print 'Generating: dashed_white.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/dashed_white.rad', "w" )
             f.write( "######dashed_white.rad######\n" )
             f.write( "white_paint polygon lane_dash\n" )
             f.write( "0\n" )
@@ -159,11 +157,10 @@ class configGenerator:
             f.write( ".1667 8 0\n")
             f.write( "-.1667 8 0\n")
             f.close()
-        return
         
     def printSolidYellowRad( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/solid_yellow.rad', "w" )
+            print 'Generating: solid_yellow.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/solid_yellow.rad', "w" )
             f.write( "######solid_yellow.rad######\n" )
             f.write( "yellow_paint polygon centre_stripe\n" )
             f.write( "0\n" )
@@ -174,13 +171,12 @@ class configGenerator:
             f.write( "   .1667 2400 0\n")
             f.write( "  -.1667 2400 0\n")
             f.close()
-        return
     
     def printPoleConfig( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/light_pole.rad', "w" )
+            print 'Generating: light_pole.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/light_pole.rad', "w" )
             f.write( "######light_pole.rad######\n" )
-            f.write( "!xform -e -rz -180 -t 6 0 30 " + entry + "/luminaire.rad\n\n" )
+            f.write( "!xform -e -rz -180 -t 6 0 30 " + self.workingDirPath + self.radDirPrefix + "/luminaire.rad\n\n" )
             f.write( "chrome cylinder pole\n" )
             f.write( "0\n")
             f.write( "0\n")
@@ -196,23 +192,34 @@ class configGenerator:
             f.write( " 6 0 30.1667\n")
             f.write( " .1667\n")
             f.close( )
-        return
     
     def printLightsRad( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/lights_s.rad', "w" )
+            print 'Generating: light_s.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
-            f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + entry + "/light_pole.rad\n" )
-            f.write( "!xform -e -rz -180 -t 21 -240 0 -a 10 -t 0 240 0 " + entry + "/light_pole.rad\n" )
+            #make variable
+            f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+            f.write( "!xform -e -rz -180 -t 21 -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
-        return
     
     def printLuminaireRad( self ):
-        for entry in self.dirIndex:
-            f = open( entry + "/luminaire.rad", "w" )
+            print 'Generating: luminaire.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + "/luminaire.rad", "w" )
             f.write( "######luminaire.rad######\n" )
             f.write( "void brightdata ex2_dist\n" )
-            f.write( "6 corr " + entry + "/ex2.dat source.cal src_phi2 src_theta -my\n" )
+            
+            if( not os.path.isdir( self.workingDirPath + '/LDCs' ) ):
+                print "LDC not found in the designated LDCs directory"
+                return
+            
+            datFile = ""
+            dirList = os.listdir( self.workingDirPath + '/LDCs' )
+            for entry in dirList:
+                if( entry.endswith( ".ies") ):
+                    datFile = entry.replace( ".ies", ".dat" )
+                    break
+            
+            f.write( "6 corr " + self.workingDirPath + "/LDCs/" + datFile + " source.cal src_phi2 src_theta -my\n" )
             f.write( "0\n" )
             f.write( "1 1\n" )
             f.write( "ex2_dist light ex2_light\n\n" )
@@ -224,11 +231,10 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "4 0 0 0 0.5\n" )
             f.close( )
-        return
     
     def printNightSky( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/night_sky.rad', "w" )
+            print 'Generating: night_sky.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/night_sky.rad', "w" )
             f.write( "######night_sky.rad######\n" )
             f.write( "void brightfunc skyfunc\n" )
             f.write( "2 skybr skybright.cal\n" )
@@ -255,11 +261,10 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "4 0 0 1 180\n" )
             f.close( )
-        return
     
     def printMaterialsRad( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/materials.rad', "w" )
+            print 'Generating: materials.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
             f.write( "void plastic pavement\n" )
             f.write( "0\n" )
@@ -289,40 +294,50 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 .2 .2 .2 .05 .05\n\n" )
-            #f.write( "void glow self_box\n" )
-            #f.write( "0\n" )
-            #f.write( "0\n" )
-            #f.write( "4 1 1 1 0\n\n" )
-        f.close( )
+            f.write( "void glow self_box\n" )
+            f.write( "0\n" )
+            f.write( "0\n" )
+            f.write( "4 1 1 1 0\n\n" )
+            f.close( )
     
     def printRView( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/eye.vp', "w" )
+            print 'Generating: eye.vp'
+            f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")
+            #make variable
             f.write( "rview -vtv -vp 28 -273 4.75 -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
             f.close( )
-        return
     
     def printTarget( self ):
-        for entry in self.dirIndex:
-            f = open( entry + '/target.rad', "w" )
+            print 'Generating: target.rad'
+            f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            #Here for ref image
-            #f.write( "!genbox self_box stv_target 2 2 2\n" )
             f.write( "!genbox 20%_gray stv_target 2 2 2\n" )
             f.close( )
-        return
+            
+            f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
+            f.write( "######target.rad######\n")
+            f.write( "!genbox self_box stv_target 2 2 2\n" )
+            f.close( )
     
     def printTargets( self ):
-        for entry in self.dirIndex:
             dist = 0
             for i in range( 14 ):
-                f = open( entry + '/target_' + str( i ) + '.rad', "w" )
+                print 'Generating: target_' + str( i ) + '.rad'
+                f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + entry + "/target.rad\n" )
+                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
                 dist = dist + 24
-        return
+            
+            dist = 0
+            for i in range( 14 ):
+                print 'Generating: self_target_' + str( i ) + '.rad'
+                f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
+                f.write( "######target_0.rad######\n")
+                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
+                f.close( )
+                dist = dist + 24
         
         
 
