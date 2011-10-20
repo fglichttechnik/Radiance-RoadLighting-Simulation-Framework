@@ -3,7 +3,8 @@
 import os
 import datetime
 import Image
-
+from xml.dom.minidom import parse
+import math
 
 class simulator:
     
@@ -18,15 +19,36 @@ class simulator:
         self.picDirSuffix = '/Pics'
         self.ldcSuffix = '/LDCs'
         self.iesPath = ''
+        self.LMKSetMat = '/LMKSetMat'
+        self.LMKSetMatFilename = '/pos.xml'
+        self.sensorHeight = 8.9
+        self.sendorWidth = 6.64
         
         if( self.makeRadfromIES( ) ):
             self.makeOct( )
             #self.makePic( )
             if( self.willMakeRefPic ):
-                self.makeRefPic( )
+                #self.makeRefPic( )
                 self.processRefPics( )
 
         return
+    
+    def calcOpeningAngle( self, focalLength ):
+        angles = []
+        
+        print 'Extracting focalLength.'
+        configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
+        dom = parse( configfile )
+        configfile.close( )
+        
+        focalLen = dom.getElementsByTagName( 'FocalLength' )
+        if( focalLen.attributes ):
+            fl = float( focalLen.attributes["fl"].value )
+            
+        angles[ 0 ] = 2 * math.atan( self.sensorHeight / ( 2 * fl ) )
+        angles[ 1 ] = 2 * math.atan( self.sensorWidth / ( 2 * fl ) )
+        
+        return angles
     
     def makeRadfromIES( self ):
         if( not os.path.isdir( self.rootDirPath + self.ldcSuffix ) ):
@@ -91,6 +113,7 @@ class simulator:
                 print 'generating Reference pic# ' + str( i )
                 starttime = datetime.datetime.now()
                 #pfilt out, make raw image.
+                # -vf filename to integrate the eye file
                 cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh 25 -vv 12.5 {0}/scene{1}.oct | pfilt -r .6 -e 5 > {2}/out{1}.pic'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix )
                 cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
@@ -106,28 +129,38 @@ class simulator:
                 #os.system( cmd2 )
                 
     def processRefPics( self ):
-        im = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out0.tiff')
-        pix = im.load()
+        print "Processing reference pics."
+        if( not os.path.isdir( self.rootDirPath + self.LMKSetMat ) ):
+            os.mkdir( self.rootDirPath + self.LMKSetMat )
         
-        width, height = im.size
+        xmlOut = open( self.rootDirPath + self.LMKSetMat + self.LMKSetMatFilename, 'w' )
+        xmlOut.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!DOCTYPE LMKSetMat SYSTEM \"LMKSetMat.dtd\">\n\n<LMKSetMat>\n" )
         
-        xmin = 0
-        xmax = 0
-        ymin = 0
-        ymax = 0
-        
-        for x in range(width):
-            for y in range(height):
-                if( pix[ x, y ][ 0 ] == 255 and pix[ x, y ][ 1 ] == 255 and pix[ x, y ][ 2 ] == 255 ):
-                    if( xmin == 0 and ymin == 0 ):
-                        xmin = x
-                        ymin = y
-                    else:
-                        xmax = x
-                        ymax = y
-        print xmin
-        print ymin
-        print xmax
-        print ymax
+        for i in range( 14 ):
+            im = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out' + str(i) + '.tiff')
+            pix = im.load()
+            
+            width, height = im.size
+            
+            xmin = 0
+            xmax = 0
+            ymin = 0
+            ymax = 0
+            
+            for x in range(width):
+                for y in range(height):
+                    if( pix[ x, y ][ 0 ] == 255 and pix[ x, y ][ 1 ] == 255 and pix[ x, y ][ 2 ] == 255 ):
+                        if( xmin == 0 and ymin == 0 ):
+                            xmin = x
+                            ymin = y
+                        else:
+                            xmax = x
+                            ymax = y
+            print xmin
+            print ymin
+            print xmax
+            print ymax
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".mat\" type=\"mat\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"--\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+        xmlOut.close()          
         return
 

@@ -1,4 +1,4 @@
-        <RoadScene>
+<RoadScene>
 	<SceneDescription>
 		<Road  NumLanes="2" LaneLength="2400" LaneWidth="24" SidewalkWidth="6" Surface="R3"/>
 		<Background Context="Grass"/>
@@ -14,4 +14,5 @@
 		<PoleArray PoleHeight="30" PoleSpacing="240" IsStaggered="True" LDC="ldc1"/>
 		<PoleSingle PoleHeight="30" LDC="ldc1" PositionX="30" Side="Left"/>		
 	</Poles>
+	<FocalLength FL="50"></FocalLength>
 </RoadScene>
