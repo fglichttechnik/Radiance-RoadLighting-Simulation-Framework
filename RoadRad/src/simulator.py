@@ -5,6 +5,8 @@ import datetime
 import Image
 from xml.dom.minidom import parse
 import math
+import csv
+import struct
 
 class simulator:
     
@@ -23,13 +25,18 @@ class simulator:
         self.LMKSetMatFilename = '/pos.xml'
         self.sensorHeight = 8.9
         self.sendorWidth = 6.64
+        self.picSubDirSuffix = '/pics'
+        self.tiffSubDirSuffix = '/tiffs'
+        self.pfSubDirPrefix = '/pfs'
+        self.rgbSubDirPrefix = '/RGBs'
         
         if( self.makeRadfromIES( ) ):
             self.makeOct( )
-            #self.makePic( )
+            self.makePic( )
             if( self.willMakeRefPic ):
-                #self.makeRefPic( )
+                self.makeRefPic( )
                 self.processRefPics( )
+        self.postRenderProcessing( )
 
         return
     
@@ -86,13 +93,17 @@ class simulator:
     def makePic(self):
             if( not os.path.isdir( self.rootDirPath + self.picDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix )
+            if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+            if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix )
                 
             for i in range( 14 ):
                 print 'generating pic# ' + str( i )
                 starttime = datetime.datetime.now()
                 #pfilt out, make raw image.1380x1030. vh and vv needs to calculated.
-                cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 1000 -vh 25 -vv 25 {0}/scene{1}.oct | pfilt -r .6 -e 5 > {2}/out{1}.pic '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix )
-                cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.picDirSuffix, i )
+                cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 1000 -vh 25 -vv 25 {0}/scene{1}.oct > {2}/out{1}.pic '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix )
+                cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
                 os.system( cmd0 )
                 os.system( cmd1 )
                 print 'done.'
@@ -160,7 +171,58 @@ class simulator:
             print ymin
             print xmax
             print ymax
-            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".mat\" type=\"mat\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"--\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".mat\" type=\"mat\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"0\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
         xmlOut.close()          
+        return
+    
+    def postRenderProcessing( self ):
+        if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix )
+        if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix +self.rgbSubDirPrefix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix )
+        
+        processingList = []
+        dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+        for entry in dirList:
+            if( not os.path.isdir( entry ) ):
+                if( "out" in entry ):
+                    processingList.append( entry )
+        
+        print "dumping pvalues:"
+        for pic in processingList:
+            print "File: " + pic
+            cmd = "pvalue -h -H " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/' +pic + "> " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + pic.replace( ".pic", ".txt" )
+            os.system(cmd)
+            print "done."
+        
+        processedList = []
+        dirList2 = os.listdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix )
+        for entry in dirList2:
+            if( not os.path.isdir( entry ) ):
+                if( "out" in entry ):
+                    processedList.append( entry )
+        print "converting to .pf format"
+        for txtFile in processedList:
+            print "File: " +txtFile
+            imgData = []
+            rgbFile = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + txtFile, 'r')
+            rgbReader = csv.reader( rgbFile, delimiter = ' ' )
+            for row in rgbReader:
+                pixelData = []
+                for item in row:
+                    if( len(item ) != 0 ):
+                        pixelData.append( float( item ) )
+                imgData.append( pixelData )
+            rgbFile.close()
+            
+            pfOut = open( str( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix + '/' + txtFile.replace( ".txt", ".pf" ) ), 'wb' )
+            pfOut.write('Typ=Pic98::TPlane<float>\r\nLines=1000\r\nColumns=1000\r\nFirstLine=1\r\nFirstColumn=1\r\n\0')
+            
+            #L = 179.R = 47.4.Rr + 119.9.Rg + 11.7.Rb
+            for pixel in imgData:
+                pfOut.write( struct.pack( 'f', 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4] ) )
+            
+            pfOut.close()
+            print "done"
         return
 
