@@ -1,5 +1,6 @@
+#!/opt/local/bin/python
 #This Python file uses the following encoding: utf-8
-
+#asd
 import os
 from optparse import OptionParser
 import sys
