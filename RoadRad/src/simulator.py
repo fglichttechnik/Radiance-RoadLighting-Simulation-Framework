@@ -8,6 +8,8 @@ import math
 import csv
 import struct
 
+
+#write a few documentation
 class simulator:
     
     def __init__( self, path, RefPic ):
@@ -23,12 +25,43 @@ class simulator:
         self.iesPath = ''
         self.LMKSetMat = '/LMKSetMat'
         self.LMKSetMatFilename = '/pos.xml'
+        
+        #millimeter
         self.sensorHeight = 8.9
-        self.sendorWidth = 6.64
+        self.sensorWidth = 6.64
+        
+        self.horizontalRes = 1380
+        self.verticalRes = 1030
+        
         self.picSubDirSuffix = '/pics'
         self.tiffSubDirSuffix = '/tiffs'
         self.pfSubDirPrefix = '/pfs'
         self.rgbSubDirPrefix = '/RGBs'
+        self.focalLength = 0
+        self.fixedVPMode = True
+        self.verticalAngle = 0
+        self.horizontalAngle = 0
+        self.lightType = ''
+        
+        configfile = open( self.rootDirPath + "/SceneDescription.xml", 'r' )
+        dom = parse( configfile )
+        configfile.close( )
+        
+        focalLen = dom.getElementsByTagName( 'FocalLength' )
+        if( focalLen[ 0 ].attributes ):
+            self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
+        
+        self.calcOpeningAngle( )
+        
+        viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
+        if( viewpointDesc[0].attributes ):
+            viewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
+            if viewpointDistanceMode == "fixedTargetDistance":
+                self.fixedVPMode = False
+        
+        LDCDesc = dom.getElementsByTagName( 'LDC' )
+        if( LDCDesc[0].attributes ):
+            self.lightType = LDCDesc[0].attributes["LightSource"].value
         
         if( self.makeRadfromIES( ) ):
             self.makeOct( )
@@ -40,22 +73,9 @@ class simulator:
 
         return
     
-    def calcOpeningAngle( self, focalLength ):
-        angles = []
-        
-        print 'Extracting focalLength.'
-        configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
-        dom = parse( configfile )
-        configfile.close( )
-        
-        focalLen = dom.getElementsByTagName( 'FocalLength' )
-        if( focalLen.attributes ):
-            fl = float( focalLen.attributes["fl"].value )
-            
-        angles[ 0 ] = 2 * math.atan( self.sensorHeight / ( 2 * fl ) )
-        angles[ 1 ] = 2 * math.atan( self.sensorWidth / ( 2 * fl ) )
-        
-        return angles
+    def calcOpeningAngle( self ):
+        self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
+        self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
     
     def makeRadfromIES( self ):
         if( not os.path.isdir( self.rootDirPath + self.ldcSuffix ) ):
@@ -101,11 +121,17 @@ class simulator:
             for i in range( 14 ):
                 print 'generating pic# ' + str( i )
                 starttime = datetime.datetime.now()
-                #pfilt out, make raw image.1380x1030. vh and vv needs to calculated.
-                cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 1000 -vh 25 -vv 25 {0}/scene{1}.oct > {2}/out{1}.pic '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix )
-                cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
+                cmd0 = ''
+                
+                #if self.fixedVPMode == False:
+                print self.verticalAngle
+                print self.horizontalAngle
+                cmd0 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 -vh {4} -vv {3} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
+                #else:
+                #    cmd0 = 'rpict -vtv -vf {6}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 1000 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.horizontalAngle, self.verticalAngle, i, self.rootDirPath + self.radDirSuffix )
+                #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
                 os.system( cmd0 )
-                os.system( cmd1 )
+                #os.system( cmd1 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
             
@@ -123,12 +149,15 @@ class simulator:
         for i in range( 14 ):
                 print 'generating Reference pic# ' + str( i )
                 starttime = datetime.datetime.now()
-                #pfilt out, make raw image.
-                # -vf filename to integrate the eye file
-                cmd0 = 'rpict -vtv -vp 15 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh 25 -vv 12.5 {0}/scene{1}.oct | pfilt -r .6 -e 5 > {2}/out{1}.pic'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix )
-                cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
+                
+                cmd0 = ''
+                if self.fixedVPMode == False:
+                    cmd0 = 'rpict -vtv -vf {5}/eye.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
+                else:
+                    cmd0 = 'rpict -vtv -vf {6}/eye{5}.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, i, self.rootDirPath + self.radDirSuffix )
+                #cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
-                os.system( cmd1 )
+                #os.system( cmd1 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
             
