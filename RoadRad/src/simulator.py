@@ -66,7 +66,7 @@ class simulator:
         for entry in dirList:
             if( entry.endswith( ".ies") ):
                 self.iesPath = self.rootDirPath + self.ldcSuffix + '/' + entry
-                cmd = 'ies2Rad -l ' + self.rootDirPath + self.ldcSuffix + ' ' + self.iesPath
+                cmd = 'ies2rad -l ' + self.rootDirPath + self.ldcSuffix + ' ' + self.iesPath
                 os.system( cmd )
                 break
         
