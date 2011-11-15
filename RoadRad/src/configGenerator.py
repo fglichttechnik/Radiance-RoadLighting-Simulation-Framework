@@ -128,7 +128,7 @@ class configGenerator:
         f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.SidewalkWidth, self.scene.Length / 2 ) )
         f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t 12 -%d .001 -a 120 -t 0 20 0 -a 1 -t 24 0 0 %s/dashed_white.rad\n\n" % ( self.scene.Length, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -%d .001 -a 120 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.Length, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
         f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
@@ -199,7 +199,7 @@ class configGenerator:
             f.write( "######lights_s.rad######\n" )
             #make variable
             f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
-            f.write( "!xform -e -rz -180 -t 21 -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+            f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
     def printLuminaireRad( self ):
@@ -301,12 +301,21 @@ class configGenerator:
             f.close( )
     
     def printRView( self ):
-            print 'Generating: eye.vp'
+        print 'Generating: eye.vp'
+        f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
+        f.write( "######eye.vp######\n")
+        
+        if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")
-            #make variable
-            f.write( "rview -vtv -vp 28 -273 4.75 -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
+            f.write( "rview -vtv -vp 28 -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
             f.close( )
+        else:
+            for i in range( 14 ):
+                f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
+                f.write( "######eye.vp######\n")
+                f.write( "rview -vtv -vp 28 " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
+                f.close( )
     
     def printTarget( self ):
             print 'Generating: target.rad'
@@ -326,7 +335,7 @@ class configGenerator:
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
+                f.write( "!xform -e -t " + str( self.scene.LaneWidth * 1.5 ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
                 dist = dist + 24
             
