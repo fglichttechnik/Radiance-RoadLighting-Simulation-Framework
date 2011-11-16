@@ -86,7 +86,7 @@ class simulator:
         for entry in dirList:
             if( entry.endswith( ".ies") ):
                 self.iesPath = self.rootDirPath + self.ldcSuffix + '/' + entry
-                cmd = 'ies2Rad -l ' + self.rootDirPath + self.ldcSuffix + ' ' + self.iesPath
+                cmd = 'ies2rad -l ' + self.rootDirPath + self.ldcSuffix + ' ' + self.iesPath
                 os.system( cmd )
                 break
         
@@ -152,12 +152,13 @@ class simulator:
                 
                 cmd0 = ''
                 if self.fixedVPMode == False:
-                    cmd0 = 'rpict -vtv -vf {5}/eye.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 -vh {4} -vv {3} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
+                    #cmd0 = 'rpict -vtv -vf {5}/eye.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
                 else:
                     cmd0 = 'rpict -vtv -vf {6}/eye{5}.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, i, self.rootDirPath + self.radDirSuffix )
-                #cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
+                cmd1 = 'ra_tiff {0}/out{1}.hdr {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
-                #os.system( cmd1 )
+                os.system( cmd1 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
             
@@ -200,7 +201,7 @@ class simulator:
             ymin = ymin + 1
             xmax = xmax - 1
             ymax = ymax - 1
-            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
         xmlOut.close()          
         return
     
