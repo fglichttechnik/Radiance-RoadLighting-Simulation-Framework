@@ -179,7 +179,7 @@ class configGenerator:
                 sys.exit(0)
             
             iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
-            cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            cmd = 'ies2rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
             os.system( cmd )
         
