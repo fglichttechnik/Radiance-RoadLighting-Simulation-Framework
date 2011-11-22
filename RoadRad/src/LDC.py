@@ -1,0 +1,3 @@
+class LDC:
+    LDCName = ""
+    LDCLightSource = ""

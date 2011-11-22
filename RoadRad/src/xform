@@ -1,0 +1,560 @@
+# xform -n a0 -e -t 56 0 0 -i 0 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a0.building_right.1540
+0
+0
+12
+                106                  0                  0
+                106                  0                100
+                 56                  0                100
+                 56                  0                  0
+
+concrete polygon a0.building_right.4620
+0
+0
+12
+                 56                  0                100
+                 56                 50                100
+                 56                 50                  0
+                 56                  0                  0
+
+concrete polygon a0.building_right.2310
+0
+0
+12
+                 56                 50                  0
+                106                 50                  0
+                106                  0                  0
+                 56                  0                  0
+
+concrete polygon a0.building_right.3267
+0
+0
+12
+                106                 50                  0
+                 56                 50                  0
+                 56                 50                100
+                106                 50                100
+
+concrete polygon a0.building_right.5137
+0
+0
+12
+                106                  0                100
+                106                  0                  0
+                106                 50                  0
+                106                 50                100
+
+concrete polygon a0.building_right.6457
+0
+0
+12
+                 56                 50                100
+                 56                  0                100
+                106                  0                100
+                106                 50                100
+# xform -n a1 -e -t 56 0 0 -i 1 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a1.building_right.1540
+0
+0
+12
+                106                 20                  0
+                106                 20                100
+                 56                 20                100
+                 56                 20                  0
+
+concrete polygon a1.building_right.4620
+0
+0
+12
+                 56                 20                100
+                 56                 70                100
+                 56                 70                  0
+                 56                 20                  0
+
+concrete polygon a1.building_right.2310
+0
+0
+12
+                 56                 70                  0
+                106                 70                  0
+                106                 20                  0
+                 56                 20                  0
+
+concrete polygon a1.building_right.3267
+0
+0
+12
+                106                 70                  0
+                 56                 70                  0
+                 56                 70                100
+                106                 70                100
+
+concrete polygon a1.building_right.5137
+0
+0
+12
+                106                 20                100
+                106                 20                  0
+                106                 70                  0
+                106                 70                100
+
+concrete polygon a1.building_right.6457
+0
+0
+12
+                 56                 70                100
+                 56                 20                100
+                106                 20                100
+                106                 70                100
+# xform -n a2 -e -t 56 0 0 -i 2 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a2.building_right.1540
+0
+0
+12
+                106                 40                  0
+                106                 40                100
+                 56                 40                100
+                 56                 40                  0
+
+concrete polygon a2.building_right.4620
+0
+0
+12
+                 56                 40                100
+                 56                 90                100
+                 56                 90                  0
+                 56                 40                  0
+
+concrete polygon a2.building_right.2310
+0
+0
+12
+                 56                 90                  0
+                106                 90                  0
+                106                 40                  0
+                 56                 40                  0
+
+concrete polygon a2.building_right.3267
+0
+0
+12
+                106                 90                  0
+                 56                 90                  0
+                 56                 90                100
+                106                 90                100
+
+concrete polygon a2.building_right.5137
+0
+0
+12
+                106                 40                100
+                106                 40                  0
+                106                 90                  0
+                106                 90                100
+
+concrete polygon a2.building_right.6457
+0
+0
+12
+                 56                 90                100
+                 56                 40                100
+                106                 40                100
+                106                 90                100
+# xform -n a3 -e -t 56 0 0 -i 3 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a3.building_right.1540
+0
+0
+12
+                106                 60                  0
+                106                 60                100
+                 56                 60                100
+                 56                 60                  0
+
+concrete polygon a3.building_right.4620
+0
+0
+12
+                 56                 60                100
+                 56                110                100
+                 56                110                  0
+                 56                 60                  0
+
+concrete polygon a3.building_right.2310
+0
+0
+12
+                 56                110                  0
+                106                110                  0
+                106                 60                  0
+                 56                 60                  0
+
+concrete polygon a3.building_right.3267
+0
+0
+12
+                106                110                  0
+                 56                110                  0
+                 56                110                100
+                106                110                100
+
+concrete polygon a3.building_right.5137
+0
+0
+12
+                106                 60                100
+                106                 60                  0
+                106                110                  0
+                106                110                100
+
+concrete polygon a3.building_right.6457
+0
+0
+12
+                 56                110                100
+                 56                 60                100
+                106                 60                100
+                106                110                100
+# xform -n a4 -e -t 56 0 0 -i 4 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a4.building_right.1540
+0
+0
+12
+                106                 80                  0
+                106                 80                100
+                 56                 80                100
+                 56                 80                  0
+
+concrete polygon a4.building_right.4620
+0
+0
+12
+                 56                 80                100
+                 56                130                100
+                 56                130                  0
+                 56                 80                  0
+
+concrete polygon a4.building_right.2310
+0
+0
+12
+                 56                130                  0
+                106                130                  0
+                106                 80                  0
+                 56                 80                  0
+
+concrete polygon a4.building_right.3267
+0
+0
+12
+                106                130                  0
+                 56                130                  0
+                 56                130                100
+                106                130                100
+
+concrete polygon a4.building_right.5137
+0
+0
+12
+                106                 80                100
+                106                 80                  0
+                106                130                  0
+                106                130                100
+
+concrete polygon a4.building_right.6457
+0
+0
+12
+                 56                130                100
+                 56                 80                100
+                106                 80                100
+                106                130                100
+# xform -n a5 -e -t 56 0 0 -i 5 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a5.building_right.1540
+0
+0
+12
+                106                100                  0
+                106                100                100
+                 56                100                100
+                 56                100                  0
+
+concrete polygon a5.building_right.4620
+0
+0
+12
+                 56                100                100
+                 56                150                100
+                 56                150                  0
+                 56                100                  0
+
+concrete polygon a5.building_right.2310
+0
+0
+12
+                 56                150                  0
+                106                150                  0
+                106                100                  0
+                 56                100                  0
+
+concrete polygon a5.building_right.3267
+0
+0
+12
+                106                150                  0
+                 56                150                  0
+                 56                150                100
+                106                150                100
+
+concrete polygon a5.building_right.5137
+0
+0
+12
+                106                100                100
+                106                100                  0
+                106                150                  0
+                106                150                100
+
+concrete polygon a5.building_right.6457
+0
+0
+12
+                 56                150                100
+                 56                100                100
+                106                100                100
+                106                150                100
+# xform -n a6 -e -t 56 0 0 -i 6 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a6.building_right.1540
+0
+0
+12
+                106                120                  0
+                106                120                100
+                 56                120                100
+                 56                120                  0
+
+concrete polygon a6.building_right.4620
+0
+0
+12
+                 56                120                100
+                 56                170                100
+                 56                170                  0
+                 56                120                  0
+
+concrete polygon a6.building_right.2310
+0
+0
+12
+                 56                170                  0
+                106                170                  0
+                106                120                  0
+                 56                120                  0
+
+concrete polygon a6.building_right.3267
+0
+0
+12
+                106                170                  0
+                 56                170                  0
+                 56                170                100
+                106                170                100
+
+concrete polygon a6.building_right.5137
+0
+0
+12
+                106                120                100
+                106                120                  0
+                106                170                  0
+                106                170                100
+
+concrete polygon a6.building_right.6457
+0
+0
+12
+                 56                170                100
+                 56                120                100
+                106                120                100
+                106                170                100
+# xform -n a7 -e -t 56 0 0 -i 7 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a7.building_right.1540
+0
+0
+12
+                106                140                  0
+                106                140                100
+                 56                140                100
+                 56                140                  0
+
+concrete polygon a7.building_right.4620
+0
+0
+12
+                 56                140                100
+                 56                190                100
+                 56                190                  0
+                 56                140                  0
+
+concrete polygon a7.building_right.2310
+0
+0
+12
+                 56                190                  0
+                106                190                  0
+                106                140                  0
+                 56                140                  0
+
+concrete polygon a7.building_right.3267
+0
+0
+12
+                106                190                  0
+                 56                190                  0
+                 56                190                100
+                106                190                100
+
+concrete polygon a7.building_right.5137
+0
+0
+12
+                106                140                100
+                106                140                  0
+                106                190                  0
+                106                190                100
+
+concrete polygon a7.building_right.6457
+0
+0
+12
+                 56                190                100
+                 56                140                100
+                106                140                100
+                106                190                100
+# xform -n a8 -e -t 56 0 0 -i 8 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a8.building_right.1540
+0
+0
+12
+                106                160                  0
+                106                160                100
+                 56                160                100
+                 56                160                  0
+
+concrete polygon a8.building_right.4620
+0
+0
+12
+                 56                160                100
+                 56                210                100
+                 56                210                  0
+                 56                160                  0
+
+concrete polygon a8.building_right.2310
+0
+0
+12
+                 56                210                  0
+                106                210                  0
+                106                160                  0
+                 56                160                  0
+
+concrete polygon a8.building_right.3267
+0
+0
+12
+                106                210                  0
+                 56                210                  0
+                 56                210                100
+                106                210                100
+
+concrete polygon a8.building_right.5137
+0
+0
+12
+                106                160                100
+                106                160                  0
+                106                210                  0
+                106                210                100
+
+concrete polygon a8.building_right.6457
+0
+0
+12
+                 56                210                100
+                 56                160                100
+                106                160                100
+                106                210                100
+# xform -n a9 -e -t 56 0 0 -i 9 -t 0 20 0
+# genbox concrete building_right 50 50 100
+
+concrete polygon a9.building_right.1540
+0
+0
+12
+                106                180                  0
+                106                180                100
+                 56                180                100
+                 56                180                  0
+
+concrete polygon a9.building_right.4620
+0
+0
+12
+                 56                180                100
+                 56                230                100
+                 56                230                  0
+                 56                180                  0
+
+concrete polygon a9.building_right.2310
+0
+0
+12
+                 56                230                  0
+                106                230                  0
+                106                180                  0
+                 56                180                  0
+
+concrete polygon a9.building_right.3267
+0
+0
+12
+                106                230                  0
+                 56                230                  0
+                 56                230                100
+                106                230                100
+
+concrete polygon a9.building_right.5137
+0
+0
+12
+                106                180                100
+                106                180                  0
+                106                230                  0
+                106                230                100
+
+concrete polygon a9.building_right.6457
+0
+0
+12
+                 56                230                100
+                 56                180                100
+                106                180                100
+                106                230                100
