@@ -168,6 +168,7 @@ class simulator:
             xmax = xmax - 1
             ymax = ymax - 1
             xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+        
         xmlOut.write( "</LMKSetMat>" )
         xmlOut.close()          
         return
@@ -213,7 +214,8 @@ class simulator:
             rgbFile.close()
             
             pfOut = open( str( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix + '/' + txtFile.replace( ".txt", ".pf" ) ), 'wb' )
-            pfOut.write('Typ=Pic98::TPlane<float>\r\nLines=1000\r\nColumns=1000\r\nFirstLine=1\r\nFirstColumn=1\r\n\0')
+            cmd = 'Typ=Pic98::TPlane<float>\r\nLines={1}\r\nColumns={0}\r\nFirstLine=1\r\nFirstColumn=1\r\n\0'.format(self.horizontalRes ,self.verticalRes)
+            pfOut.write( cmd )
             
             #L = 179.R = 47.4.Rr + 119.9.Rg + 11.7.Rb
             for pixel in imgData:

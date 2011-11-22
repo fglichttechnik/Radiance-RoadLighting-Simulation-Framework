@@ -1,3 +1,10 @@
 *.DS_Store
 *.rad
 *.oct
+RoadRad/scenes
+RoadRad/src/scenes
+*.pf
+*.hdr
+*.pic
+
+
