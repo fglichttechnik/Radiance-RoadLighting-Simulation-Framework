@@ -371,7 +371,7 @@ class configGenerator:
             print 'Generating: target.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( "!genbox 20%_gray stv_target 2 2 2\n" )
+            f.write( '!genbox 20%_gray stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
             f.close( )
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
