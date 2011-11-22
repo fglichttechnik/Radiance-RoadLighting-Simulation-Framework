@@ -163,8 +163,8 @@ class configGenerator:
         f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
         if self.scene.Background == 'City':
-            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t -50 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t -50 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
         
