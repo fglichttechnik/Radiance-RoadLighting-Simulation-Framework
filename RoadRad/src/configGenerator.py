@@ -381,11 +381,21 @@ class configGenerator:
     
     def printTargets( self ):
             dist = 0
+            
+            targetXPos = self.scene.LaneWidth
+                
+            if self.scene.TargetOrientation == "Centre":
+                targetXPos = targetXPos * (self.scene.TargetPosition + 0.5 )
+            elif self.scene.TargetOrientation == "Left":
+                targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
+            else:
+                targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
+            
             for i in range( 14 ):
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
+                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
                 dist = dist + 24
             
@@ -394,7 +404,7 @@ class configGenerator:
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
+                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
                 dist = dist + 24
         
