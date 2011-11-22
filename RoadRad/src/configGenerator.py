@@ -4,6 +4,9 @@ import os
 from xml.dom.minidom import parse
 import Scene
 import Pole
+import math
+import sys
+import LDC
 
 class configGenerator:
     
@@ -14,20 +17,26 @@ class configGenerator:
         
         self.dirIndex = []
         
-        #dirList = os.listdir( self.rootDirPath )
-        #for entry in dirList:
-        #    if( os.path.isdir( entry ) ):
-        #        if( "scene" in entry ):
-        #            self.dirIndex.append( self.rootDirPath + '/' + entry )
-        #            print "Found: " + entry
-        
         self.sceneDecriptor = "/SceneDescription.xml"
         self.radDirPrefix = "/Rads"
+        self.LDCDirSuffix = "/LDCs"
         self.scene = Scene.Scene
+        self.verticalAngle = 0
+        self.horizontalAngle = 0
+        self.focalLength = 0
+        
+        #millimeter
+        self.sensorHeight = 8.9
+        self.sensorWidth = 6.64
+        
+        self.Poles = []
+        
+        self.lights = []
         
         if( self.performFileAndDirChecks( ) ):
             self.parseConfig( )
             self.printRoadRads( )
+            self.makeRadfromIES( )
             self.printDashedWhiteRad( )
             self.printSolidYellowRad( )
             self.printPoleConfig( )
@@ -72,29 +81,40 @@ class configGenerator:
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
         
         LDCDesc = dom.getElementsByTagName( 'LDC' )
-        if( LDCDesc[0].attributes ):
-            self.scene.LDCName = LDCDesc[0].attributes["Name"].value
-            self.scene. LDCLightSource = LDCDesc[0].attributes["LightSource"].value
-            self.scene.LCDTag = LDCDesc[0].attributes["Tag"].value
+        for LDCEntry in LDCDesc:
+            if( LDCEntry.attributes ):
+                tempLDC = LDC.LDC( )
+                tempLDC.LDCName = LDCEntry.attributes["Name"].value
+                tempLDC.LDCLightSource = LDCEntry.attributes["LightSource"].value
+                self.lights.append(tempLDC)
             
         poleDesc = dom.getElementsByTagName( 'Poles' )
         for pole in poleDesc[0].childNodes:
             if( pole.attributes ):
-                tempPole = Pole.Pole
+                tempPole = Pole.Pole( )
                 if( pole.nodeName == "PoleSingle" ):
                     tempPole.isSingle = True
                     tempPole.PolePositionX = int( pole.attributes["PositionX"].value )
-                    tempPole.PoleSide = pole.attributes["Side"].value
                 else:
+                    tempPole.isSingle = False
                     tempPole.PoleSpacing = int( pole.attributes["PoleSpacing"].value )
                     tempPole.IsStaggered = bool( pole.attributes["IsStaggered"].value)
                 
+                tempPole.PoleSide = pole.attributes["Side"].value
                 tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
+                self.Poles.append(tempPole)
+        
+        focalLen = dom.getElementsByTagName( 'FocalLength' )
+        if( focalLen[ 0 ].attributes ):
+            self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
+            self.calcOpeningAngle( )
         
         print 'Sucessfully Parsed.'
 
-    
+    def calcOpeningAngle( self ):
+        self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
+        self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
     
     
     def performFileAndDirChecks( self ):
@@ -128,7 +148,7 @@ class configGenerator:
         f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.SidewalkWidth, self.scene.Length / 2 ) )
         f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -%d .001 -a 120 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.Length, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -%d .001 -a 2000 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.Length, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
         f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
@@ -142,7 +162,26 @@ class configGenerator:
         f.write( "%d %d .5\n" % ( 1140, self.scene.Length / 2 ) )
         f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
+        if self.scene.Background == 'City':
+            f.write( "!genbox concrete building_left 50 100 100 | xform -e -t -%d 0 0 | xform -a 20 -t 0 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_right 50 100 100 | xform -e -t %d 0 0 | xform -a 20 -t 0 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+        
         f.close()
+        
+    def makeRadfromIES( self ):
+        if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
+            print "LDCs directory not found. Terminating."
+            sys.exit(0)
+        
+        for entry in self.lights:
+            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies' ) ):
+                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
+                sys.exit(0)
+            
+            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
+            cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
+            os.system( cmd )
         
     def printDashedWhiteRad(self):
             print 'Generating: dashed_white.rad'
@@ -173,64 +212,77 @@ class configGenerator:
             f.close()
     
     def printPoleConfig( self ):
-            print 'Generating: light_pole.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/light_pole.rad', "w" )
-            f.write( "######light_pole.rad######\n" )
-            f.write( "!xform -e -rz -180 -t 6 0 30 " + self.workingDirPath + self.radDirPrefix + "/luminaire.rad\n\n" )
-            f.write( "chrome cylinder pole\n" )
-            f.write( "0\n")
-            f.write( "0\n")
-            f.write( "7\n")
-            f.write( " 0 0 0\n")
-            f.write( " 0 0 32\n")
-            f.write( " .3333\n\n")
-            f.write( "chrome cylinder mount\n" )
-            f.write( "0\n")
-            f.write( "0\n")
-            f.write( "7\n")
-            f.write( " 0 0 30.1667\n")
-            f.write( " 6 0 30.1667\n")
-            f.write( " .1667\n")
-            f.close( )
+            print 'Generating: Light Pole Rad files'
+            
+            for entry in self.Poles:
+                f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC +'_light_pole.rad', "w" )
+                f.write( "######light_pole.rad######\n" )
+                f.write( "!xform -e -rz -180 -t 6 0 30 " + self.workingDirPath + self.radDirPrefix + "/" + entry.PoleLDC + ".rad\n\n" )
+                f.write( "chrome cylinder pole\n" )
+                f.write( "0\n")
+                f.write( "0\n")
+                f.write( "7\n")
+                f.write( " 0 0 0\n")
+                f.write( " 0 0 32\n")
+                f.write( " .3333\n\n")
+                f.write( "chrome cylinder mount\n" )
+                f.write( "0\n")
+                f.write( "0\n")
+                f.write( "7\n")
+                f.write( " 0 0 30.1667\n")
+                f.write( " 6 0 30.1667\n")
+                f.write( " .1667\n")
+                f.close( )
     
     def printLightsRad( self ):
             print 'Generating: light_s.rad'
+            firstArrayHandled = False
             f = open( self.workingDirPath + self.radDirPrefix + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
-            #make variable
-            f.write( "!xform -e -t -1 -120 0 -a 11 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
-            f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+            for poleArray in self.Poles:
+                if poleArray.isSingle == True:
+                    if poleArray.PoleSide == "Left":
+                        f.write( "!xform -e -t -1 " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+                    else:
+                        f.write( "!xform -e -t "+ str( self.scene.NumLanes * self.scene.LaneWidth + 1 )+" " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+                elif poleArray.PoleSide == "Left":
+                    print "making left poles"
+                    if firstArrayHandled == False or poleArray.IsStaggered == False:
+                        f.write( "!xform -e -t -1 -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+            #f.write( "!xform -e -t -1 -"+ str(self.Poles[0].PoleSpacing) +" 0 -a 4 -t 0 "+ str(self.Poles[0].PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+                        firstArrayHandled = True
+                    else:
+                        f.write( "!xform -e -t -1 -" + str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+                else:
+                    print "making right poles"
+                    if firstArrayHandled == False or poleArray.IsStaggered == False:
+                        f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+                        firstArrayHandled = True
+                    else:
+                        f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+            #f.write( "!xform -e -t -1 -120 0 -a 4 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+            #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
     def printLuminaireRad( self ):
-            print 'Generating: luminaire.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + "/luminaire.rad", "w" )
-            f.write( "######luminaire.rad######\n" )
-            f.write( "void brightdata ex2_dist\n" )
+            print 'Generating: LDC Rad files'
             
-            if( not os.path.isdir( self.workingDirPath + '/LDCs' ) ):
-                print "LDC not found in the designated LDCs directory"
-                return
-            
-            datFile = ""
-            dirList = os.listdir( self.workingDirPath + '/LDCs' )
-            for entry in dirList:
-                if( entry.endswith( ".ies") ):
-                    datFile = entry.replace( ".ies", ".dat" )
-                    break
-            
-            f.write( "6 corr " + self.workingDirPath + "/LDCs/" + datFile + " source.cal src_phi2 src_theta -my\n" )
-            f.write( "0\n" )
-            f.write( "1 1\n" )
-            f.write( "ex2_dist light ex2_light\n\n" )
-            f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "3 2.492 2.492 2.492\n\n" )
-            f.write( "ex2_light sphere ex2.s\n" )
-            f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "4 0 0 0 0.5\n" )
-            f.close( )
+            for entry in self.lights:
+                f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
+                f.write( "######luminaire.rad######\n" )
+                f.write( "void brightdata ex2_dist\n" )
+                f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
+                f.write( "0\n" )
+                f.write( "1 1\n" )
+                f.write( "ex2_dist light ex2_light\n\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "3 2.492 2.492 2.492\n\n" )
+                f.write( "ex2_light sphere ex2.s\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "4 0 0 0 0.5\n" )
+                f.close( )
     
     def printNightSky( self ):
             print 'Generating: night_sky.rad'
@@ -302,19 +354,17 @@ class configGenerator:
     
     def printRView( self ):
         print 'Generating: eye.vp'
-        f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
-        f.write( "######eye.vp######\n")
         
         if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")
-            f.write( "rview -vtv -vp 28 -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
+            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
             for i in range( 14 ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp 28 " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh 25 -vv 12.5\n" )
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
     
     def printTarget( self ):
@@ -326,7 +376,7 @@ class configGenerator:
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( "!genbox self_box stv_target 2 2 2\n" )
+            f.write( '!genbox self_box stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
             f.close( )
     
     def printTargets( self ):
@@ -335,7 +385,7 @@ class configGenerator:
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t " + str( self.scene.LaneWidth * 1.5 ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
+                f.write( "!xform -e -t " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
                 dist = dist + 24
             
@@ -344,7 +394,7 @@ class configGenerator:
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t 15 " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
+                f.write( "!xform -e -t " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
                 dist = dist + 24
         

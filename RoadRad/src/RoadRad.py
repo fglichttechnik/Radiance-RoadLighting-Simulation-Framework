@@ -20,7 +20,7 @@ version = "%prog 0.1"
 oparser = OptionParser( )
 oparser.add_option( "--setEnv", action="store", type="string", dest="setEnv" )
 oparser.add_option( "--dir", action ="store", type = "string", dest = "dir" )
-oparser.add_option( "--refPic", action ="store_true", dest = "refPic" )
+oparser.add_option( "--skipRefPics", action ="store_true", dest = "skipRefPics" )
 
 ( options, args ) = oparser.parse_args()
 
@@ -33,7 +33,7 @@ if( options.setEnv ):
 
 if( options.dir ):
     configGen = configGenerator.configGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
-    sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.refPic )
+    sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
 else:
     oparser.print_usage( )
 

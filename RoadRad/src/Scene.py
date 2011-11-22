@@ -21,10 +21,7 @@ class Scene:
     TargetPosition = 0
     TargetOrientation = 0
         
-    #LDC Variables
-    LDCName = ""
-    LDCLightSource = ""
-    LCDTag = ""
+    LDCArray = []
         
     #An Array of pole objects to contain all types of poles that might exsist in a scene
     Poles = [ ]

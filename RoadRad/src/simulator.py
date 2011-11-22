@@ -15,20 +15,15 @@ class simulator:
     def __init__( self, path, RefPic ):
         
         self.rootDirPath = path
-        self.willMakeRefPic = RefPic
+        self.willSkipRefPic = RefPic
         self.octDirSuffix = '/Octs'
         self.refOctDirSuffix = '/RefOcts'
         self.radDirSuffix = '/Rads'
         self.refPicDirSuffix = '/RefPics'
         self.picDirSuffix = '/Pics'
         self.ldcSuffix = '/LDCs'
-        self.iesPath = ''
         self.LMKSetMat = '/LMKSetMat'
         self.LMKSetMatFilename = '/pos.xml'
-        
-        #millimeter
-        self.sensorHeight = 8.9
-        self.sensorWidth = 6.64
         
         self.horizontalRes = 1380
         self.verticalRes = 1030
@@ -47,12 +42,6 @@ class simulator:
         dom = parse( configfile )
         configfile.close( )
         
-        focalLen = dom.getElementsByTagName( 'FocalLength' )
-        if( focalLen[ 0 ].attributes ):
-            self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
-        
-        self.calcOpeningAngle( )
-        
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             viewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
@@ -63,34 +52,14 @@ class simulator:
         if( LDCDesc[0].attributes ):
             self.lightType = LDCDesc[0].attributes["LightSource"].value
         
-        if( self.makeRadfromIES( ) ):
-            self.makeOct( )
-            self.makePic( )
-            if( self.willMakeRefPic ):
-                self.makeRefPic( )
-                self.processRefPics( )
+        self.makeOct( )
+        self.makePic( )
+        if( not self.willSkipRefPic ):
+            self.makeRefPic( )
+            self.processRefPics( )
         self.postRenderProcessing( )
 
         return
-    
-    def calcOpeningAngle( self ):
-        self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
-        self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
-    
-    def makeRadfromIES( self ):
-        if( not os.path.isdir( self.rootDirPath + self.ldcSuffix ) ):
-            print "LDC not found in the designated LDCs directory"
-            return False
-        
-        dirList = os.listdir( self.rootDirPath + self.ldcSuffix )
-        for entry in dirList:
-            if( entry.endswith( ".ies") ):
-                self.iesPath = self.rootDirPath + self.ldcSuffix + '/' + entry
-                cmd = 'ies2Rad -l ' + self.rootDirPath + self.ldcSuffix + ' ' + self.iesPath
-                os.system( cmd )
-                break
-        
-        return True
     
     def makeOct(self):
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
@@ -101,7 +70,7 @@ class simulator:
             os.system(cmd)
             print 'generated oct# ' + str( i )
         
-        if( self.makeRefPic ):
+        if( not self.willSkipRefPic ):
             if( not os.path.isdir( self.rootDirPath + self.refOctDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.refOctDirSuffix )
             
@@ -123,12 +92,10 @@ class simulator:
                 starttime = datetime.datetime.now()
                 cmd0 = ''
                 
-                #if self.fixedVPMode == False:
-                print self.verticalAngle
-                print self.horizontalAngle
-                cmd0 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 -vh {4} -vv {3} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
-                #else:
-                #    cmd0 = 'rpict -vtv -vf {6}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 1000 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.horizontalAngle, self.verticalAngle, i, self.rootDirPath + self.radDirSuffix )
+                if self.fixedVPMode == True:
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+                else:
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
                 #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
                 os.system( cmd0 )
                 #os.system( cmd1 )
@@ -151,10 +118,10 @@ class simulator:
                 starttime = datetime.datetime.now()
                 
                 cmd0 = ''
-                if self.fixedVPMode == False:
-                    cmd0 = 'rpict -vtv -vf {5}/eye.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, self.rootDirPath + self.radDirSuffix )
+                if self.fixedVPMode == True:
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
                 else:
-                    cmd0 = 'rpict -vtv -vf {6}/eye{5}.vp -vd 0 0.999856 -0.0169975 -x 1000 -y 500 -vh {3} -vv {4} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.horizontalAngle, self.verticalAngle, i, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
                 #cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
                 #os.system( cmd1 )
@@ -201,6 +168,7 @@ class simulator:
             xmax = xmax - 1
             ymax = ymax - 1
             xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf\"/>\n<RectObject>\n<upperLeft x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<lowerRight x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+        xmlOut.write( "</LMKSetMat>" )
         xmlOut.close()          
         return
     
