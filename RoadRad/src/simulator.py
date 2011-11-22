@@ -122,9 +122,9 @@ class simulator:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
                 else:
                     cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
-                #cmd1 = 'ra_tiff {0}/out{1}.pic {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
+                cmd1 = 'ra_tiff {0}/out{1}.hdr {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
-                #os.system( cmd1 )
+                os.system( cmd1 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
             
@@ -189,7 +189,7 @@ class simulator:
         print "dumping pvalues:"
         for pic in processingList:
             print "File: " + pic
-            cmd = "pvalue -h -H " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/' +pic + "> " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + pic.replace( ".pic", ".txt" )
+            cmd = "pvalue -h -H " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/' +pic + "> " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + pic.replace( ".hdr", ".txt" )
             os.system(cmd)
             print "done."
         

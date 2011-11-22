@@ -1,6 +1,6 @@
 <RoadScene>
 	<SceneDescription>
-		<Road  NumLanes="2" LaneLength="2400" LaneWidth="24" SidewalkWidth="6" Surface="R3"/>
+		<Road  NumLanes="2" LaneLength="24000" LaneWidth="24" SidewalkWidth="6" Surface="R3"/>
 		<Background Context="City"/>
 	</SceneDescription>
 	<TargetParameters>
@@ -13,8 +13,8 @@
 		<LDC Name="TX033307" LightSource="HPS"/><!--convert ies to dat file with same name; LightSource-> TBD either x,y or radiance presets-->
 	</LDCs>	
 	<Poles>
-		<PoleArray PoleHeight="3" PoleSpacing="20" IsStaggered="True" LDC="TX033306" Side="Right"/>
-		<PoleArray PoleHeight="10" PoleSpacing="40" IsStaggered="True" LDC="TX033307" Side="Left"/>
+		<PoleArray PoleHeight="3" PoleSpacing="50" IsStaggered="True" LDC="TX033306" Side="Right"/>
+		<PoleArray PoleHeight="10" PoleSpacing="100" IsStaggered="True" LDC="TX033307" Side="Left"/>
 		<!--<PoleSingle PoleHeight="30" LDC="ldc1" PositionX="30" Side="Left"/>-->
 	</Poles>
 	<FocalLength FL="50"></FocalLength>
