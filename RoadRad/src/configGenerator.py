@@ -163,8 +163,8 @@ class configGenerator:
         f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
         if self.scene.Background == 'City':
-            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t -50 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t -50 20 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
         
@@ -380,7 +380,19 @@ class configGenerator:
             f.close( )
     
     def printTargets( self ):
-            dist = 0
+            selectedArray = -1
+            
+            for index, pole in enumerate( self.Poles ):
+                if pole.isSingle == False:
+                    selectedArray = index
+                    break
+                
+            if selectedArray == -1:
+                print "No Pole array defined, cannot position the object. terminating"
+                sys.exit(0)
+            
+            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
+            jump = self.Poles[selectedArray].PoleSpacing / 10
             
             targetXPos = self.scene.LaneWidth
                 
@@ -397,16 +409,16 @@ class configGenerator:
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
-                dist = dist + 24
+                dist = dist + jump
             
-            dist = 0
+            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
             for i in range( 14 ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
-                dist = dist + 24
+                dist = dist + jump
         
         
 
