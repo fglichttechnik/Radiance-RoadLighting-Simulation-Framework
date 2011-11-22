@@ -341,7 +341,7 @@ class configGenerator:
             f.write( "void plastic 20%_gray\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( "5 .2 .2 .2 0 0\n\n" )
+            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
