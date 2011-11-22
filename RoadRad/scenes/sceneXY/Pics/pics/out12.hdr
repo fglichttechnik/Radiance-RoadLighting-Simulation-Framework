@@ -1,2 +1,0 @@
-#?RADIANCE
-oconv /Users/sahilsachdeva/pro/RoadRad/Repository/RoadRad/scenes/sceneXY/Rads/materials.rad /Users/sahilsachdeva/pro/RoadRad/Repository/RoadRad/scenes/sceneXY/Rads/road.rad /Users/sahilsachdeva/pro/RoadRad/Repository/RoadRad/scenes/sceneXY/Rads/lights_s.rad /Users/sahilsachdeva/pro/RoadRad/Repository/RoadRad/scenes/sceneXY/Rads/target_12.rad /Users/sahilsachdeva/pro/RoadRad/Repository/RoadRad/scenes/sceneXY/Rads/night_sky.rad
