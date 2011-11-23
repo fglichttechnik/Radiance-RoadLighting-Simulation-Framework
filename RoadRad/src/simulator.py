@@ -93,9 +93,9 @@ class simulator:
                 cmd0 = ''
                 
                 if self.fixedVPMode == True:
-                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
                 os.system( cmd0 )
                 #os.system( cmd1 )
@@ -119,9 +119,9 @@ class simulator:
                 
                 cmd0 = ''
                 if self.fixedVPMode == True:
-                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x 1380 -y 1030 {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix )
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 cmd1 = 'ra_tiff {0}/out{1}.hdr {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
                 os.system( cmd1 )
@@ -218,7 +218,16 @@ class simulator:
             pfOut.write( cmd )
             
             #L = 179.R = 47.4.Rr + 119.9.Rg + 11.7.Rb
+            i = 0
             for pixel in imgData:
+            	if( i == 0 ):
+            		print pixel[2]
+            		print pixel[3]
+            		print pixel[3]
+            		L = 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4]
+            		print L
+            		
+            	i = i + 1
                 pfOut.write( struct.pack( 'f', 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4] ) )
             
             pfOut.close()

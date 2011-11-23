@@ -163,8 +163,8 @@ class configGenerator:
         f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
         if self.scene.Background == 'City':
-            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_left 45 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox concrete building_right 45 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
         
@@ -179,6 +179,7 @@ class configGenerator:
                 sys.exit(0)
             
             iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
+            print "Creating radiance LDC for light source type" + entry.LDCLightSource
             cmd = 'ies2rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
             os.system( cmd )
@@ -277,7 +278,7 @@ class configGenerator:
                 f.write( "ex2_dist light ex2_light\n\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "3 2.492 2.492 2.492\n\n" )
+                f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
                 f.write( "ex2_light sphere ex2.s\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
@@ -338,7 +339,7 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 0 .1 .02 0 0\n\n" )
-            f.write( "void plastic 20%_gray\n" )
+            f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )
@@ -371,7 +372,7 @@ class configGenerator:
             print 'Generating: target.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox 20%_gray stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox targetMaterial stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
             f.close( )
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
