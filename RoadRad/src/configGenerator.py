@@ -24,6 +24,7 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
+        self.sceneLength = 240000	#length of road
         
         #millimeter
         self.sensorHeight = 8.9
@@ -58,7 +59,6 @@ class configGenerator:
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
-            self.scene.Length = int( roadDesc[0].attributes["LaneLength"].value )
             self.scene.LaneWidth = int( roadDesc[0].attributes["LaneWidth"].value )
             self.scene.SidewalkWidth = int( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
@@ -141,26 +141,26 @@ class configGenerator:
         f = open( self.workingDirPath + self.radDirPrefix + '/road.rad', "w" )
     
         f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
-        f.write( "%d -%d %d\n" % ( 0, self.scene.Length / 2, 0 ) )
-        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
-        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
-        f.write( "%d %d %d\n\n" % ( 0, self.scene.Length / 2, 0 ) )
-        f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2 ) )
+        f.write( "%d -%d %d\n" % ( 0, self.sceneLength / 2, 0 ) )
+        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n\n" % ( 0, self.sceneLength / 2, 0 ) )
+        f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -%d .001 -a 2000 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.Length, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -%d .001 -a 2000 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.sceneLength, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
-        f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "-%d %d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "-%d %d .5\n" % ( 55506, self.scene.Length / 2 ) )
-        f.write( "-%d -%d .5\n\n\n" % ( 55506, self.scene.Length / 2 ) )
+        f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "-%d %d .5\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "-%d %d .5\n" % ( 55506, self.sceneLength / 2 ) )
+        f.write( "-%d -%d .5\n\n\n" % ( 55506, self.sceneLength / 2 ) )
     
         f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-        f.write( "%d -%d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "%d %d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "%d %d .5\n" % ( 1140, self.scene.Length / 2 ) )
-        f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
+        f.write( "%d -%d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "%d %d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "%d %d .5\n" % ( 1140, self.sceneLength / 2 ) )
+        f.write( "%d -%d .5\n" % ( 1140, self.sceneLength / 2 ) )
         
         if self.scene.Background == 'City':
             f.write( "!genbox concrete building_left 45 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
@@ -372,7 +372,7 @@ class configGenerator:
             print 'Generating: target.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox targetMaterial stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox targetMaterial stv_target 0.05 {0} {0}\n'.format( self.scene.TargetSize ) )
             f.close( )
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
