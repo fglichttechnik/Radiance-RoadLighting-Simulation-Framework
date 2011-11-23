@@ -24,9 +24,9 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
-        self.sceneLength = 240000	#length of road
-        
+        self.sceneLength = 240000	#length of road        
         self.sidewalkHeight = 0.1	#height of sidewalk
+        self.poleRadius = 0.15		#radius of pole cylinder
         
         #millimeter
         self.sensorHeight = 8.9
@@ -227,14 +227,14 @@ class configGenerator:
                 f.write( "7\n")
                 f.write( " 0 0 0\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " .3333\n\n")
+                f.write( " " + str( self.poleRadius ) + "\n\n")
                 f.write( "chrome cylinder mount\n" )
                 f.write( "0\n")
                 f.write( "0\n")
                 f.write( "7\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
                 f.write( " 1 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " .1667\n")
+                f.write( " " + str( self.poleRadius ) + "\n")
                 f.close( )
     
     def printLightsRad( self ):
