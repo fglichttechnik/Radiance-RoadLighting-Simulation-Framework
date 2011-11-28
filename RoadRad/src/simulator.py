@@ -14,6 +14,7 @@ class simulator:
     
     def __init__( self, path, RefPic ):
         
+        #instance variables which define the relative paths
         self.rootDirPath = path
         self.willSkipRefPic = RefPic
         self.octDirSuffix = '/Octs'
@@ -24,14 +25,15 @@ class simulator:
         self.ldcSuffix = '/LDCs'
         self.LMKSetMat = '/LMKSetMat'
         self.LMKSetMatFilename = '/pos.xml'
-        
-        self.horizontalRes = 1380
-        self.verticalRes = 1030
-        
         self.picSubDirSuffix = '/pics'
         self.tiffSubDirSuffix = '/tiffs'
         self.pfSubDirPrefix = '/pfs'
         self.rgbSubDirPrefix = '/RGBs'
+        
+        #output image resolution
+        self.horizontalRes = 1380
+        self.verticalRes = 1030
+       
         self.focalLength = 0
         self.fixedVPMode = True
         self.verticalAngle = 0
@@ -61,6 +63,9 @@ class simulator:
 
         return
     
+    #system call to radiance framework to generate oct files out of the various rads
+    # both for the actual simulated image and the refernce pictures to determine the 
+    # pixel position of the target objects
     def makeOct(self):
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
             os.mkdir( self.rootDirPath + self.octDirSuffix )
@@ -79,6 +84,7 @@ class simulator:
                 os.system(cmd)
                 print 'generated refernce oct# ' + str( i )
     
+    #System call to radiance framework for the actual rendering of the images
     def makePic(self):
             if( not os.path.isdir( self.rootDirPath + self.picDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix )
@@ -109,6 +115,7 @@ class simulator:
                 #print cmd
                 #os.system( cmd2 )
     
+    #system call to render the refernce images
     def makeRefPic(self):
         if( not os.path.isdir( self.rootDirPath + self.refPicDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.refPicDirSuffix )
@@ -134,7 +141,9 @@ class simulator:
                 #cmd2 = 'rpict -x 500 -y 2000 -vtl -vp 18 -150 4 -vd 0 0 -1 -vu 0 1 0 -vh 100 -vv 400 -vs 0 -vl 0 {0}/scene.oct | pfilt -x 200 -y 800 -r .6 -1 -e 200 > {0}/scene2.pic'.format( entry )
                 #print cmd
                 #os.system( cmd2 )
-                
+    
+    #Here the reference pictures are parsed pixel wise using the python image library.
+    #The self glowing target object is isolated and outputted in the defined xml format.
     def processRefPics( self ):
         print "Processing reference pics."
         if( not os.path.isdir( self.rootDirPath + self.LMKSetMat ) ):
@@ -173,6 +182,11 @@ class simulator:
         xmlOut.close()          
         return
     
+    #Here the generated hdr images are converted to the pf format.
+    #This involves using pvalue(radiance) to determine the RGB values of each pixel.
+    #these values are dumped into a text file. the text file is then parsed, RGB values are
+    #converted into luminace values using the formula highlighted below, and
+    #are written into the final output pf file with the predefined header.
     def postRenderProcessing( self ):
         if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix )
@@ -217,6 +231,7 @@ class simulator:
             cmd = 'Typ=Pic98::TPlane<float>\r\nLines={1}\r\nColumns={0}\r\nFirstLine=1\r\nFirstColumn=1\r\n\0'.format(self.horizontalRes ,self.verticalRes)
             pfOut.write( cmd )
             
+            #luminace formula
             #L = 179.R = 47.4.Rr + 119.9.Rg + 11.7.Rb
             for pixel in imgData:
                 pfOut.write( struct.pack( 'f', 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4] ) )

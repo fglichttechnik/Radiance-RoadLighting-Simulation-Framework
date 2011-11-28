@@ -9,3 +9,4 @@ class Pole:
     PoleLDC = ""
     PolePositionX = 0
     PoleSide = ""
+    PoleOverhang = 0

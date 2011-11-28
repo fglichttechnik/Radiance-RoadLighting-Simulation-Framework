@@ -1,5 +1,8 @@
 # This Python file uses the following encoding: utf-8
 
+
+#This class reads the scenedescription.xml and generates the appropriate rad files for the rendering
+
 import os
 from xml.dom.minidom import parse
 import Scene
@@ -49,6 +52,7 @@ class configGenerator:
             self.printTargets( )
             
 
+    #Scene description xml parser.
     def parseConfig( self ):
         print 'Begining to parse XML Config.'
         configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
@@ -79,6 +83,10 @@ class configGenerator:
             self.scene.TargetReflectency = float( targetDesc[0].attributes["Reflectancy"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
+            
+        if self.scene.NumLanes - self.scene.TargetPosition != 1:
+            print "Numlanes and TargetPosition Parameters are impossible"
+            sys.exit(0)
         
         LDCDesc = dom.getElementsByTagName( 'LDC' )
         for LDCEntry in LDCDesc:
@@ -103,6 +111,7 @@ class configGenerator:
                 tempPole.PoleSide = pole.attributes["Side"].value
                 tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
+                tempPole.PoleOverhang = pole.attributes["PoleOverhang"].value
                 self.Poles.append(tempPole)
         
         focalLen = dom.getElementsByTagName( 'FocalLength' )
@@ -112,11 +121,12 @@ class configGenerator:
         
         print 'Sucessfully Parsed.'
 
+    #calculate the horizontal and vertical opening angle of the camera required for the rendering
     def calcOpeningAngle( self ):
         self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
         self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
     
-    
+    #checks the presence of a few important files and directories before begining
     def performFileAndDirChecks( self ):
         print 'Attempting to locate configuration in: ' + self.workingDirPath + self.sceneDecriptor
         
@@ -136,6 +146,7 @@ class configGenerator:
         
         return True
     
+    #Output the Road config files
     def printRoadRads( self ):
         print 'Generating: road.rad'
         f = open( self.workingDirPath + self.radDirPrefix + '/road.rad', "w" )
@@ -162,13 +173,17 @@ class configGenerator:
         f.write( "%d %d .5\n" % ( 1140, self.scene.Length / 2 ) )
         f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
         
+        #Adds concrete boxes to emulate road side buildings
         if self.scene.Background == 'City':
-            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
-        
+    
+    #This function attempts to locate all the ies files mentioned in the scene description
+    #and convert them to the RAD files necessary for the rendering
     def makeRadfromIES( self ):
+        print 'HELLOHELLOHELLO'
         if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
             print "LDCs directory not found. Terminating."
             sys.exit(0)
@@ -182,7 +197,23 @@ class configGenerator:
             cmd = 'ies2rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
             os.system( cmd )
-        
+            
+            radpath_old = iesPath.replace( '.ies', '.rad' )
+            radpath_new = iesPath.replace( '.ies', '.txt' )
+            print radpath_old
+            print radpath_new
+            os.rename(radpath_old, radpath_new )
+            
+            datfile_old = open( radpath_new, 'r' )
+            datfile_new = open( radpath_old, 'w' )
+            
+            for line in datfile_old.readlines():
+                if line.find( entry.LDCName + '.dat' ) == -1:
+                    datfile_new.write( line )
+                else:
+                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_new.replace( '.rad', '.dat' ) ) )
+    
+    #White paint line that divides the lanes
     def printDashedWhiteRad(self):
             print 'Generating: dashed_white.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/dashed_white.rad', "w" )
@@ -211,13 +242,15 @@ class configGenerator:
             f.write( "  -.1667 2400 0\n")
             f.close()
     
+    #Basic geometry of the pole is defined here and named on the basis of the LDC's of the light sources that
+    #they are holding
     def printPoleConfig( self ):
             print 'Generating: Light Pole Rad files'
             
             for index, entry in enumerate( self.Poles ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz -180 -t 6 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.radDirPrefix + "/" + entry.PoleLDC + ".rad\n\n" )
+                f.write( "!xform -e -rz -180 -t 6 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
@@ -230,10 +263,11 @@ class configGenerator:
                 f.write( "0\n")
                 f.write( "7\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " 6 0 " + str( entry.PoleHeight ) + "\n")
+                f.write( " "+str(entry.PoleOverhang)+" 0 " + str( entry.PoleHeight ) + "\n")
                 f.write( " .1667\n")
                 f.close( )
     
+    #This function places the various poles in the scene
     def printLightsRad( self ):
             print 'Generating: light_s.rad'
             firstArrayHandled = False
@@ -264,12 +298,12 @@ class configGenerator:
             #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
+    
     def printLuminaireRad( self ):
             print 'Generating: LDC Rad files'
             
             for entry in self.lights:
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
-                f.write( "######luminaire.rad######\n" )
                 f.write( "void brightdata ex2_dist\n" )
                 f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
                 f.write( "0\n" )
@@ -284,6 +318,7 @@ class configGenerator:
                 f.write( "4 0 0 0 0.5\n" )
                 f.close( )
     
+    #Night sky Rad file
     def printNightSky( self ):
             print 'Generating: night_sky.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/night_sky.rad', "w" )
@@ -314,6 +349,7 @@ class configGenerator:
             f.write( "4 0 0 1 180\n" )
             f.close( )
     
+    #All the materials used in the simulation are defined here
     def printMaterialsRad( self ):
             print 'Generating: materials.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
@@ -323,6 +359,10 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "5 .07 .07 .07 0 0\n\n" )
             f.write( "void plastic concrete\n" )
+            f.write( "0\n" )
+            f.write( "0\n" )
+            f.write( "5 .14 .14 .14 0 0\n\n" )
+            f.write( "void plastic house_concrete\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 .14 .14 .14 0 0\n\n" )
@@ -352,6 +392,8 @@ class configGenerator:
             f.write( "4 1 1 1 0\n\n" )
             f.close( )
     
+    #Prints view point files.
+    #Based on the viewpoint mode, one of several viewpoints are written
     def printRView( self ):
         print 'Generating: eye.vp'
         
@@ -367,18 +409,23 @@ class configGenerator:
                 f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
     
+    #Definition of the geometry of the target.
     def printTarget( self ):
             print 'Generating: target.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox 20%_gray stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox 20%_gray stv_target {0} {0} .5\n'.format( self.scene.TargetSize ) )
             f.close( )
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox self_box stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox self_box stv_target {0} {0} .5\n'.format( self.scene.TargetSize ) )
             f.close( )
     
+    #Several files are written here to place the targets at different locations in the scene.
+    #each files is then ran as a separate simulation.
+    #Placement of the targets is done relative to the first pole array defined in the scene description
+    #10 targets between the two consecutive poles, and 2 before the first and after the last each.
     def printTargets( self ):
             selectedArray = -1
             
