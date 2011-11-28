@@ -76,7 +76,7 @@ def cleanSceneDir( path ):
 	if( os.path.exists( LDCsDir ) ):
 		dirList = os.listdir( LDCsDir )
 		for file in dirList:
-			if( file.endswith( ".dat" ) or file.endswith( ".rad" ) ):
+			if( file.endswith( ".dat" ) or file.endswith( ".rad" ) or file.endswith( ".txt" ) ):
 				os.remove( LDCsDir + "/" + file )
 
 
