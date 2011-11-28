@@ -108,12 +108,15 @@ class configGenerator:
                 else:
                     tempPole.isSingle = False
                     tempPole.PoleSpacing = int( pole.attributes["PoleSpacing"].value )
-                    tempPole.IsStaggered = bool( pole.attributes["IsStaggered"].value)
-                
+                    isStaggered = pole.attributes["IsStaggered"].value
+                    if isStaggered == "False":
+                        tempPole.IsStaggered = False
+                    
+                print tempPole.IsStaggered
                 tempPole.PoleSide = pole.attributes["Side"].value
                 tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
-                tempPole.PoleOverhang = pole.attributes["PoleOverhang"].value
+                tempPole.PoleOverhang = float(pole.attributes["PoleOverhang"].value )
                 self.Poles.append(tempPole)
         
         focalLen = dom.getElementsByTagName( 'FocalLength' )

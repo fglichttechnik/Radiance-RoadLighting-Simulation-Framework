@@ -37,6 +37,7 @@ import os
 from optparse import OptionParser
 import sys
 import shutil
+import datetime
 
 import configGenerator
 import simulator
@@ -99,6 +100,8 @@ if( options.setEnv ):
             envtest.addRadianceEnv()
             sys.exit()
 
+starttime = datetime.datetime.now()
+
 if( options.cleanDir ):
 	cleanSceneDir( options.cleanDir )	
 	
@@ -110,4 +113,5 @@ elif( options.dir ):
 else:
     oparser.print_usage( )
 
-
+endtime = datetime.datetime.now()
+print "Total time elapsed: " + str( endtime - starttime )
