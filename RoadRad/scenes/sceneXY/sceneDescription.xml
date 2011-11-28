@@ -5,7 +5,7 @@
 	</SceneDescription>
 	<TargetParameters>
 		<!--<ViewPoint Distance="273" Height="1.2" TargetDistanceMode="fixedTargetDistance"/>-->
-		<ViewPoint Distance="273" Height="12" TargetDistanceMode="fixedViewPoint"/>
+		<ViewPoint Distance="273" Height="1.2" TargetDistanceMode="fixedViewPoint"/>
 		<Target Size="0.3" Reflectancy="0.2" Position="Left" OnLane="1"/>
 	</TargetParameters>
 	<LDCs>

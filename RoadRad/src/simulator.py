@@ -146,6 +146,15 @@ class simulator:
     #The self glowing target object is isolated and outputted in the defined xml format.
     def processRefPics( self ):
         print "Processing reference pics."
+        
+        targetDistance = []
+        
+        targetFile = open( self.rootDirPath + self.radDirSuffix + '/targetdistances.txt' )
+        for line in targetFile.readlines( ):
+            targetDistance.append( float( line.strip( '\n' ) ) )
+            
+        targetFile.close( )
+        
         if( not os.path.isdir( self.rootDirPath + self.LMKSetMat ) ):
             os.mkdir( self.rootDirPath + self.LMKSetMat )
         
@@ -176,7 +185,7 @@ class simulator:
             ymin = ymin + 1
             xmax = xmax - 1
             ymax = ymax - 1
-            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\""+str(targetDistance[i])+"\"/>\n</RectObject>\n</LMKData>\n\n" )
         
         xmlOut.write( "</LMKSetMat>" )
         xmlOut.close()          

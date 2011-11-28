@@ -179,8 +179,8 @@ class configGenerator:
         
         #Adds concrete boxes to emulate road side buildings
         if self.scene.Background == 'City':
-            f.write( "!genbox house_concrete building_left 50 40 40 | xform -e -t -42 0 0 | xform -a 20 -t 0 -50 0\n" )#% ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox house_concrete building_right 50 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_left 1 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_right 1 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
     
@@ -453,8 +453,11 @@ class configGenerator:
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
             else:
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
+                
+            targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
             
             for i in range( 14 ):
+                targetfile.write( str(dist) + '\n')
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
@@ -462,6 +465,7 @@ class configGenerator:
                 f.close( )
                 dist = dist + jump
             
+            targetfile.close()
             dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
             for i in range( 14 ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
