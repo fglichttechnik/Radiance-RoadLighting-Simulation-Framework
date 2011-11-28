@@ -167,7 +167,7 @@ class simulator:
             ymin = ymin + 1
             xmax = xmax - 1
             ymax = ymax - 1
-            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\"--\"/>\n</RectObject>\n</LMKData>\n\n" )
         
         xmlOut.write( "</LMKSetMat>" )
         xmlOut.close()          
