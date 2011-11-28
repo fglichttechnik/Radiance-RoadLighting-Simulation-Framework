@@ -1,7 +1,7 @@
 <RoadScene>
 	<SceneDescription>
 		<Road  NumLanes="2" LaneLength="24000" LaneWidth="24" SidewalkWidth="6" Surface="R3"/>
-		<Background Context="Grass"/>
+		<Background Context="City"/>
 	</SceneDescription>
 	<TargetParameters>
 		<!--<ViewPoint Distance="273" Height="1.2" TargetDistanceMode="fixedTargetDistance"/>-->
