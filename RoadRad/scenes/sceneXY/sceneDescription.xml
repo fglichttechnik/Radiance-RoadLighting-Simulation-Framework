@@ -1,6 +1,6 @@
 <RoadScene>
 	<SceneDescription>
-		<Road  NumLanes="2" LaneLength="24000" LaneWidth="24" SidewalkWidth="6" Surface="R3"/>
+		<Road  NumLanes="2" LaneLength="24000" LaneWidth="2" SidewalkWidth="1" Surface="R3"/>
 		<Background Context="City"/>
 	</SceneDescription>
 	<TargetParameters>

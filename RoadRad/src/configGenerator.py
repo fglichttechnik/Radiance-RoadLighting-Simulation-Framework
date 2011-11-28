@@ -111,8 +111,7 @@ class configGenerator:
                     isStaggered = pole.attributes["IsStaggered"].value
                     if isStaggered == "False":
                         tempPole.IsStaggered = False
-                    
-                print tempPole.IsStaggered
+
                 tempPole.PoleSide = pole.attributes["Side"].value
                 tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
@@ -180,7 +179,7 @@ class configGenerator:
         
         #Adds concrete boxes to emulate road side buildings
         if self.scene.Background == 'City':
-            f.write( "!genbox house_concrete building_left 50 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_left 50 40 40 | xform -e -t -42 0 0 | xform -a 20 -t 0 -50 0\n" )#% ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
             f.write( "!genbox house_concrete building_right 50 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
