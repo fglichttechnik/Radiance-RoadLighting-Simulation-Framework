@@ -185,7 +185,6 @@ class configGenerator:
     #This function attempts to locate all the ies files mentioned in the scene description
     #and convert them to the RAD files necessary for the rendering
     def makeRadfromIES( self ):
-        print 'HELLOHELLOHELLO'
         if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
             print "LDCs directory not found. Terminating."
             sys.exit(0)
@@ -214,7 +213,7 @@ class configGenerator:
                 if line.find( entry.LDCName + '.dat' ) == -1:
                     datfile_new.write( line )
                 else:
-                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_new.replace( '.rad', '.dat' ) ) )
+                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
     
     #White paint line that divides the lanes
     def printDashedWhiteRad(self):
