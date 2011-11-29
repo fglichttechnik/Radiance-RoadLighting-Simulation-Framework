@@ -6,5 +6,6 @@ RoadRad/src/scenes
 *.pf
 *.hdr
 *.pic
-
+*.pyc
+*.pdf
 

@@ -29,7 +29,7 @@ class configGenerator:
         self.focalLength = 0
         self.sceneLength = 240000	#length of road        
         self.sidewalkHeight = 0.1	#height of sidewalk
-        self.poleRadius = 0.15		#radius of pole cylinder
+        self.poleRadius = 0.1		#radius of pole cylinder
         
         #millimeter
         self.sensorHeight = 8.9
@@ -47,7 +47,7 @@ class configGenerator:
             self.printSolidYellowRad( )
             self.printPoleConfig( )
             self.printLightsRad( )
-            self.printLuminaireRad( )
+            #self.printLuminaireRad( )
             self.printNightSky( )
             self.printMaterialsRad( )
             self.printRView( )
@@ -254,7 +254,7 @@ class configGenerator:
             for index, entry in enumerate( self.Poles ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz -180 -t "+str( entry.PoleOverhang )+" 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
+                f.write( "!xform -e -rz 180 -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
@@ -268,7 +268,7 @@ class configGenerator:
                 f.write( "7\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
                 f.write( " "+str(entry.PoleOverhang)+" 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " .1667\n")
+                f.write( " " + str( self.poleRadius ) + "\n\n")
                 f.close( )
     
     #This function places the various poles in the scene
@@ -303,24 +303,24 @@ class configGenerator:
             f.close( )
     
     
-    def printLuminaireRad( self ):
-            print 'Generating: LDC Rad files'
-            
-            for entry in self.lights:
-                f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
-                f.write( "void brightdata ex2_dist\n" )
-                f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
-                f.write( "0\n" )
-                f.write( "1 1\n" )
-                f.write( "ex2_dist light ex2_light\n\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
-                f.write( "ex2_light sphere ex2.s\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "4 0 0 0 0.5\n" )
-                f.close( )
+    # def printLuminaireRad( self ):
+#             print 'Generating: LDC Rad files'
+#             
+#             for entry in self.lights:
+#                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
+#                 f.write( "void brightdata ex2_dist\n" )
+#                 f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
+#                 f.write( "0\n" )
+#                 f.write( "1 1\n" )
+#                 f.write( "ex2_dist light ex2_light\n\n" )
+#                 f.write( "0\n" )
+#                 f.write( "0\n" )
+#                 f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
+#                 f.write( "ex2_light sphere ex2.s\n" )
+#                 f.write( "0\n" )
+#                 f.write( "0\n" )
+#                 f.write( "4 0 0 0 0.5\n" )
+#                 f.close( )
     
     #Night sky Rad file
     def printNightSky( self ):

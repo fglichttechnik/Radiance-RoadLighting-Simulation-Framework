@@ -26,13 +26,15 @@ class simulator:
         self.LMKSetMat = '/LMKSetMat'
         self.LMKSetMatFilename = '/pos.xml'
         self.picSubDirSuffix = '/pics'
-        self.tiffSubDirSuffix = '/tiffs'
+        self.falsecolorSubDirSuffix = '/falsecolor'
         self.pfSubDirPrefix = '/pfs'
         self.rgbSubDirPrefix = '/RGBs'
         
         #output image resolution
         self.horizontalRes = 1380
         self.verticalRes = 1030
+        
+        self.numberOfSubimages = 1	#14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True
@@ -56,6 +58,7 @@ class simulator:
         
         self.makeOct( )
         self.makePic( )
+        self.makeFalsecolorPic( )
         if( not self.willSkipRefPic ):
             self.makeRefPic( )
             self.processRefPics( )
@@ -70,7 +73,7 @@ class simulator:
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
             os.mkdir( self.rootDirPath + self.octDirSuffix )
         
-        for i in range( 14 ):
+        for i in range( self.numberOfSubimages ):
             cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
             os.system(cmd)
             print 'generated oct# ' + str( i )
@@ -79,7 +82,7 @@ class simulator:
             if( not os.path.isdir( self.rootDirPath + self.refOctDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.refOctDirSuffix )
             
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/self_target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.refOctDirSuffix )
                 os.system(cmd)
                 print 'generated refernce oct# ' + str( i )
@@ -90,10 +93,10 @@ class simulator:
                 os.mkdir( self.rootDirPath + self.picDirSuffix )
             if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
-            if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix ) ):
-                os.mkdir( self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix )
+            if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
                 
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages ):
                 print 'generating pic# ' + str( i )
                 starttime = datetime.datetime.now()
                 cmd0 = ''
@@ -102,7 +105,7 @@ class simulator:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
                     cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.tiffSubDirSuffix, i )
+                #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, i )
                 os.system( cmd0 )
                 #os.system( cmd1 )
                 print 'done.'
@@ -113,14 +116,27 @@ class simulator:
             
                 #cmd2 = 'rpict -x 500 -y 2000 -vtl -vp 18 -150 4 -vd 0 0 -1 -vu 0 1 0 -vh 100 -vv 400 -vs 0 -vl 0 {0}/scene.oct | pfilt -x 200 -y 800 -r .6 -1 -e 200 > {0}/scene2.pic'.format( entry )
                 #print cmd
-                #os.system( cmd2 )
+                
+                        #System call to radiance framework for creating a falsecolor image
+    def makeFalsecolorPic(self):                
+            for i in range( self.numberOfSubimages ):
+                print 'generating falsecolor pic# ' + str( i )
+                starttime = datetime.datetime.now()                
+                cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                print cmd0
+                print cmd1
+                os.system( cmd0 )
+                os.system( cmd1 )
+                print 'done.'
+                print datetime.datetime.now() - starttime
     
     #system call to render the refernce images
     def makeRefPic(self):
         if( not os.path.isdir( self.rootDirPath + self.refPicDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.refPicDirSuffix )
         
-        for i in range( 14 ):
+        for i in range( self.numberOfSubimages ):
                 print 'generating Reference pic# ' + str( i )
                 starttime = datetime.datetime.now()
                 
@@ -161,7 +177,7 @@ class simulator:
         xmlOut = open( self.rootDirPath + self.LMKSetMat + self.LMKSetMatFilename, 'w' )
         xmlOut.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!DOCTYPE LMKSetMat SYSTEM \"LMKSetMat.dtd\">\n\n<LMKSetMat>\n" )
         
-        for i in range( 14 ):
+        for i in range( self.numberOfSubimages ):
             im = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out' + str(i) + '.tiff')
             pix = im.load()
             
