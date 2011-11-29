@@ -1,0 +1,21 @@
+<RoadScene>
+	<SceneDescription>
+		<Road  NumLanes="2" LaneLength="24000" LaneWidth="2" SidewalkWidth="1" Surface="R3"/>
+		<Background Context="City"/>
+	</SceneDescription>
+	<TargetParameters>
+		<!--<ViewPoint Distance="273" Height="1.2" TargetDistanceMode="fixedTargetDistance"/>-->
+		<ViewPoint Distance="273" Height="1.2" TargetDistanceMode="fixedViewPoint"/>
+		<Target Size="0.3" Reflectancy="0.2" Position="Left" OnLane="1"/>
+	</TargetParameters>
+	<LDCs>
+		<LDC Name="TX033306" LightSource="HPS"/>
+		<LDC Name="TX033307" LightSource="HPS"/><!--convert ies to dat file with same name; LightSource-> TBD either x,y or radiance presets-->
+	</LDCs>	
+	<Poles>
+		<PoleArray PoleHeight="3" PoleOverhang="5" PoleSpacing="50" IsStaggered="False" LDC="TX033306" Side="Right"/>
+		<PoleArray PoleHeight="10" PoleOverhang="5" PoleSpacing="100" IsStaggered="False" LDC="TX033307" Side="Left"/>
+		<!--<PoleSingle PoleHeight="30" PoleOverhang="5" LDC="TX033306" PositionX="30" Side="Right"/>-->
+	</Poles>
+	<FocalLength FL="50"></FocalLength>
+</RoadScene>
