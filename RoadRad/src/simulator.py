@@ -3,10 +3,12 @@
 import os
 import datetime
 import Image
+import ImageDraw
 from xml.dom.minidom import parse
 import math
 import csv
 import struct
+#import pymorph
 
 
 #write a few documentation
@@ -200,26 +202,67 @@ class simulator:
             xmax = 0
             ymin = 0
             ymax = 0
+            THRESH = 100
             
             #this is the ragged approach of detecting the rectangle of the target
+            #does not work very well yet...
+            
+            #TODO: better mark all connected components and extract the coordinates of the biggest rect
+            
+            #f=binary(to_uint8([
+ #[1, 1, 0, 0, 0, 0, 1],
+ #[1, 0, 1, 1, 1, 0, 1],
+ #[0, 0, 0, 0, 1, 0, 0]]))
+#y=areaopen(f,4,secross())
+#print y
+            #pymorph.dilate(f, B={3x3 cross})
             
             #make image to grayscale
             #pix = im.convert("L")
-    
+
             for x in range(width):
                 for y in range(height):
-                    if( pix[ x, y ][ 0 ] > 200 and pix[ x, y ][ 1 ] > 200 and pix[ x, y ][ 2 ] > 200 ):
-                    #if( pix[ x, y ] > 200 ):
-                        if( xmin == 0 and ymin == 0 ):
-                            xmin = x
+                	#this checks if each value in each channels of the current pixel is above the certain threshold
+                    if( pix[ x, y ][ 0 ] > THRESH and pix[ x, y ][ 1 ] > THRESH and pix[ x, y ][ 2 ] > THRESH ):
+                        if( xmin == 0 ):
+                        	xmin = x
+                        else:
+                        	if (x > xmax ):
+								xmax = x
+                            
+                        if( ymin == 0 ):                            
                             ymin = y
                         else:
-                            xmax = x
-                            ymax = y
-            xmin = xmin + 1
-            ymin = ymin + 1
-            xmax = xmax - 1
-            ymax = ymax - 1
+                        	if (y > ymax ):
+                        		ymax = y
+                            
+                    #if( i == 11 and xmin != 0 ):
+            			#print str( xmax )
+                            
+            
+            #xmin = xmin + 1
+            #ymin = ymin + 1
+            #xmax = xmax - 1
+            #ymax = ymax - 1
+            
+           # print "index " + str(i)
+            #print "xMin, xMax"
+            #print xmin, xmax
+            #print "yMin, yMax"
+            #print ymin, ymax
+            #print "No of pixels"
+            #print (xmax - xmin) * (ymax - ymin)
+            
+                        #debug: save region to image:
+            #draw.line(xy, options)
+            width = xmax - xmin
+            height = ymax - ymin
+            im2 = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out' + str(i) + '.tiff')
+            im2.convert('RGB')
+            draw = ImageDraw.Draw(im2)
+            draw.rectangle([(xmin, ymin), (xmax, ymax)], fill='red')
+            im2.save(self.rootDirPath + self.refPicDirSuffix + '/debug_output' + str(i) + '.tif')
+            
             xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\""+str(targetDistance[i])+"\"/>\n</RectObject>\n</LMKData>\n\n" )
         
         xmlOut.write( "</LMKSetMat>" )
