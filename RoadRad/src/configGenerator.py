@@ -29,7 +29,7 @@ class configGenerator:
         self.focalLength = 0
         self.sceneLength = 240000	#length of road        
         self.sidewalkHeight = 0.1	#height of sidewalk
-        self.poleRadius = 0.1		#radius of pole cylinder
+        self.poleRadius = 0.05		#radius of pole cylinder
         
         #millimeter
         self.sensorHeight = 8.9
@@ -44,10 +44,8 @@ class configGenerator:
             self.printRoadRads( )
             self.makeRadfromIES( )
             self.printDashedWhiteRad( )
-            self.printSolidYellowRad( )
             self.printPoleConfig( )
             self.printLightsRad( )
-            #self.printLuminaireRad( )
             self.printNightSky( )
             self.printMaterialsRad( )
             self.printRView( )
@@ -113,7 +111,7 @@ class configGenerator:
                         tempPole.IsStaggered = False
 
                 tempPole.PoleSide = pole.attributes["Side"].value
-                tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
+                tempPole.PoleHeight = float( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
                 tempPole.PoleOverhang = float(pole.attributes["PoleOverhang"].value )
                 self.Poles.append(tempPole)
@@ -163,7 +161,7 @@ class configGenerator:
         f.write( "!genbox concrete curb1 %d %d %f | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.SidewalkWidth, self.sceneLength / 2 ) )
         f.write( "!genbox concrete curb2 %d %d %f | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -%d .001 -a 2000 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.sceneLength, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -120 .001 -a 2000 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
         f.write( "-%d -%d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
@@ -198,8 +196,13 @@ class configGenerator:
             
             iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
             print "Creating radiance LDC for light source type" + entry.LDCLightSource
-            cmd = 'ies2rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            #-dm for meters
+            #-t for lightsource type in lamp.tab (radiance dir)
+            #-l library dir prefix for pathes in generated .rad file?
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
+            print "ies2rad command:"
+            print cmd
             os.system( cmd )
             
             radpath_old = iesPath.replace( '.ies', '.rad' )
@@ -220,30 +223,18 @@ class configGenerator:
     #White paint line that divides the lanes
     def printDashedWhiteRad(self):
             print 'Generating: dashed_white.rad'
+            self.markingWidth = 0.1
+            self.markingLength = 4
             f = open( self.workingDirPath + self.radDirPrefix + '/dashed_white.rad', "w" )
             f.write( "######dashed_white.rad######\n" )
             f.write( "white_paint polygon lane_dash\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "12\n" )
-            f.write( "-.1667 0 0\n")
-            f.write( ".1667 0 0\n")
-            f.write( ".1667 8 0\n")
-            f.write( "-.1667 8 0\n")
-            f.close()
-        
-    def printSolidYellowRad( self ):
-            print 'Generating: solid_yellow.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/solid_yellow.rad', "w" )
-            f.write( "######solid_yellow.rad######\n" )
-            f.write( "yellow_paint polygon centre_stripe\n" )
-            f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "12\n" )
-            f.write( "  -.1667 0 0\n")
-            f.write( "   .1667 0 0\n")
-            f.write( "   .1667 2400 0\n")
-            f.write( "  -.1667 2400 0\n")
+            f.write( str( -self.markingWidth / 2) + " 0 0\n")
+            f.write( str( self.markingWidth / 2 ) + " 0 0\n")
+            f.write( str( self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
+            f.write( str( -self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
             f.close()
     
     #Basic geometry of the pole is defined here and named on the basis of the LDC's of the light sources that
@@ -254,7 +245,8 @@ class configGenerator:
             for index, entry in enumerate( self.Poles ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz 180 -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
+                #str( entry.PoleHeight - self.poleRadius ) --> maybe the cylinder blocks the LDC?
+                f.write( "!xform -e -rz -90 -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight - self.poleRadius ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")

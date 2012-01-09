@@ -34,7 +34,7 @@ class simulator:
         self.horizontalRes = 1380
         self.verticalRes = 1030
         
-        self.numberOfSubimages = 1	#14 images will be rendered (should be the same as in configGenerator
+        self.numberOfSubimages = 14	#14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True
@@ -124,12 +124,19 @@ class simulator:
                 starttime = datetime.datetime.now()                
                 cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
                 cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-                print cmd0
-                print cmd1
                 os.system( cmd0 )
                 os.system( cmd1 )
-                print 'done.'
-                print datetime.datetime.now() - starttime
+                cmd3 = 'ra_tiff {1}/false_out{0}.hdr {1}/false_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                cmd4 = 'ra_tiff {1}/falseContour_out{0}.hdr {1}/falseContour_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                os.system( cmd3 )
+                os.system( cmd4 )
+                
+            #remove hdr files
+            dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+            for file in dirList:
+            	if( file.endswith( ".hdr" ) ):
+            		os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
+
     
     #system call to render the refernce images
     def makeRefPic(self):
@@ -141,10 +148,16 @@ class simulator:
                 starttime = datetime.datetime.now()
                 
                 cmd0 = ''
+                #if self.fixedVPMode == True:
+                #    cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                #else:
+                #    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 if self.fixedVPMode == True:
-                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr'.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                
+                
                 cmd1 = 'ra_tiff {0}/out{1}.hdr {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
                 os.system( cmd0 )
                 os.system( cmd1 )
@@ -188,9 +201,15 @@ class simulator:
             ymin = 0
             ymax = 0
             
+            #this is the ragged approach of detecting the rectangle of the target
+            
+            #make image to grayscale
+            #pix = im.convert("L")
+    
             for x in range(width):
                 for y in range(height):
-                    if( pix[ x, y ][ 0 ] == 255 and pix[ x, y ][ 1 ] == 255 and pix[ x, y ][ 2 ] == 255 ):
+                    if( pix[ x, y ][ 0 ] > 200 and pix[ x, y ][ 1 ] > 200 and pix[ x, y ][ 2 ] > 200 ):
+                    #if( pix[ x, y ] > 200 ):
                         if( xmin == 0 and ymin == 0 ):
                             xmin = x
                             ymin = y

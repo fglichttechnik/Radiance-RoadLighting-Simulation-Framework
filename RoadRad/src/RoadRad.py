@@ -43,7 +43,6 @@ import configGenerator
 import simulator
 import EnvVarSetter;
 
-
 # Determine the current directory of executaion
 # Important step because configfiles and output directories are relative to this path
 def extractWorkingDir( ):
@@ -79,8 +78,6 @@ def cleanSceneDir( path ):
 		for file in dirList:
 			if( file.endswith( ".dat" ) or file.endswith( ".rad" ) or file.endswith( ".txt" ) ):
 				os.remove( LDCsDir + "/" + file )
-
-
 				
 usage = "usage: %prog [options]"
 version = "%prog 0.1"
