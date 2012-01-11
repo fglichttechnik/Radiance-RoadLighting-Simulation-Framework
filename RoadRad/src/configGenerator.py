@@ -378,20 +378,22 @@ class configGenerator:
             f.write( "######materials.rad######\n" )
             
             #road surface
-            #f.write( "void plastic pavement\n" )
-            #f.write( "0\n" )
-            #f.write( "0\n" )
-            #f.write( "5 .07 .07 .07 0 0\n\n" )
+            if self.scene.Surfacetype == 'plastic':            
+                f.write( "void plastic pavement\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "5 .07 .07 .07 0 0\n\n" )
             
-            f.write( "void plasdata pavement\n" )
-            f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
-            f.write( "0\n" )
-            f.write( "4 .5 .5 .5 1 \n\n" )
-            
-            #void plasdata Strassen_blag
-			#6 refl r3-table.dat r-table.cal alfa gamma beta
-			#0
-			#4 .5 .5 .5 1 
+            elif self.scene.Surfacetype == 'R3':
+                f.write( "void plasdata pavement\n" )
+                f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "0\n" )
+                f.write( "4 .5 .5 .5 1 \n\n" )
+
+            else:
+                print 'no valid surfacetype given (R3 or plastic)'
+                print 'surface type is ' + self.scene.Surfacetype
+                sys.exit( 0 )
             
             #sidewalk
             f.write( "void plastic concrete\n" )
@@ -419,7 +421,7 @@ class configGenerator:
             f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )
+            f.write( '5 {0} {0} {0} 0.016 0.25\n\n'.format( self.scene.TargetReflectency ) )	#R G B spec rough
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
