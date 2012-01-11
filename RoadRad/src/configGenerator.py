@@ -421,7 +421,7 @@ class configGenerator:
             f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} 0.016 0.25\n\n'.format( self.scene.TargetReflectency ) )	#R G B spec rough
+            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )	#R G B spec rough 0.016 0.25
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
