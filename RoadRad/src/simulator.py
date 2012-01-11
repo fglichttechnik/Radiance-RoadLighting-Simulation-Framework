@@ -49,6 +49,11 @@ class simulator:
         dom = parse( configfile )
         configfile.close( )
         
+        if( not os.path.isdir( self.rootDirPath + self.LMKSetMat ) ):
+            os.mkdir( self.rootDirPath + self.LMKSetMat )
+            
+        shutil.copy( self.rootDirPath + "/SceneDescription.xml", self.rootDirPath + self.LMKSetMat )
+        
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             viewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
@@ -280,8 +285,8 @@ class simulator:
     #converted into luminace values using the formula highlighted below, and
     #are written into the final output pf file with the predefined header.
     def postRenderProcessing( self ):
-        if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix ) ):
-                os.mkdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix )
+        #if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix ) ):
+        #        os.mkdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix )
         if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix +self.rgbSubDirPrefix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix )
         
@@ -319,7 +324,7 @@ class simulator:
                 imgData.append( pixelData )
             rgbFile.close()
             
-            pfOut = open( str( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix + '/' + txtFile.replace( ".txt", ".pf" ) ), 'wb' )
+            pfOut = open( str( self.rootDirPath + self.LMKSetMat + '/' + txtFile.replace( ".txt", ".pf" ) ), 'wb' )
             cmd = 'Typ=Pic98::TPlane<float>\r\nLines={1}\r\nColumns={0}\r\nFirstLine=1\r\nFirstColumn=1\r\n\0'.format(self.horizontalRes ,self.verticalRes)
             pfOut.write( cmd )
             
