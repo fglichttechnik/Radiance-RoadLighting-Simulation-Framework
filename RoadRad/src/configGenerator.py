@@ -31,6 +31,10 @@ class configGenerator:
         self.sidewalkHeight = 0.1	#height of sidewalk
         self.poleRadius = 0.05		#radius of pole cylinder
         
+        #calculated
+        self.measurementStartPosition = 0
+        self.measurementStepWidth = 0
+        
         #millimeter
         self.sensorHeight = 8.9
         self.sensorWidth = 6.64
@@ -63,8 +67,8 @@ class configGenerator:
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
-            self.scene.LaneWidth = int( roadDesc[0].attributes["LaneWidth"].value )
-            self.scene.SidewalkWidth = int( roadDesc[0].attributes["SidewalkWidth"].value )
+            self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
+            self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
         
         backgroundDesc = dom.getElementsByTagName( 'Background' )
@@ -102,10 +106,10 @@ class configGenerator:
                 tempPole = Pole.Pole( )
                 if( pole.nodeName == "PoleSingle" ):
                     tempPole.isSingle = True
-                    tempPole.PolePositionX = int( pole.attributes["PositionX"].value )
+                    tempPole.PolePositionX = float( pole.attributes["PositionX"].value )
                 else:
                     tempPole.isSingle = False
-                    tempPole.PoleSpacing = int( pole.attributes["PoleSpacing"].value )
+                    tempPole.PoleSpacing = float( pole.attributes["PoleSpacing"].value )
                     isStaggered = pole.attributes["IsStaggered"].value
                     if isStaggered == "False":
                         tempPole.IsStaggered = False
@@ -120,6 +124,28 @@ class configGenerator:
         if( focalLen[ 0 ].attributes ):
             self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
             self.calcOpeningAngle( )
+        
+            
+        #calculate necessary measures
+        selectedArray = -1
+        #select the first nonSingle pole
+        for index, pole in enumerate( self.Poles ):
+            if pole.isSingle == False:
+                selectedArray = index
+                break
+                
+        if selectedArray == -1:
+            print "No Pole array defined, cannot position the object. terminating"
+            sys.exit(0)             
+            
+        #according to DIN EN 13201
+        self.measurementStepWidth = self.Poles[selectedArray].PoleSpacing / 10
+        self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
+        
+        print "selected Pole array: " +  str( selectedArray )
+        print "PoleSpacing: " + str( self.Poles[selectedArray].PoleSpacing )
+        print "measurementStartPosition: " + str( self.measurementStartPosition )
+        print "measurementStepWidth: " + str( self.measurementStepWidth ) 
         
         print 'Sucessfully Parsed.'
 
@@ -350,14 +376,30 @@ class configGenerator:
             print 'Generating: materials.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
-            f.write( "void plastic pavement\n" )
+            
+            #road surface
+            #f.write( "void plastic pavement\n" )
+            #f.write( "0\n" )
+            #f.write( "0\n" )
+            #f.write( "5 .07 .07 .07 0 0\n\n" )
+            
+            f.write( "void plasdata pavement\n" )
+            f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
             f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "5 .07 .07 .07 0 0\n\n" )
+            f.write( "4 .5 .5 .5 1 \n\n" )
+            
+            #void plasdata Strassen_blag
+			#6 refl r3-table.dat r-table.cal alfa gamma beta
+			#0
+			#4 .5 .5 .5 1 
+            
+            #sidewalk
             f.write( "void plastic concrete\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 .14 .14 .14 0 0\n\n" )
+            
+            #houses
             f.write( "void plastic house_concrete\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -402,7 +444,7 @@ class configGenerator:
             for i in range( 14 ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
     
     #Definition of the geometry of the target.
@@ -423,19 +465,8 @@ class configGenerator:
     #Placement of the targets is done relative to the first pole array defined in the scene description
     #10 targets between the two consecutive poles, and 2 before the first and after the last each.
     def printTargets( self ):
-            selectedArray = -1
             
-            for index, pole in enumerate( self.Poles ):
-                if pole.isSingle == False:
-                    selectedArray = index
-                    break
-                
-            if selectedArray == -1:
-                print "No Pole array defined, cannot position the object. terminating"
-                sys.exit(0)
-            
-            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
-            jump = self.Poles[selectedArray].PoleSpacing / 10
+            dist = self.measurementStartPosition            
             
             targetXPos = self.scene.LaneWidth
                 
@@ -455,17 +486,17 @@ class configGenerator:
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
-                dist = dist + jump
+                dist = dist + self.measurementStepWidth
             
             targetfile.close()
-            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
+            dist = self.measurementStartPosition
             for i in range( 14 ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
-                dist = dist + jump
+                dist = dist + self.measurementStepWidth
         
         
 

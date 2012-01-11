@@ -8,6 +8,7 @@ from xml.dom.minidom import parse
 import math
 import csv
 import struct
+import shutil
 #import pymorph
 
 
@@ -60,11 +61,12 @@ class simulator:
         
         self.makeOct( )
         self.makePic( )
-        self.makeFalsecolorPic( )
+        #self.makeFalsecolorPic( )
         if( not self.willSkipRefPic ):
             self.makeRefPic( )
             self.processRefPics( )
         self.postRenderProcessing( )
+        self.deleteUnnecessaryFiles( )
 
         return
     
@@ -106,7 +108,9 @@ class simulator:
                 if self.fixedVPMode == True:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+					cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                
                 #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, i )
                 os.system( cmd0 )
                 #os.system( cmd1 )
@@ -157,7 +161,8 @@ class simulator:
                 if self.fixedVPMode == True:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                	cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 
                 
                 cmd1 = 'ra_tiff {0}/out{1}.hdr {0}/out{1}.tiff'.format( self.rootDirPath + self.refPicDirSuffix, i )
@@ -333,6 +338,14 @@ class simulator:
                 pfOut.write( struct.pack( 'f', 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4] ) )
             
             pfOut.close()
-            print "done"
+            print "done"				
+        return
+        
+                #clean up and delete txt files
+    def deleteUnnecessaryFiles( self ):
+        rbgPath = self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix
+        if( os.path.exists( rbgPath ) ):
+            shutil.rmtree( rbgPath )
+        
         return
 
