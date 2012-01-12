@@ -27,7 +27,7 @@ class simulator:
         self.picDirSuffix = '/Pics'
         self.ldcSuffix = '/LDCs'
         self.LMKSetMat = '/LMKSetMat'
-        self.LMKSetMatFilename = '/pos.xml'
+        self.LMKSetMatFilename = '/LMKSetMat.xml'
         self.picSubDirSuffix = '/pics'
         self.falsecolorSubDirSuffix = '/falsecolor'
         self.pfSubDirPrefix = '/pfs'
@@ -62,7 +62,20 @@ class simulator:
         
         LDCDesc = dom.getElementsByTagName( 'LDC' )
         if( LDCDesc[0].attributes ):
-            self.lightType = LDCDesc[0].attributes["LightSource"].value
+            self.lightType = LDCDesc[0].attributes["LightSource"].value            
+            
+        descriptionDesc = dom.getElementsByTagName( 'Description' )
+        if( descriptionDesc[0].attributes ):
+            self.title = descriptionDesc[0].attributes["Title"].value
+            self.spratio = descriptionDesc[0].attributes["SPRatio"].value
+    	
+    	focalLengthDesc = dom.getElementsByTagName( 'FocalLength' )
+        if( descriptionDesc[0].attributes ):
+            self.focalLength = focalLengthDesc[0].attributes["FL"].value     
+            
+        viewPointDistanceDesc = dom.getElementsByTagName( 'ViewPoint' )
+        if( viewPointDistanceDesc[0].attributes ):
+            self.viewPointDistance = viewPointDistanceDesc[0].attributes["Distance"].value  
         
         self.makeOct( )
         self.makePic( )
@@ -201,7 +214,8 @@ class simulator:
         
         xmlOut = open( self.rootDirPath + self.LMKSetMat + self.LMKSetMatFilename, 'w' )
         xmlOut.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!DOCTYPE LMKSetMat SYSTEM \"LMKSetMat.dtd\">\n\n<LMKSetMat>\n" )
-        
+        xmlOut.write( "<Description>\n<SceneTitle Title=\"" + self.title + "\"/>\n<FocalLength FL=\"" + self.focalLength + "\"/>\n<ViewPoint Distance=\"" + self.viewPointDistance + "\"/>\n<PhotopicToScotopicRatio SPRatio=\"" + self.spratio + "\"/>\n</Description>\n\n" )
+                
         for i in range( self.numberOfSubimages ):
             im = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out' + str(i) + '.tiff')
             pix = im.load()

@@ -2,6 +2,7 @@
 
 class Scene:
     #Scene Description Variables
+    Title = ""
     Length = 0
     NumLanes = 0
     LaneWidth = 0
