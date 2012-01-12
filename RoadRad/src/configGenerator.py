@@ -383,6 +383,12 @@ class configGenerator:
                 f.write( "0\n" )
                 f.write( "0\n" )
                 f.write( "5 .07 .07 .07 0 0\n\n" )
+                
+            if self.scene.Surfacetype == 'plastic_improvedPhilips':            
+                f.write( "void plastic pavement\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "5 .07 .07 .07 0.002 0.001\n\n" )
             
             elif self.scene.Surfacetype == 'R3':
                 f.write( "void plasdata pavement\n" )
@@ -391,7 +397,7 @@ class configGenerator:
                 f.write( "4 .5 .5 .5 1 \n\n" )
 
             else:
-                print 'no valid surfacetype given (R3 or plastic)'
+                print 'no valid surfacetype given (R3 or plastic, plastic_improvedPhilips)'
                 print 'surface type is ' + self.scene.Surfacetype
                 sys.exit( 0 )
             
@@ -440,6 +446,7 @@ class configGenerator:
         if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")
+            #-vd 0 0.9999856 -0.0169975 is this 1 degree down???
             f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
@@ -477,7 +484,7 @@ class configGenerator:
             elif self.scene.TargetOrientation == "Left":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
             elif self.scene.TargetOrientation == "Right":
-                targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
+                targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
             else:
             	print "unrecognized Target Position " + self.scene.TargetOrientation
             	print "possible values: Center, Left, Right"
