@@ -443,17 +443,22 @@ class configGenerator:
     def printRView( self ):
         print 'Generating: eye.vp'
         
+        #-vd 0 0.9999856 -0.0169975 is this 1 degree down???
+        viewDirection = "0 0.9999856 -0.0169975"
+        #viewDirection = "0 0 0"
+        #debug
+        print "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        
         if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
-            f.write( "######eye.vp######\n")
-            #-vd 0 0.9999856 -0.0169975 is this 1 degree down???
-            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+            f.write( "######eye.vp######\n")            
+            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
             for i in range( 14 ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
     
     #Definition of the geometry of the target.
