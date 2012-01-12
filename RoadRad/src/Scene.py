@@ -8,6 +8,8 @@ class Scene:
     SidewalkWidth = 0
     Surfacetype = ""
     
+    Title = ""    
+    SPRatio = ""    
     Background = ""
         
     #Target Parameters Variables
