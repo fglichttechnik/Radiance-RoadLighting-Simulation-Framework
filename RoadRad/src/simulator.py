@@ -37,7 +37,7 @@ class simulator:
         self.horizontalRes = 1380
         self.verticalRes = 1030
         
-        self.numberOfSubimages = 14	#14 images will be rendered (should be the same as in configGenerator
+        self.numberOfSubimages = 1	#14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True

@@ -472,12 +472,17 @@ class configGenerator:
             
             targetXPos = self.scene.LaneWidth
                 
-            if self.scene.TargetOrientation == "Centre":
+            if self.scene.TargetOrientation == "Center":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.5 )
             elif self.scene.TargetOrientation == "Left":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
+            elif self.scene.TargetOrientation == "Right":
+                targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
             else:
-                targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
+            	print "unrecognized Target Position " + self.scene.TargetOrientation
+            	print "possible values: Center, Left, Right"
+            	print "WILL EXIT"
+                sys.exit(0)
                 
             targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
             
