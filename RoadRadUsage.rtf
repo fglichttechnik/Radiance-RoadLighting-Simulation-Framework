@@ -18,4 +18,14 @@ python path must be PIL enabled python path\
 \pard\pardeftab720
 
 \f1\fs30 \cf2 \cb3 find src/*.pyc -name \\* -print | sed -e 's/.*/git rm --cached &/' | sed -e '1s/.*/#!\\/bin\\/bash \\\
-&/' > git-ignore-this.sh}
+&/' > git-ignore-this.sh\
+\
+\
+edit matlab path for certain commands, e.g.\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\fs24 \cf0 \cb1 edit MATLAB.app/bin/matlab
+\f1\fs30 \cf2 \cb3 \
+
+\f0\fs24 \cf0 \cb1 export RAYPATH=$PATH:
+\f1\fs30 \cf2 \cb3 /usr/texbin/epstopdf}
