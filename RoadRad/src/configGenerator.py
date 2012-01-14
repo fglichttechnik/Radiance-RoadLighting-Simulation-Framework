@@ -30,6 +30,7 @@ class configGenerator:
         self.sceneLength = 240000	#length of road        
         self.sidewalkHeight = 0.1	#height of sidewalk
         self.poleRadius = 0.05		#radius of pole cylinder
+        self.numberOfLightsPerArray = 7 #was 4
         
         #calculated
         self.measurementStartPosition = 0
@@ -67,6 +68,7 @@ class configGenerator:
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
+            self.scene.NumPoleFields = float( roadDesc[0].attributes["NumPoleFields"].value )
             self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
             self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
@@ -138,8 +140,8 @@ class configGenerator:
             print "No Pole array defined, cannot position the object. terminating"
             sys.exit(0)             
             
-        #according to DIN EN 13201
-        self.measurementStepWidth = self.Poles[selectedArray].PoleSpacing / 10
+        #according to DIN EN 13201 / RP 8 00 (max 5 m)
+        self.measurementStepWidth = self.Poles[selectedArray].PoleSpacing / 10 * self.scene.NumPoleFields
         self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
         
         print "selected Pole array: " +  str( selectedArray )
@@ -304,18 +306,18 @@ class configGenerator:
                 elif poleArray.PoleSide == "Left":
                     print "making left poles"
                     if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -t -1 -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -t -1 -"+ str(poleArray.PoleSpacing) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
             #f.write( "!xform -e -t -1 -"+ str(self.Poles[0].PoleSpacing) +" 0 -a 4 -t 0 "+ str(self.Poles[0].PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -t -1 -" + str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -t -1 -" + str( 0.5 * poleArray.PoleSpacing) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                 else:
                     print "making right poles"
                     if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str(poleArray.PoleSpacing) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( 0.5 * poleArray.PoleSpacing) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
             #f.write( "!xform -e -t -1 -120 0 -a 4 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )

@@ -9,6 +9,7 @@ import math
 import csv
 import struct
 import shutil
+import sys
 #import pymorph
 
 
@@ -26,7 +27,9 @@ class simulator:
         self.refPicDirSuffix = '/RefPics'
         self.picDirSuffix = '/Pics'
         self.ldcSuffix = '/LDCs'
-        self.LMKSetMat = '/LMKSetMat'
+        self.LMKSetMat = '/' + os.path.basename( self.rootDirPath )#'/LMKSetMat'
+        print self.LMKSetMat
+        #sys.exit(0)
         self.LMKSetMatFilename = '/LMKSetMat.xml'
         self.picSubDirSuffix = '/pics'
         self.falsecolorSubDirSuffix = '/falsecolor'
@@ -53,6 +56,7 @@ class simulator:
             os.mkdir( self.rootDirPath + self.LMKSetMat )
             
         shutil.copy( self.rootDirPath + "/SceneDescription.xml", self.rootDirPath + self.LMKSetMat )
+        shutil.copy( os.getcwd() + "/LMKSetMat.dtd", self.rootDirPath + self.LMKSetMat )#copy DTD for LMKSetMat XML
         
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):

@@ -54,7 +54,7 @@ def extractWorkingDir( ):
 def cleanSceneDir( path ):
 	print "Will delete all created files in scene directory"
 	cwd = extractWorkingDir()
-	LMKSetMatDir = cwd + '/scenes/' + path + "/LMKSetMat"
+	LMKSetMatDir = cwd + '/scenes/' + path + "/" + path #path + "/LMKSetMat"
 	OctsDir = cwd + '/scenes/' + path + "/Octs"
 	PicsDir = cwd + '/scenes/' + path + "/Pics"
 	RadsDir = cwd + '/scenes/' + path + "/Rads"
