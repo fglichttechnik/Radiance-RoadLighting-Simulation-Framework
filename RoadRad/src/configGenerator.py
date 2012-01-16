@@ -35,6 +35,7 @@ class configGenerator:
         #calculated
         self.measurementStartPosition = 0
         self.measurementStepWidth = 0
+        self.measFieldLength = 0
         
         #millimeter
         self.sensorHeight = 8.9
@@ -141,13 +142,24 @@ class configGenerator:
             sys.exit(0)             
             
         #according to DIN EN 13201 / RP 8 00 (max 5 m)
-        self.measurementStepWidth = self.Poles[selectedArray].PoleSpacing / 10 * self.scene.NumPoleFields
+        self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;
+        self.measurementStepWidth =  self.measFieldLength / 10;      
+        self.numberOfSubimages = 14;
+        
+        #adjust number of subimages if stepwidth is > 5m (according to RP 8 00)
+        if( self.measurementStepWidth > 5 ):
+        	self.measurementStepWidth = 5;
+        	self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
+        	self.numberOfSubimages = self.numberOfSubimages + 4
+        	
         self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
         
         print "selected Pole array: " +  str( selectedArray )
         print "PoleSpacing: " + str( self.Poles[selectedArray].PoleSpacing )
         print "measurementStartPosition: " + str( self.measurementStartPosition )
         print "measurementStepWidth: " + str( self.measurementStepWidth ) 
+        print "measFieldLength: " + str( self.measFieldLength ) 
+        print "numberOfSubimages: " + str( self.numberOfSubimages ) 
         
         print 'Sucessfully Parsed.'
 
@@ -457,7 +469,7 @@ class configGenerator:
             f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages  ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
                 f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
@@ -500,7 +512,7 @@ class configGenerator:
                 
             targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
             
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages  ):
                 targetfile.write( str(dist) + '\n')
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
@@ -511,7 +523,7 @@ class configGenerator:
             
             targetfile.close()
             dist = self.measurementStartPosition
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages  ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")

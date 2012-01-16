@@ -21,6 +21,7 @@ class simulator:
         #instance variables which define the relative paths
         self.rootDirPath = path
         self.willSkipRefPic = RefPic
+        self.radDirPrefix = "/Rads"
         self.octDirSuffix = '/Octs'
         self.refOctDirSuffix = '/RefOcts'
         self.radDirSuffix = '/Rads'
@@ -40,7 +41,19 @@ class simulator:
         self.horizontalRes = 1380
         self.verticalRes = 1030
         
-        self.numberOfSubimages = 14	#14 images will be rendered (should be the same as in configGenerator
+        path = self.rootDirPath + self.radDirPrefix
+        #print "PATH " + path
+        dirList = os.listdir( path )
+        targetCount = 0
+        for file in dirList:
+            #print "FILE: " + file
+            if( file.startswith( "target_" ) ):
+                targetCount = targetCount + 1
+        
+        self.numberOfSubimages = targetCount
+        print "found " + str( self.numberOfSubimages ) + "target files"
+        #overwrite standardValue
+        #self.numberOfSubimages = 14	#14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True
@@ -375,4 +388,3 @@ class simulator:
             shutil.rmtree( rbgPath )
         
         return
-
