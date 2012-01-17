@@ -52,8 +52,8 @@ class simulator:
         
         self.numberOfSubimages = targetCount
         print "found " + str( self.numberOfSubimages ) + "target files"
-        #overwrite standardValue
-        #self.numberOfSubimages = 14	#14 images will be rendered (should be the same as in configGenerator
+        #overwrite standardValue (for testing: will generate 1 image only)
+        #self.numberOfSubimages = 1	#14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True
