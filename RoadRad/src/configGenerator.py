@@ -38,6 +38,9 @@ class configGenerator:
         self.measurementStepWidth = 0
         self.measFieldLength = 0
         
+        #ldc rotation
+        self.ldcRotation = -90;	#was -90
+        
         #millimeter
         self.sensorHeight = 8.9
         self.sensorWidth = 6.64
@@ -287,7 +290,7 @@ class configGenerator:
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
                 #str( entry.PoleHeight - self.poleRadius ) --> maybe the cylinder blocks the LDC?
-                f.write( "!xform -e -rz -90 -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight - self.poleRadius ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
+                f.write( "!xform -e -rz " + str( self.ldcRotation ) + " -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight - self.poleRadius ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
