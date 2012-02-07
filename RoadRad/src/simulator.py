@@ -97,6 +97,10 @@ class simulator:
         targetSizeDesc = dom.getElementsByTagName( 'Target' )
         if( targetSizeDesc[0].attributes ):
             self.targetSize = targetSizeDesc[0].attributes["Size"].value  
+            
+       	numPoleFieldsDesc = dom.getElementsByTagName( 'Road' )
+        if(numPoleFieldsDesc[0].attributes ):
+        	self.numPoleFields = numPoleFieldsDesc[0].attributes["NumPoleFields"].value
         
         self.makeOct( )
         self.makePic( )
@@ -235,7 +239,7 @@ class simulator:
         
         xmlOut = open( self.rootDirPath + self.LMKSetMat + self.LMKSetMatFilename, 'w' )
         xmlOut.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!DOCTYPE LMKSetMat SYSTEM \"LMKSetMat.dtd\">\n\n<LMKSetMat>\n" )
-        xmlOut.write( "<Description>\n<SceneTitle Title=\"" + self.title + "\"/>\n<FocalLength FL=\"" + self.focalLength + "\"/>\n<ViewPoint Distance=\"" + self.viewPointDistance + "\"/>\n<Target Size=\"" + self.targetSize + "\"/>\n<ScotopicToPhotopicRatio SPRatio=\"" + self.spratio + "\"/>\n</Description>\n\n" )
+        xmlOut.write( "<Description>\n<SceneTitle Title=\"" + self.title + "\"/>\n<FocalLength FL=\"" + self.focalLength + "\"/>\n<ViewPoint Distance=\"" + self.viewPointDistance + "\"/>\n<Target Size=\"" + self.targetSize + "\"/>\n<ScotopicToPhotopicRatio SPRatio=\"" + self.spratio + "\"/>\n<Pole NumPoleFields=\"" + self.numPoleFields + "\"/>\n</Description>\n\n" )
                 
         for i in range( self.numberOfSubimages ):
             im = Image.open(self.rootDirPath + self.refPicDirSuffix + '/out' + str(i) + '.tiff')
