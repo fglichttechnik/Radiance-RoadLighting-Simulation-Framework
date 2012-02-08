@@ -1,0 +1,63 @@
+<!ELEMENT RoadScene (SceneDescription, TargetParameters, LDCs, Poles, FocalLength)>
+
+<!ELEMENT SceneDescription (Description, Road, Background, Calculation)>
+<!ELEMENT Description (#PCDATA)>
+<!ATTLIST Description
+    Title CDATA #REQUIRED
+    SPRatio CDATA #REQUIRED
+>
+<!ELEMENT Road (#PCDATA)>
+<!ATTLIST Road
+    NumLanes CDATA #REQUIRED
+    LaneWidth CDATA #REQUIRED
+    SidewalkWidth CDATA #REQUIRED
+    Surface CDATA #REQUIRED
+    NumPoleFields CDATA #REQUIRED
+>
+<!ELEMENT Background (#PCDATA)>
+<!ATTLIST Background
+    Context CDATA #REQUIRED
+>
+<!ELEMENT Calculation (#PCDATA)>
+<!ATTLIST Calculation
+    Method CDATA #REQUIRED
+>
+
+
+<!ELEMENT TargetParameters (ViewPoint, Target)>
+<!ELEMENT ViewPoint (#PCDATA)>
+<!ATTLIST ViewPoint
+    Distance CDATA #REQUIRED
+    Height CDATA #REQUIRED
+    TargetDistanceMode CDATA #REQUIRED
+>
+<!ELEMENT Target (#PCDATA)>
+<!ATTLIST Target
+    Size CDATA #REQUIRED
+    Reflectancy CDATA #REQUIRED
+    Position CDATA #REQUIRED
+    OnLane CDATA #REQUIRED
+>
+
+<!ELEMENT LDCs (LDC+)>
+<!ELEMENT LDC (#PCDATA)>
+<!ATTLIST LDC
+	Name CDATA #REQUIRED
+    LightSource CDATA #REQUIRED
+>
+
+<!ELEMENT Poles (PoleArray)>
+<!ELEMENT PoleArray (#PCDATA)>
+<!ATTLIST PoleArray
+	PoleHeight CDATA #REQUIRED
+    PoleSpacing CDATA #REQUIRED
+    PoleOverhang CDATA #REQUIRED
+    IsStaggered CDATA #REQUIRED
+    LDC CDATA #REQUIRED
+    Side CDATA #REQUIRED
+>
+
+<!ELEMENT FocalLength (#PCDATA)>
+<!ATTLIST FocalLength
+	FL CDATA #REQUIRED
+>
