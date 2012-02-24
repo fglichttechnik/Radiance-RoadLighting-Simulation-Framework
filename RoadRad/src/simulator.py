@@ -132,7 +132,14 @@ class simulator:
             for i in range( self.numberOfSubimages ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/self_target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.refOctDirSuffix )
                 os.system(cmd)
-                print 'generated refernce oct# ' + str( i )
+                print 'generated reference oct# ' + str( i )
+                
+        #make octs for scene without targets
+        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+        os.system(cmd)
+    	cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.refOctDirSuffix )
+        os.system(cmd)
+        print 'generated oct without targets for view up and down'
     
     #System call to radiance framework for the actual rendering of the images
     def makePic(self):
@@ -165,8 +172,21 @@ class simulator:
             
                 #cmd2 = 'rpict -x 500 -y 2000 -vtl -vp 18 -150 4 -vd 0 0 -1 -vu 0 1 0 -vh 100 -vv 400 -vs 0 -vl 0 {0}/scene.oct | pfilt -x 200 -y 800 -r .6 -1 -e 200 > {0}/scene2.pic'.format( entry )
                 #print cmd
-                
-                        #System call to radiance framework for creating a falsecolor image
+            
+            #make pic for view up and down the raod
+            print 'generating pics for view up and down'
+            cmdUp = 'rpict -vf {2}/eye_up.vp -x 2000 -y 500 {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            os.system( cmdUp )
+            cmdUpTiff = 'ra_tiff {0}/out_up.hdr {0}/out_up.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+            os.system( cmdUpTiff)
+            cmdDown = 'rpict -vf {2}/eye_down.vp -x 2000 -y 500 {0}/scene.oct > {1}/out_down.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            os.system( cmdDown )
+            cmdDownTiff = 'ra_tiff {0}/out_down.hdr {0}/out_down.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+            os.system( cmdDownTiff)
+            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
+            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
+             
+    #System call to radiance framework for creating a falsecolor image
     def makeFalsecolorPic(self):                
             for i in range( self.numberOfSubimages ):
                 print 'generating falsecolor pic# ' + str( i )
@@ -185,7 +205,6 @@ class simulator:
             for file in dirList:
             	if( file.endswith( ".hdr" ) ):
             		os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
-
     
     #system call to render the refernce images
     def makeRefPic(self):
