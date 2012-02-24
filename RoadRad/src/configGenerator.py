@@ -480,15 +480,15 @@ class configGenerator:
                 f.close( )
                 
         #print view point files for plan view of the roadway
-        #view up from the roadway
-        f = open( self.workingDirPath + self.radDirPrefix + '/eye_up.vp', "w" )
-        f.write( "######eye.vp######\n" )
-        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 20\n" )
-        f.close( )
         #view down on the roadway
         f = open( self.workingDirPath + self.radDirPrefix + '/eye_down.vp', "w" )
         f.write( "######eye.vp######\n" )
         f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
+        f.close( )
+        #view up from the roadway
+        f = open( self.workingDirPath + self.radDirPrefix + '/eye_up.vp', "w" )
+        f.write( "######eye.vp######\n" )
+        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 100\n" )
         f.close( )
         
     

@@ -175,16 +175,16 @@ class simulator:
             
             #make pic for view up and down the raod
             print 'generating pics for view up and down'
-            cmdUp = 'rpict -vf {2}/eye_up.vp -x 2000 -y 500 {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            cmdUp = 'rpict -x 2000 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
             os.system( cmdUp )
-            cmdUpTiff = 'ra_tiff {0}/out_up.hdr {0}/out_up.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+            cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdUpTiff)
-            cmdDown = 'rpict -vf {2}/eye_down.vp -x 2000 -y 500 {0}/scene.oct > {1}/out_down.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            cmdDown = 'rpict -x 500 -y 500 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
             os.system( cmdDown )
-            cmdDownTiff = 'ra_tiff {0}/out_down.hdr {0}/out_down.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
+            cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdDownTiff)
-            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
-            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
+            #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
+            #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
              
     #System call to radiance framework for creating a falsecolor image
     def makeFalsecolorPic(self):                
@@ -195,10 +195,6 @@ class simulator:
                 cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
                 os.system( cmd0 )
                 os.system( cmd1 )
-                cmd3 = 'ra_tiff {1}/false_out{0}.hdr {1}/false_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-                cmd4 = 'ra_tiff {1}/falseContour_out{0}.hdr {1}/falseContour_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-                os.system( cmd3 )
-                os.system( cmd4 )
                 
             #remove hdr files
             dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
