@@ -302,22 +302,8 @@ class simulator:
                             
                     #if( i == 11 and xmin != 0 ):
             			#print str( xmax )
-                            
             
-            #xmin = xmin + 1
-            #ymin = ymin + 1
-            #xmax = xmax - 1
-            #ymax = ymax - 1
-            
-           # print "index " + str(i)
-            #print "xMin, xMax"
-            #print xmin, xmax
-            #print "yMin, yMax"
-            #print ymin, ymax
-            #print "No of pixels"
-            #print (xmax - xmin) * (ymax - ymin)
-            
-                        #debug: save region to image:
+            #debug: save region to image:
             #draw.line(xy, options)
             width = xmax - xmin
             height = ymax - ymin
@@ -327,7 +313,13 @@ class simulator:
             draw.rectangle([(xmin, ymin), (xmax, ymax)], fill='red')
             im2.save(self.rootDirPath + self.refPicDirSuffix + '/debug_output' + str(i) + '.tif')
             
-            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xmin)+"\" y=\""+str(ymin)+"\"/>\n<lowerRight x=\""+str(xmax)+"\" y=\""+str(ymax)+"\"/>\n<border pixel=\"2\"/>\n<position p=\""+str(targetDistance[i])+"\"/>\n</RectObject>\n</LMKData>\n\n" )
+            #prepare xml rect positions for use in matlab (offset of 1 pixel)
+            xminRect = xmin + 1
+            yminRect = ymin + 1
+            xmaxRect = xmax + 1
+            ymaxRect = ymax + 1
+            
+            xmlOut.write( "<LMKData>\n<dataSource src=\"out"+str(i)+".pf\" type=\"pf_photopic\"/>\n<RectObject>\n<upperLeft x=\""+str(xminRect)+"\" y=\""+str(yminRect)+"\"/>\n<lowerRight x=\""+str(xmaxRect)+"\" y=\""+str(ymaxRect)+"\"/>\n<border pixel=\"2\"/>\n<position p=\""+str(targetDistance[i])+"\"/>\n</RectObject>\n</LMKData>\n\n" )
         
         xmlOut.write( "</LMKSetMat>" )
         xmlOut.close()          
