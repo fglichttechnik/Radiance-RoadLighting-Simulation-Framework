@@ -60,6 +60,7 @@ class simulator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.lightType = ''
+        self.makeFalsecolor = True
         
         configfile = open( self.rootDirPath + "/SceneDescription.xml", 'r' )
         dom = parse( configfile )
@@ -104,7 +105,7 @@ class simulator:
         
         self.makeOct( )
         self.makePic( )
-        #self.makeFalsecolorPic( )
+        self.makeFalsecolorPic( )
         if( not self.willSkipRefPic ):
             self.makeRefPic( )
             self.processRefPics( )
@@ -160,10 +161,8 @@ class simulator:
                 else:
 					cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                     #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                
-                #cmd1 = 'ra_tiff {0}/out{2}.pic {1}/out{2}.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, i )
+                    
                 os.system( cmd0 )
-                #os.system( cmd1 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
             
@@ -175,6 +174,7 @@ class simulator:
             
             #make pic for view up and down the raod
             print 'generating pics for view up and down'
+            starttime = datetime.datetime.now()
             cmdUp = 'rpict -x 2000 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
             os.system( cmdUp )
             cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
@@ -185,22 +185,29 @@ class simulator:
             os.system( cmdDownTiff)
             #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
             #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
+            print 'done.'
+            print datetime.datetime.now() - starttime
              
     #System call to radiance framework for creating a falsecolor image
-    def makeFalsecolorPic(self):                
-            for i in range( self.numberOfSubimages ):
-                print 'generating falsecolor pic# ' + str( i )
-                starttime = datetime.datetime.now()                
-                cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-                cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-                os.system( cmd0 )
-                os.system( cmd1 )
-                
-            #remove hdr files
-            dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-            for file in dirList:
-            	if( file.endswith( ".hdr" ) ):
-            		os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
+    def makeFalsecolorPic(self):  
+    	if self.makeFalsecolor == True:
+    		for i in range( self.numberOfSubimages ):
+    			print 'generating falsecolor pic# ' + str( i )
+    			starttime = datetime.datetime.now()
+    			cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 -l cd/m^2 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+    			#cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+    			os.system( cmd0 )
+    			#os.system( cmd1 )
+    			cmd2 = 'ra_tiff {1}/false_out{0}.hdr {2}/false_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix)
+    			os.system( cmd2 )
+    			
+    			print 'done.'
+    			print datetime.datetime.now() - starttime
+    		
+    		dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+    		for file in dirList:
+    			if( file.endswith( ".hdr" ) ):
+    				os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
     
     #system call to render the refernce images
     def makeRefPic(self):
