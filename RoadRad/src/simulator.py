@@ -35,7 +35,7 @@ class simulator:
         self.picSubDirSuffix = '/pics'
         self.falsecolorSubDirSuffix = '/falsecolor'
         self.pfSubDirPrefix = '/pfs'
-        self.rgbSubDirPrefix = '/RGBs'
+        self.lumSubDirPrefix = '/lums'
         
         #output image resolution
         self.horizontalRes = 1380
@@ -60,7 +60,7 @@ class simulator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.lightType = ''
-        self.makeFalsecolor = True
+        self.makeFalsecolor = False
         
         configfile = open( self.rootDirPath + "/SceneDescription.xml", 'r' )
         dom = parse( configfile )
@@ -333,67 +333,61 @@ class simulator:
         return
     
     #Here the generated hdr images are converted to the pf format.
-    #This involves using pvalue(radiance) to determine the RGB values of each pixel.
-    #these values are dumped into a text file. the text file is then parsed, RGB values are
-    #converted into luminace values using the formula highlighted below, and
-    #are written into the final output pf file with the predefined header.
+    #This involves using pvalue(radiance) to determine the luminance values of each pixel (-b option 
+    #gives radiance values, rcalc converts them to luminance values.
+    #These values are dumped into a text file. the text file is then parsed and
+    #are written into the final binary output pf file with the predefined header.
     def postRenderProcessing( self ):
-        #if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix ) ):
-        #        os.mkdir( self.rootDirPath + self.picDirSuffix + self.pfSubDirPrefix )
-        if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix +self.rgbSubDirPrefix ) ):
-                os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix )
+    	#create direction for temporarily save luminance txt files
+        if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix +self.lumSubDirPrefix ) ):
+                os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix )
         
+        #find all .hdr images named "out[i].hdr in pics directory
         processingList = []
         dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
         for entry in dirList:
             if( not os.path.isdir( entry ) ):
-                if( "out" in entry ):
+                if( "out" and "hdr" in entry ):
                     processingList.append( entry )
         
+        #using pvalue (radiance) to determine the luminance values of each pixel (-b option 
+    	#gives radiance values, rcalc converts them to luminance values) and save them into txt file.
         print "dumping pvalues:"
         for pic in processingList:
             print "File: " + pic
-            cmd = "pvalue -h -H " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/' +pic + "> " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + pic.replace( ".hdr", ".txt" )
+            cmd = "pvalue -h -H -b " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/' +pic + " | rcalc -e '$1=179*$3' > " + self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix + '/' + pic.replace( ".hdr", ".txt" )
             os.system(cmd)
             print "done."
         
+        #find all txt files containing luminance values
         processedList = []
-        dirList2 = os.listdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix )
+        dirList2 = os.listdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix )
         for entry in dirList2:
             if( not os.path.isdir( entry ) ):
                 if( "out" in entry ):
                     processedList.append( entry )
+                    
+        #write all luminance values into binary pf file and add predefined header
         print "converting to .pf format"
         for txtFile in processedList:
-            print "File: " +txtFile
+            print "File: " + txtFile.replace( ".txt", ".pf" )
             imgData = []
-            rgbFile = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix + '/' + txtFile, 'r')
-            rgbReader = csv.reader( rgbFile, delimiter = ' ' )
+            lumFile = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix + '/' + txtFile, 'r')
+            rgbReader = csv.reader( lumFile, delimiter = ' ' )
             for row in rgbReader:
                 pixelData = []
                 for item in row:
                     if( len(item ) != 0 ):
                         pixelData.append( float( item ) )
                 imgData.append( pixelData )
-            rgbFile.close()
+            lumFile.close()
             
             pfOut = open( str( self.rootDirPath + self.LMKSetMat + '/' + txtFile.replace( ".txt", ".pf" ) ), 'wb' )
             cmd = 'Typ=Pic98::TPlane<float>\r\nLines={1}\r\nColumns={0}\r\nFirstLine=1\r\nFirstColumn=1\r\n\0'.format(self.horizontalRes ,self.verticalRes)
             pfOut.write( cmd )
             
-            #luminace formula
-            #L = 179.R = 47.4.Rr + 119.9.Rg + 11.7.Rb
-            i = 0
-            for pixel in imgData:
-            	if( i == 0 ):
-            		print pixel[2]
-            		print pixel[3]
-            		print pixel[3]
-            		L = 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4]
-            		print L
-            		
-            	i = i + 1
-                pfOut.write( struct.pack( 'f', 47.4 * pixel[2] + 119.9 * pixel[3] + 11.7 * pixel [4] ) )
+            for pixel in imgData: 
+                pfOut.write( struct.pack( 'f', pixel[0] ) )
             
             pfOut.close()
             print "done"				
@@ -401,7 +395,7 @@ class simulator:
         
                 #clean up and delete txt files
     def deleteUnnecessaryFiles( self ):
-        rbgPath = self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.rgbSubDirPrefix
+        rbgPath = self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix
         if( os.path.exists( rbgPath ) ):
             shutil.rmtree( rbgPath )
         
