@@ -1,5 +1,8 @@
 # This Python file uses the following encoding: utf-8
 
+
+#This class reads the scenedescription.xml and generates the appropriate rad files for the rendering
+
 import os
 from xml.dom.minidom import parse
 import Scene
@@ -24,6 +27,19 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
+        self.sceneLength = 240000	#length of road        
+        self.sidewalkHeight = 0.1	#height of sidewalk
+        self.poleRadius = 0.05		#radius of pole cylinder
+        self.numberOfLightsPerArray = 9 #was 4
+        self.numberOfLightsBeforeMeasurementArea = 3 #was 1
+        
+        #calculated
+        self.measurementStartPosition = 0
+        self.measurementStepWidth = 0
+        self.measFieldLength = 0
+        
+        #ldc rotation
+        self.ldcRotation = -90;	#was -90
         
         #millimeter
         self.sensorHeight = 8.9
@@ -38,10 +54,8 @@ class configGenerator:
             self.printRoadRads( )
             self.makeRadfromIES( )
             self.printDashedWhiteRad( )
-            self.printSolidYellowRad( )
             self.printPoleConfig( )
             self.printLightsRad( )
-            self.printLuminaireRad( )
             self.printNightSky( )
             self.printMaterialsRad( )
             self.printRView( )
@@ -49,6 +63,7 @@ class configGenerator:
             self.printTargets( )
             
 
+    #Scene description xml parser.
     def parseConfig( self ):
         print 'Begining to parse XML Config.'
         configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
@@ -58,9 +73,9 @@ class configGenerator:
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
-            self.scene.Length = int( roadDesc[0].attributes["LaneLength"].value )
-            self.scene.LaneWidth = int( roadDesc[0].attributes["LaneWidth"].value )
-            self.scene.SidewalkWidth = int( roadDesc[0].attributes["SidewalkWidth"].value )
+            self.scene.NumPoleFields = float( roadDesc[0].attributes["NumPoleFields"].value )
+            self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
+            self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
         
         backgroundDesc = dom.getElementsByTagName( 'Background' )
@@ -79,6 +94,10 @@ class configGenerator:
             self.scene.TargetReflectency = float( targetDesc[0].attributes["Reflectancy"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
+            
+        if self.scene.NumLanes - self.scene.TargetPosition != 1:
+            print "Numlanes and TargetPosition Parameters are impossible"
+            sys.exit(0)
         
         LDCDesc = dom.getElementsByTagName( 'LDC' )
         for LDCEntry in LDCDesc:
@@ -94,15 +113,18 @@ class configGenerator:
                 tempPole = Pole.Pole( )
                 if( pole.nodeName == "PoleSingle" ):
                     tempPole.isSingle = True
-                    tempPole.PolePositionX = int( pole.attributes["PositionX"].value )
+                    tempPole.PolePositionX = float( pole.attributes["PositionX"].value )
                 else:
                     tempPole.isSingle = False
-                    tempPole.PoleSpacing = int( pole.attributes["PoleSpacing"].value )
-                    tempPole.IsStaggered = bool( pole.attributes["IsStaggered"].value)
-                
+                    tempPole.PoleSpacing = float( pole.attributes["PoleSpacing"].value )
+                    isStaggered = pole.attributes["IsStaggered"].value
+                    if isStaggered == "False":
+                        tempPole.IsStaggered = False
+
                 tempPole.PoleSide = pole.attributes["Side"].value
-                tempPole.PoleHeight = int( pole.attributes["PoleHeight"].value )
+                tempPole.PoleHeight = float( pole.attributes["PoleHeight"].value )
                 tempPole.PoleLDC = pole.attributes["LDC"].value
+                tempPole.PoleOverhang = float(pole.attributes["PoleOverhang"].value )
                 self.Poles.append(tempPole)
         
         focalLen = dom.getElementsByTagName( 'FocalLength' )
@@ -110,13 +132,47 @@ class configGenerator:
             self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
             self.calcOpeningAngle( )
         
+            
+        #calculate necessary measures
+        selectedArray = -1
+        #select the first nonSingle pole
+        for index, pole in enumerate( self.Poles ):
+            if pole.isSingle == False:
+                selectedArray = index
+                break
+                
+        if selectedArray == -1:
+            print "No Pole array defined, cannot position the object. terminating"
+            sys.exit(0)             
+            
+        #according to DIN EN 13201 / RP 8 00 (max 5 m)
+        self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;
+        self.measurementStepWidth =  self.measFieldLength / 10;      
+        self.numberOfSubimages = 14;
+        
+        #adjust number of subimages if stepwidth is > 5m (according to RP 8 00)
+        if( self.measurementStepWidth > 5 ):
+        	self.measurementStepWidth = 5;
+        	self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
+        	self.numberOfSubimages = self.numberOfSubimages + 4
+        	
+        self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
+        
+        print "selected Pole array: " +  str( selectedArray )
+        print "PoleSpacing: " + str( self.Poles[selectedArray].PoleSpacing )
+        print "measurementStartPosition: " + str( self.measurementStartPosition )
+        print "measurementStepWidth: " + str( self.measurementStepWidth ) 
+        print "measFieldLength: " + str( self.measFieldLength ) 
+        print "numberOfSubimages: " + str( self.numberOfSubimages ) 
+        
         print 'Sucessfully Parsed.'
 
+    #calculate the horizontal and vertical opening angle of the camera required for the rendering
     def calcOpeningAngle( self ):
         self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
         self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
     
-    
+    #checks the presence of a few important files and directories before begining
     def performFileAndDirChecks( self ):
         print 'Attempting to locate configuration in: ' + self.workingDirPath + self.sceneDecriptor
         
@@ -136,38 +192,42 @@ class configGenerator:
         
         return True
     
+    #Output the Road config files
     def printRoadRads( self ):
         print 'Generating: road.rad'
         f = open( self.workingDirPath + self.radDirPrefix + '/road.rad', "w" )
     
         f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
-        f.write( "%d -%d %d\n" % ( 0, self.scene.Length / 2, 0 ) )
-        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
-        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2, 0 ) )
-        f.write( "%d %d %d\n\n" % ( 0, self.scene.Length / 2, 0 ) )
-        f.write( "!genbox concrete curb1 %d %d .5 | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "!genbox concrete curb2 %d %d .5 | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.scene.Length, self.scene.NumLanes * self.scene.LaneWidth, self.scene.Length / 2 ) )
+        f.write( "%d -%d %d\n" % ( 0, self.sceneLength / 2, 0 ) )
+        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n\n" % ( 0, self.sceneLength / 2, 0 ) )
+        f.write( "!genbox concrete curb1 %d %d %f | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.SidewalkWidth, self.sceneLength / 2 ) )
+        f.write( "!genbox concrete curb2 %d %d %f | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -%d .001 -a 2000 -t 0 20 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.Length, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -120 .001 -a 2000 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
-        f.write( "-%d -%d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "-%d %d .5\n" % ( self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "-%d %d .5\n" % ( 55506, self.scene.Length / 2 ) )
-        f.write( "-%d -%d .5\n\n\n" % ( 55506, self.scene.Length / 2 ) )
+        f.write( "-%d -%d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "-%d %d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "-%d %d %f\n" % ( 55506, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "-%d -%d %f\n\n\n" % ( 55506, self.sceneLength / 2, self.sidewalkHeight ) )
     
         f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-        f.write( "%d -%d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "%d %d .5\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.scene.Length / 2 ) )
-        f.write( "%d %d .5\n" % ( 1140, self.scene.Length / 2 ) )
-        f.write( "%d -%d .5\n" % ( 1140, self.scene.Length / 2 ) )
+        f.write( "%d -%d %f\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "%d %d %f\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "%d %d %f\n" % ( 1140, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "%d -%d %f\n" % ( 1140, self.sceneLength / 2, self.sidewalkHeight ) )
         
+        #Adds concrete boxes to emulate road side buildings
         if self.scene.Background == 'City':
-            f.write( "!genbox concrete building_left 50 100 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox concrete building_right 50 100 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_left 1 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.SidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_right 1 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
         
         f.close()
-        
+    
+    #This function attempts to locate all the ies files mentioned in the scene description
+    #and convert them to the RAD files necessary for the rendering
     def makeRadfromIES( self ):
         if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
             print "LDCs directory not found. Terminating."
@@ -179,61 +239,75 @@ class configGenerator:
                 sys.exit(0)
             
             iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
-            cmd = 'ies2rad -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            print "Creating radiance LDC for light source type" + entry.LDCLightSource
+            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            #-dm for meters
+            #-t for lightsource type in lamp.tab (radiance dir)
+            #-l library dir prefix for pathes in generated .rad file?
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
+            print "ies2rad command:"
+            print cmd
             os.system( cmd )
-        
+            
+            radpath_old = iesPath.replace( '.ies', '.rad' )
+            radpath_new = iesPath.replace( '.ies', '.txt' )
+            print radpath_old
+            print radpath_new
+            os.rename(radpath_old, radpath_new )
+            
+            datfile_old = open( radpath_new, 'r' )
+            datfile_new = open( radpath_old, 'w' )
+            
+            for line in datfile_old.readlines():
+                if line.find( entry.LDCName + '.dat' ) == -1:
+                    datfile_new.write( line )
+                else:
+                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+    
+    #White paint line that divides the lanes
     def printDashedWhiteRad(self):
             print 'Generating: dashed_white.rad'
+            self.markingWidth = 0.1
+            self.markingLength = 4
             f = open( self.workingDirPath + self.radDirPrefix + '/dashed_white.rad', "w" )
             f.write( "######dashed_white.rad######\n" )
             f.write( "white_paint polygon lane_dash\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "12\n" )
-            f.write( "-.1667 0 0\n")
-            f.write( ".1667 0 0\n")
-            f.write( ".1667 8 0\n")
-            f.write( "-.1667 8 0\n")
-            f.close()
-        
-    def printSolidYellowRad( self ):
-            print 'Generating: solid_yellow.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/solid_yellow.rad', "w" )
-            f.write( "######solid_yellow.rad######\n" )
-            f.write( "yellow_paint polygon centre_stripe\n" )
-            f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "12\n" )
-            f.write( "  -.1667 0 0\n")
-            f.write( "   .1667 0 0\n")
-            f.write( "   .1667 2400 0\n")
-            f.write( "  -.1667 2400 0\n")
+            f.write( str( -self.markingWidth / 2) + " 0 0\n")
+            f.write( str( self.markingWidth / 2 ) + " 0 0\n")
+            f.write( str( self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
+            f.write( str( -self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
             f.close()
     
+    #Basic geometry of the pole is defined here and named on the basis of the LDC's of the light sources that
+    #they are holding
     def printPoleConfig( self ):
             print 'Generating: Light Pole Rad files'
             
             for index, entry in enumerate( self.Poles ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz -180 -t 6 0 " + str( entry.PoleHeight ) + " " + self.workingDirPath + self.radDirPrefix + "/" + entry.PoleLDC + ".rad\n\n" )
+                #str( entry.PoleHeight - self.poleRadius ) --> maybe the cylinder blocks the LDC?
+                f.write( "!xform -e -rz " + str( self.ldcRotation ) + " -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight - self.poleRadius ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
                 f.write( "7\n")
                 f.write( " 0 0 0\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " .3333\n\n")
+                f.write( " " + str( self.poleRadius ) + "\n\n")
                 f.write( "chrome cylinder mount\n" )
                 f.write( "0\n")
                 f.write( "0\n")
                 f.write( "7\n")
                 f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " 6 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " .1667\n")
+                f.write( " "+str(entry.PoleOverhang)+" 0 " + str( entry.PoleHeight ) + "\n")
+                f.write( " " + str( self.poleRadius ) + "\n\n")
                 f.close( )
     
+    #This function places the various poles in the scene
     def printLightsRad( self ):
             print 'Generating: light_s.rad'
             firstArrayHandled = False
@@ -244,46 +318,47 @@ class configGenerator:
                     if poleArray.PoleSide == "Left":
                         f.write( "!xform  -t -1 " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                     else:
-                        f.write( "!xform -rz -180 -t "+ str( self.scene.NumLanes * self.scene.LaneWidth + 1 )+" " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t "+ str( self.scene.NumLanes * self.scene.LaneWidth + 1 )+" " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_" + str(index) + "_light_pole.rad\n" )
                 elif poleArray.PoleSide == "Left":
                     print "making left poles"
                     if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -t -1 -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -t -1 -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
             #f.write( "!xform -e -t -1 -"+ str(self.Poles[0].PoleSpacing) +" 0 -a 4 -t 0 "+ str(self.Poles[0].PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -t -1 -" + str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -t -1 -" + str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                 else:
                     print "making right poles"
                     if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str(poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( 0.5 * poleArray.PoleSpacing) +" 0 -a 4 -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
             #f.write( "!xform -e -t -1 -120 0 -a 4 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
-    def printLuminaireRad( self ):
-            print 'Generating: LDC Rad files'
-            
-            for entry in self.lights:
-                f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
-                f.write( "######luminaire.rad######\n" )
-                f.write( "void brightdata ex2_dist\n" )
-                f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
-                f.write( "0\n" )
-                f.write( "1 1\n" )
-                f.write( "ex2_dist light ex2_light\n\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "3 2.492 2.492 2.492\n\n" )
-                f.write( "ex2_light sphere ex2.s\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "4 0 0 0 0.5\n" )
-                f.close( )
     
+    # def printLuminaireRad( self ):
+#             print 'Generating: LDC Rad files'
+#             
+#             for entry in self.lights:
+#                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
+#                 f.write( "void brightdata ex2_dist\n" )
+#                 f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
+#                 f.write( "0\n" )
+#                 f.write( "1 1\n" )
+#                 f.write( "ex2_dist light ex2_light\n\n" )
+#                 f.write( "0\n" )
+#                 f.write( "0\n" )
+#                 f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
+#                 f.write( "ex2_light sphere ex2.s\n" )
+#                 f.write( "0\n" )
+#                 f.write( "0\n" )
+#                 f.write( "4 0 0 0 0.5\n" )
+#                 f.close( )
+    
+    #Night sky Rad file
     def printNightSky( self ):
             print 'Generating: night_sky.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/night_sky.rad', "w" )
@@ -314,15 +389,44 @@ class configGenerator:
             f.write( "4 0 0 1 180\n" )
             f.close( )
     
+    #All the materials used in the simulation are defined here
     def printMaterialsRad( self ):
             print 'Generating: materials.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
-            f.write( "void plastic pavement\n" )
-            f.write( "0\n" )
-            f.write( "0\n" )
-            f.write( "5 .07 .07 .07 0 0\n\n" )
+            
+            #road surface
+            if self.scene.Surfacetype == 'plastic':            
+                f.write( "void plastic pavement\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "5 .07 .07 .07 0 0\n\n" )
+                
+            if self.scene.Surfacetype == 'plastic_improvedPhilips':            
+                f.write( "void plastic pavement\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "5 .07 .07 .07 0.002 0.001\n\n" )
+            
+            elif self.scene.Surfacetype == 'R3':
+                f.write( "void plasdata pavement\n" )
+                f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "0\n" )
+                f.write( "4 .5 .5 .5 1 \n\n" )
+
+            else:
+                print 'no valid surfacetype given (R3 or plastic, plastic_improvedPhilips)'
+                print 'surface type is ' + self.scene.Surfacetype
+                sys.exit( 0 )
+            
+            #sidewalk
             f.write( "void plastic concrete\n" )
+            f.write( "0\n" )
+            f.write( "0\n" )
+            f.write( "5 .14 .14 .14 0 0\n\n" )
+            
+            #houses
+            f.write( "void plastic house_concrete\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 .14 .14 .14 0 0\n\n" )
@@ -338,10 +442,10 @@ class configGenerator:
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "5 0 .1 .02 0 0\n\n" )
-            f.write( "void plastic 20%_gray\n" )
+            f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )
+            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )	#R G B spec rough 0.016 0.25
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -352,73 +456,97 @@ class configGenerator:
             f.write( "4 1 1 1 0\n\n" )
             f.close( )
     
+    #Prints view point files.
+    #Based on the viewpoint mode, one of several viewpoints are written
     def printRView( self ):
         print 'Generating: eye.vp'
         
+        #-vd 0 0.9999856 -0.0169975 is this 1 degree down???
+        viewDirection = "0 0.9999856 -0.0169975"
+        #viewDirection = "0 0 0"
+        #debug
+        print "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        
         if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
-            f.write( "######eye.vp######\n")
-            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+            f.write( "######eye.vp######\n")            
+            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages  ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
+                
+        #print view point files for plan view of the roadway
+        #view down on the roadway
+        f = open( self.workingDirPath + self.radDirPrefix + '/eye_down.vp', "w" )
+        f.write( "######eye.vp######\n" )
+        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
+        f.close( )
+        #view up from the roadway
+        f = open( self.workingDirPath + self.radDirPrefix + '/eye_up.vp', "w" )
+        f.write( "######eye.vp######\n" )
+        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 100\n" )
+        f.close( )
+        
     
+    #Definition of the geometry of the target.
     def printTarget( self ):
             print 'Generating: target.rad'
             f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox 20%_gray stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox targetMaterial stv_target {0} 0.05 {0}\n'.format( self.scene.TargetSize ) )
             f.close( )
             
             f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox self_box stv_target {0} {0} 2\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox self_box stv_target {0} 0.05 {0}\n'.format( self.scene.TargetSize ) )
             f.close( )
     
+    #Several files are written here to place the targets at different locations in the scene.
+    #each files is then ran as a separate simulation.
+    #Placement of the targets is done relative to the first pole array defined in the scene description
+    #10 targets between the two consecutive poles, and 2 before the first and after the last each.
     def printTargets( self ):
-            selectedArray = -1
             
-            for index, pole in enumerate( self.Poles ):
-                if pole.isSingle == False:
-                    selectedArray = index
-                    break
-                
-            if selectedArray == -1:
-                print "No Pole array defined, cannot position the object. terminating"
-                sys.exit(0)
-            
-            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
-            jump = self.Poles[selectedArray].PoleSpacing / 10
+            dist = self.measurementStartPosition            
             
             targetXPos = self.scene.LaneWidth
                 
-            if self.scene.TargetOrientation == "Centre":
+            if self.scene.TargetOrientation == "Center":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.5 )
             elif self.scene.TargetOrientation == "Left":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
-            else:
+            elif self.scene.TargetOrientation == "Right":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
+            else:
+            	print "unrecognized Target Position " + self.scene.TargetOrientation
+            	print "possible values: Center, Left, Right"
+            	print "WILL EXIT"
+                sys.exit(0)
+                
+            targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
             
-            for i in range( 14 ):
+            for i in range( self.numberOfSubimages  ):
+                targetfile.write( str(dist) + '\n')
                 print 'Generating: target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
                 f.close( )
-                dist = dist + jump
+                dist = dist + self.measurementStepWidth
             
-            dist = -1 * ( 2 *self.Poles[selectedArray].PoleSpacing / 20 )
-            for i in range( 14 ):
+            targetfile.close()
+            dist = self.measurementStartPosition
+            for i in range( self.numberOfSubimages  ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
                 f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
-                dist = dist + jump
+                dist = dist + self.measurementStepWidth
         
         
 

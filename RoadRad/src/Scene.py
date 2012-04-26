@@ -2,12 +2,16 @@
 
 class Scene:
     #Scene Description Variables
+    Title = ""
     Length = 0
     NumLanes = 0
+    NumPoleFields = 1
     LaneWidth = 0
     SidewalkWidth = 0
     Surfacetype = ""
     
+    Title = ""    
+    SPRatio = ""    
     Background = ""
         
     #Target Parameters Variables

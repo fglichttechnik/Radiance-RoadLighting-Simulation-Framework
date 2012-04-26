@@ -1,0 +1,78 @@
+<!ELEMENT LMKSetMat (Description, StreetSurface, LMKData+)>
+
+<!ELEMENT Description (SceneTitle, FocalLength, ViewPoint, Target, ScotopicToPhotopicRatio, Pole)>
+<!ELEMENT SceneTitle (#PCDATA)>
+<!ATTLIST SceneTitle
+    Title CDATA #REQUIRED
+>
+<!ELEMENT FocalLength (#PCDATA)>
+<!ATTLIST FocalLength
+    FL CDATA #REQUIRED
+>
+<!ELEMENT ViewPoint (#PCDATA)>
+<!ATTLIST ViewPoint
+    Distance CDATA #REQUIRED
+>
+<!ELEMENT Target (#PCDATA)>
+<!ATTLIST Target
+    Size CDATA #REQUIRED
+>
+<!ELEMENT ScotopicToPhotopicRatio (#PCDATA)>
+<!ATTLIST ScotopicToPhotopicRatio
+    SPRatio CDATA #REQUIRED
+>
+<!ELEMENT Pole (#PCDATA)>
+<!ATTLIST Pole
+    NumPoleFields CDATA #REQUIRED
+>
+
+
+<!ELEMENT StreetSurface (QuadrangleObject)>
+<!ELEMENT QuadrangleObject (upperLeft, upperRight, lowerLeft, lowerRight)>
+<!ELEMENT upperLeft (#PCDATA)>
+<!ATTLIST upperLeft 
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+<!ELEMENT upperRight (#PCDATA)>
+<!ATTLIST upperRight 
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+<!ELEMENT lowerLeft (#PCDATA)>
+<!ATTLIST lowerLeft
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+<!ELEMENT lowerRight (#PCDATA)>
+<!ATTLIST lowerRight 
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+
+
+<!ELEMENT LMKData (dataSource+, RectObject)>
+<!ELEMENT dataSource (#PCDATA)>
+<!ATTLIST dataSource 
+    src CDATA #REQUIRED
+    type CDATA #REQUIRED
+>
+<!ELEMENT RectObject (upperLeft, lowerRight, border, position)>
+<!ELEMENT upperLeft (#PCDATA)>
+<!ATTLIST upperLeft 
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+<!ELEMENT lowerRight (#PCDATA)>
+<!ATTLIST lowerRight 
+    x CDATA #REQUIRED
+    y CDATA #REQUIRED
+>
+<!ELEMENT border (#PCDATA)>
+<!ATTLIST border
+    pixel CDATA #REQUIRED
+>
+<!ELEMENT position (#PCDATA)>
+<!ATTLIST position 
+    p CDATA #REQUIRED
+>
