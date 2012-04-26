@@ -121,10 +121,10 @@ class evaluator:
         print "pole spacing: " + str( self.Poles[0].PoleSpacing )
         self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;   
         
-        numberOfMeasurementPoints = 10
+        self.numberOfMeasurementPoints = 10
         if( self.Poles[selectedArray].PoleSpacing > 30 ):        	
-        	while ( self.Poles[selectedArray].PoleSpacing / numberOfMeasurementPoints ) > 3:
-        		numberOfMeasurementPoints = numberOfMeasurementPoints + 1
+        	while ( self.Poles[selectedArray].PoleSpacing / self.numberOfMeasurementPoints ) > 3:
+        		self.numberOfMeasurementPoints = self.numberOfMeasurementPoints + 1
         
         print "numberOfMeasurementPoints: " + str( numberOfMeasurementPoints )
         self.measurementStepWidth = self.measFieldLength / numberOfMeasurementPoints        	
@@ -145,7 +145,7 @@ class evaluator:
     #system call to radiance framework to generate oct files out of the various rads
     # both for the actual simulated image and the refernce pictures to determine the 
     # pixel position of the target objects
-    def makeOct(self):
+    def makeOct( self ):
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
             os.mkdir( self.rootDirPath + self.octDirSuffix )        
         
@@ -157,13 +157,32 @@ class evaluator:
     #Based on the viewpoint mode, one of several viewpoints are written
     def printRView( self ):
         print 'Generating: eye.vp'
+        self.rows = []
         
-        #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? --> yes, for the IESNA standard 
+        #-vd 0 0.9999856 -0.0169975 is 1 degree down for the IESNA standard 
         #observer who is 273 feet (83.2104m) away from and 4.75 feet (1.4478m) above the section of 
         #pavement of interest (Rendering with Radiance, p. 400 f.)
-        viewDirection = "0 0.9999856 -0.0169975"
+        #viewDirection = "0 0.9999856 -0.0169975"
         
-        print "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        #calc view direction according to DIN standard observer
+        viewerXPosition = ( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) )
+        viewPoint = ' {0} {1} {2} '.format( viewerXPosition, self.viewPointDistance, self.viewPointHeight )
+        distanceOfMeasRows = self.scene.LaneWidth / 3
+        rowXPosition = self.scene.LaneWidth
+        
+        
+        for i in range( 3 ):
+        	rowXPosition = rowXPosition * (self.scene.TargetPosition + ( i * 0.25 ) )
+        	directionX = rowXPosition - viewerXPosition
+        	for j in range( self.numberOfMeasurementPoints ):
+        		directionY = ( i + 0.5 ) * self.measurementStepWidth
+        		directionZ = 0 - self.viewPointHeight
+        		viewDirection = ' {0} {1} {2} '.format( directionX, directionY, directionZ )
+        		print "rview -vtv -vp " + viewPoint + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        		f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( j ) + '_' + str( i ) '.vp', "w" )
+                f.write( "######eye.vp######\n")
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * 24 ) + " " + str( self.scene.ViewpointHeight ) + " -vd 0 0.9999856 -0.0169975 -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.close( )
         
     
     #System call to radiance framework for the actual rendering of the images
