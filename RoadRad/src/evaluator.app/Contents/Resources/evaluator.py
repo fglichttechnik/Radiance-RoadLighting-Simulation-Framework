@@ -16,7 +16,6 @@ class evaluator:
     def __init__( self, path ):
         
         #instance variables which define the relative paths
-        self.workingDirPath = path
         self.rootDirPath = path
         self.radDirPrefix = "/Rads"
         self.octDirSuffix = '/Octs'
@@ -53,7 +52,7 @@ class evaluator:
         
         self.parseConfig( )
         self.makeOct( )
-        self.calcLuminances( )
+        self.printRView( )
         self.makePic( )
 
         return
@@ -104,19 +103,34 @@ class evaluator:
         if( focalLen[ 0 ].attributes ):
             self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
             self.calcOpeningAngle( )
-                
+        
+            
+        #calculate necessary measures
+        selectedArray = -1
+        #select the first nonSingle pole
+        for index, pole in enumerate( self.Poles ):
+            if pole.isSingle == False:
+                selectedArray = index
+                break
+        
+        if selectedArray == -1:
+            print "No Pole array defined, cannot position the object. terminating"
+            sys.exit(0)             
             
         #according to DIN EN 13201
         print "pole spacing: " + str( self.Poles[0].PoleSpacing )
-        self.measFieldLength = self.Poles[0].PoleSpacing * self.scene.NumPoleFields;   
+        self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;   
         
-        self.numberOfMeasurementPoints = 10
-        if( self.Poles[0].PoleSpacing > 30 ):        	
-        	while ( self.Poles[0].PoleSpacing / self.numberOfMeasurementPoints ) > 3:
-        		self.numberOfMeasurementPoints = self.numberOfMeasurementPoints + 1
+        numberOfMeasurementPoints = 10
+        if( self.Poles[selectedArray].PoleSpacing > 30 ):        	
+        	while ( self.Poles[selectedArray].PoleSpacing / numberOfMeasurementPoints ) > 3:
+        		numberOfMeasurementPoints = numberOfMeasurementPoints + 1
         
-        print "numberOfMeasurementPoints: " + str( self.numberOfMeasurementPoints )
-        self.measurementStepWidth = self.measFieldLength / self.numberOfMeasurementPoints        
+        print "numberOfMeasurementPoints: " + str( numberOfMeasurementPoints )
+        self.measurementStepWidth = self.measFieldLength / numberOfMeasurementPoints        	
+        
+        print "selected Pole array: " +  str( selectedArray )
+        print "PoleSpacing: " + str( self.Poles[selectedArray].PoleSpacing )
         print "measurementStepWidth: " + str( self.measurementStepWidth ) 
         print "measFieldLength: " + str( self.measFieldLength ) 
         
@@ -131,7 +145,7 @@ class evaluator:
     #system call to radiance framework to generate oct files out of the various rads
     # both for the actual simulated image and the refernce pictures to determine the 
     # pixel position of the target objects
-    def makeOct( self ):
+    def makeOct(self):
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
             os.mkdir( self.rootDirPath + self.octDirSuffix )        
         
@@ -141,41 +155,15 @@ class evaluator:
     
     #Prints view point files for every lane
     #Based on the viewpoint mode, one of several viewpoints are written
-    def calcLuminances( self ):
-    	directionZ = 0 - self.viewPointHeight
-    	print 'Generating: luminance view directions'
-        self.rows = []   
-        f = open( self.workingDirPath + self.radDirPrefix + '/luminanceCoordinates.pos', "w" )
+    def printRView( self ):
+        print 'Generating: eye.vp'
         
-    	for laneNumber in range( self.scene.NumLanes ):    		        
-			#
-        	print "lane index: " + str( laneNumber )
-        	#
-        	#calc view direction according to DIN standard observer
-        	viewerXPosition = ( self.scene.LaneWidth * (laneNumber + 0.5 ) )
-        	print 'viewer X position: ' + str( viewerXPosition )
-        	viewPoint = ' {0} {1} {2}'.format( viewerXPosition, self.viewPointDistance, self.viewPointHeight )
-        	distanceOfMeasRows = self.scene.LaneWidth / 3
-        	#
-        	for rowNumber in range( 3 ):        		
-        		rowXPosition = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
-        		print 'row x position: ' + str( rowXPosition )
-        		directionX = rowXPosition - viewerXPosition
-        		#
-        		for measPointNumber in range( self.numberOfMeasurementPoints ):
-        			directionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth ) + self.viewPointDistance
-        			viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
-        			print ' ' + str( viewPoint ) + str( viewDirection ) + '\n'
-        			f.write( str( viewPoint ) + str( viewDirection ) + '\n')
-                	
-                	
-        f.close( )
+        #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? --> yes, for the IESNA standard 
+        #observer who is 273 feet (83.2104m) away from and 4.75 feet (1.4478m) above the section of 
+        #pavement of interest (Rendering with Radiance, p. 400 f.)
+        viewDirection = "0 0.9999856 -0.0169975"
         
-        print 'Calculating: Luminances for defined rays'
-        cmd = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt"
-        os.system( cmd )
-        cmd = "rlam " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt > " + self.workingDirPath + self.radDirPrefix + "/luminances.txt"
-        os.system( cmd )
+        print "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
         
     
     #System call to radiance framework for the actual rendering of the images

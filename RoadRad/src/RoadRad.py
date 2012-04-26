@@ -41,7 +41,8 @@ import datetime
 
 import configGenerator
 import simulator
-import EnvVarSetter;
+import EnvVarSetter
+import evaluator;
 
 # Determine the current directory of executaion
 # Important step because configfiles and output directories are relative to this path
@@ -104,9 +105,10 @@ if( options.cleanDir ):
 	
 elif( options.dir ):
 	cleanSceneDir( options.dir )
-    configGen = configGenerator.configGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
-    #sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
-    ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
+	configGen = configGenerator.configGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
+	#sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
+	ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
+
 else:
     oparser.print_usage( )
 
