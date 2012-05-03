@@ -7,6 +7,7 @@ import shutil
 import sys
 import csv
 import struct
+import xml.dom as dom
 import Scene
 import LDC
 import Pole
@@ -59,6 +60,7 @@ class evaluator:
         #self.makeFalsecolor( )
         self.evalLuminance( )
         self.evalIlluminance( )
+        self.makeXML( )
 
         return
     
@@ -68,6 +70,10 @@ class evaluator:
         configfile = open( self.rootDirPath + "/SceneDescription.xml", 'r' )
         dom = parse( configfile )
         configfile.close( )
+        
+        descriptionDesc = dom.getElementsByTagName( 'Description' )
+        if( descriptionDesc[0].attributes ):
+            self.title = descriptionDesc[0].attributes["Title"].value
         
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
@@ -385,12 +391,48 @@ class evaluator:
     		if( not os.path.isdir( self.rootDirPath + self.evalDirSuffix ) ):
     			os.mkdir( self.rootDirPath + self.evalDirSuffix )
     		
+    		xml_name = 'Evaluation'
     		
-
-			
-            
-            
+    		implement = dom.getDOMImplementation( )
+    		doc = implement.createDocument( None, xml_name, None );
     		
+    		descr_element = doc.createElement( "Description" )
+    		descr_element.setAttribute( "Title", self.title )
+    		doc.documentElement.appendChild( descr_element )
+    		
+    		lum_element = doc.createElement( "Luminance" )
+    		doc.documentElement.appendChild( lum_element )
+    		
+    		meanLum_element = doc.createElement( "meanLuminance" )
+    		meanLum_element.setAttribute( "Lm", str( self.meanLuminance ) )
+    		lum_element.appendChild( meanLum_element )
+    		
+    		uniformityLum_element = doc.createElement( "uniformityOfLuminance" )
+    		uniformityLum_element.setAttribute( "U0", str( self.uniformityOfLuminance ) )
+    		lum_element.appendChild( uniformityLum_element )
+    		
+    		lengthUniformityLum_element = doc.createElement( "lengthwiseUniformityOfLuminance" )
+    		lengthUniformityLum_element.setAttribute( "Ul", str( self.lengthwiseUniformityOfLuminance ) )
+    		lum_element.appendChild( lengthUniformityLum_element )
+    		
+    		illum_element = doc.createElement( "Illuminance" )
+    		doc.documentElement.appendChild( illum_element )
+    		
+    		meanIllum_element = doc.createElement( "meanIlluminance" )
+    		meanIllum_element.setAttribute( "Em", str( self.meanIlluminance ) )
+    		illum_element.appendChild( meanIllum_element )
+    		
+    		minIllum_element = doc.createElement( "minIlluminance" )
+    		minIllum_element.setAttribute( "Emin", str( self.minIlluminance ) )
+    		illum_element.appendChild( minIllum_element )
+    		
+    		uniformityIllum_element = doc.createElement( "uniformityOfIlluminance" )
+    		uniformityIllum_element.setAttribute( "g1", str( self.uniformityOfIlluminance ) )
+    		illum_element.appendChild( uniformityIllum_element )
+    		
+    		f = open( self.rootDirPath + self.evalDirSuffix + '/' + xml_name + '.xml', "w" )
+    		doc.writexml( f, "\n", "	")
+    		f.close( )   		
     		
     		print 'Done.'
 

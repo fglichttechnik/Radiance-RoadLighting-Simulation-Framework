@@ -106,7 +106,7 @@ if( options.cleanDir ):
 elif( options.dir ):
 	cleanSceneDir( options.dir )
 	configGen = configGenerator.configGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
-	#sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
+	sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
 	ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
 
 else:
