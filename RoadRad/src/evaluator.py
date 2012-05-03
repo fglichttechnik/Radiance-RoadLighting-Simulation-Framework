@@ -25,6 +25,7 @@ class evaluator:
         self.radDirSuffix = '/Rads'
         self.picDirSuffix = '/Pics'
         self.picSubDirSuffix = '/pics'
+        self.evalDirSuffix = '/Evaluation'
         
         self.scene = Scene.Scene
         
@@ -43,6 +44,13 @@ class evaluator:
         self.lights = []
         self.Poles = []
         
+        self.meanLuminance = 0.0
+        self.uniformityOfLuminance = 0.0
+        self.lengthwiseUniformityOfLuminance = 0.0
+        self.meanIlluminance = 0.0
+        self.minIlluminance = 0.0
+        self.uniformityOfIlluminance = 0.0
+        
         self.parseConfig( )
         self.makeOct( )
         self.calcLuminances( )
@@ -50,6 +58,7 @@ class evaluator:
         #self.makePic( )
         #self.makeFalsecolor( )
         self.evalLuminance( )
+        self.evalIlluminance( )
 
         return
     
@@ -244,7 +253,8 @@ class evaluator:
     		print 'falsecolor_illuminance.hdr'
     		cmd1 = 'falsecolor -i {0}/out_irradiance.hdr -log 5 -l lx > {0}/falsecolor_illuminance.hdr'.format( self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix )
     		os.system( cmd1 )
-    		
+    		    
+    
     def evalLuminance( self ):
     	print 'Evaluate luminances...'    	    	
     	
@@ -260,28 +270,35 @@ class evaluator:
     		print '	lane: ' + str( lane )
     		lumFile = open( self.workingDirPath + self.radDirPrefix + '/luminances.txt', 'r')
     		lumReader = csv.reader( lumFile, delimiter = ' ' )
+    		
     		L = []
     		L_l = []
+    		
     		L_m_lane = 0
     		L_l_m_lane = 0
+    		
     		L_m_values = 0
     		L_l_values = 0
+    		
     		for row in lumReader:
     			if( float( row[0] ) == float( lane ) ):
     				L_row = float( row[8] )
     				L_m_lane += float( row[8] )
     				L_m_values += 1
     				L.append( L_row)
+    				#
     				if( float( row[1] ) == 1 ):
     						L_l_row = float( row[8] )
     						L_l_values += 1
     						L_l_m_lane += float( row[8] )
     						L_l.append( L_l_row )
+    		#
     		L_m_.append( L_m_lane / L_m_values )
     		L_m_lane = L_m_lane / L_m_values
     		L_min_lane = min( L )
     		L_min_.append( L_min_lane )
     		U_0_.append( L_min_lane / L_m_lane )
+    		#
     		print '		L_m of lane ' + str( lane ) + ':			' + str( L_m_lane )
     		print '		L_min of lane ' + str( lane ) + ':		' + str( L_min_[lane] )
     		print '		U_0 of lane ' + str( lane ) + ':			' + str( U_0_[lane] )
@@ -291,10 +308,10 @@ class evaluator:
     		L_l_min_lane = min( L_l )
     		L_l_min_.append( L_l_min_lane )
     		U_l_.append( L_l_min_lane / L_l_m_lane )
+    		#
     		print '		L_m lengthwise of lane ' + str( lane ) + ':	' + str( L_l_m_lane )
     		print '		L_min lengthwise of lane ' + str( lane ) + ':	' + str( L_l_min_[lane] )
     		print '		U_l of lane ' + str( lane ) + ':			' + str( U_l_[lane] )
-    		#
     		#
     		lumFile.close( )
         		
@@ -302,17 +319,80 @@ class evaluator:
 		L_min = min( L_min_ )
         U_0 = min( U_0_ )
         U_l = min( U_l_ )
+        
         print '	L_m = ' + str( L_m )
         print '	U_0 = ' + str( U_0 )
         print '	U_l = ' + str( U_l )
-        lumOut = open( self.workingDirPath + self.radDirPrefix + '/evaluatedLuminances.txt', 'a+' )
-        lumOut.write( str( L_m ) + '\n' )
-        lumOut.write( str( U_0 ) + '\n' )
-        lumOut.write( str( U_l ) + '\n' )
-            
-        lumFile.close()  
-        lumOut.close()
+        
+        self.meanLuminance = L_m
+        self.uniformityOfLuminance = U_0
+        self.lengthwiseUniformityOfLuminance = U_l
+        
         print "Done."			
+        
+    def evalIlluminance( self ):
+    	print 'Evaluate illuminances...'    	    	
+    	
+    	E_min_ = []
+    	E_m_ = []
+    	g_1_ = []
+    	    	
+    	for lane in range( self.scene.NumLanes ):
+    		print '	lane: ' + str( lane )
+    		lumFile = open( self.workingDirPath + self.radDirPrefix + '/illuminances.txt', 'r')
+    		lumReader = csv.reader( lumFile, delimiter = ' ' )
+    		
+    		E = []    		
+    		E_m_lane = 0    		
+    		E_m_values = 0
+    		
+    		for row in lumReader:
+    			if( float( row[0] ) == float( lane ) ):
+    				E_row = float( row[8] )
+    				E_m_lane += float( row[8] )
+    				E_m_values += 1
+    				E.append( E_row)
+    		#
+    		E_m_.append( E_m_lane / E_m_values )
+    		E_m_lane = E_m_lane / E_m_values
+    		E_min_lane = min( E )
+    		E_min_.append( E_min_lane )
+    		g_1_.append( E_min_lane / E_m_lane )
+    		#
+    		print '		E_m of lane ' + str( lane ) + ':			' + str( E_m_lane )
+    		print '		E_min of lane ' + str( lane ) + ':		' + str( E_min_[lane] )
+    		print '		g_1 of lane ' + str( lane ) + ':			' + str( g_1_[lane] )
+    		#
+    		lumFile.close( )
+        		
+		E_m = min( E_m_ )
+		E_min = min( E_min_ )
+        g_1 = min( g_1_ )
+        
+        print '	E_m = ' + str( E_m )
+        print '	E_min = ' + str( E_min)
+        print '	g_1 = ' + str( g_1 )
+        
+        self.meanIlluminance = E_m
+        self.minIlluminance = E_min        
+        self.uniformityOfIlluminance = g_1
+        
+        print "Done."	
+    
+    
+    def makeXML( self ):
+    		print 'Generating XML: file..'
+    		if( not os.path.isdir( self.rootDirPath + self.evalDirSuffix ) ):
+    			os.mkdir( self.rootDirPath + self.evalDirSuffix )
+    		
+    		
+
+			
+            
+            
+    		
+    		
+    		print 'Done.'
 
     	
             
