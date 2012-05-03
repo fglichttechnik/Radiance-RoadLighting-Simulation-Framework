@@ -5,6 +5,8 @@ from xml.dom.minidom import parse
 import math
 import shutil
 import sys
+import csv
+import struct
 import Scene
 import LDC
 import Pole
@@ -46,6 +48,8 @@ class evaluator:
         self.calcLuminances( )
         self.calcIlluminances( )
         #self.makePic( )
+        #self.makeFalsecolor( )
+        self.evalLuminance( )
 
         return
     
@@ -128,8 +132,11 @@ class evaluator:
         print "	measurement step width: " + str( self.measurementStepWidth ) 
         print "	measurment field length: " + str( self.measFieldLength ) 
     
-    	directionZ = self.viewPointHeight   
+    	directionZ = 0 - self.viewPointHeight   
+    	viewerYPosition = - self.viewPointDistance
+    	viewerZPosition = self.viewPointHeight
         f = open( self.workingDirPath + self.radDirPrefix + '/luminanceCoordinates.pos', "w" )
+        l = open( self.workingDirPath + self.radDirPrefix + '/luminanceLanes.pos', "w" )
         
     	for laneNumber in range( self.scene.NumLanes ):    		        
 			#
@@ -138,33 +145,35 @@ class evaluator:
         	#calc view direction according to DIN standard observer
         	viewerXPosition = ( self.scene.LaneWidth * (laneNumber + 0.5 ) )
         	print '		viewer X position: ' + str( viewerXPosition )
-        	viewPoint = ' {0} {1} {2}'.format( viewerXPosition, self.viewPointDistance, self.viewPointHeight )
+        	viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
         	distanceOfMeasRows = self.scene.LaneWidth / 3
         	#
         	for rowNumber in range( 3 ):        		
         		rowXPosition = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
         		print '		row x position: ' + str( rowXPosition )
-        		directionX = viewerXPosition -rowXPosition
+        		directionX = rowXPosition - viewerXPosition
         		#
         		for measPointNumber in range( self.numberOfMeasurementPoints ):
-        			directionY = self.viewPointDistance - ( ( measPointNumber + 0.5 ) * self.measurementStepWidth )
+        			directionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth ) - viewerYPosition
         			viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
-        			f.write( str( viewPoint ) + str( viewDirection ) + '\n')
+        			f.write( str( viewPoint ) + str( viewDirection ) + ' \n')
+        			l.write( str( laneNumber) + ' ' + str( rowNumber ) + ' \n' )
                 	
                 	
         f.close( )
+        l.close( )
         
-        cmd = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt"
-        os.system( cmd )
-        cmd = "rlam " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt > " + self.workingDirPath + self.radDirPrefix + "/luminances.txt"
-        os.system( cmd )
-        print "Luminance values successfully calculated"
+        cmd1 = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt"
+        os.system( cmd1 )
+        cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.workingDirPath + self.radDirPrefix )
+        os.system( cmd2 )
+        print "Done."
         
     #Prints view point files for every lane
     #Based on the viewpoint mode, one of several viewpoints are written
     def calcIlluminances( self ):    
 		
-    	print 'Generating: illuminance values according to DIN EN 13201-3'
+    	print 'Generating: illuminance values at measurement points according to DIN EN 13201-3'
 		
     	#according to DIN EN 13201
         print "	pole spacing: " + str( self.Poles[0].PoleSpacing )
@@ -180,7 +189,7 @@ class evaluator:
         print "	measurement step width: " + str( self.measurementStepWidth ) 
         print "	measurment field length: " + str( self.measFieldLength ) 
     
-    	viewDirection = '0 0 -1'
+    	viewDirection = '0 0 1'
     	positionZ = '0.02'
     	
     	self.numberOfMeasurementRows = 3
@@ -190,32 +199,30 @@ class evaluator:
     	print "	number of measurement rows per lane: " + str( self.numberOfMeasurementRows )
     	
     	f = open( self.workingDirPath + self.radDirPrefix + '/illuminanceCoordinates.pos', "w" )
+    	l = open( self.workingDirPath + self.radDirPrefix + '/illuminanceLanes.pos', "w" )
     	
     	for laneNumber in range( self.scene.NumLanes ):
     		#
-    		print "	lane: " + str( laneNumber +1 )
-    		#
     		for rowNumber in range( self.numberOfMeasurementRows ):
     			positionX = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
-    			print "		position X: " + str( positionX )
     			#
     			for measPointNumber in range( self.numberOfMeasurementPoints ):
     				positionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth )
     				viewPoint = '{} {} {} '.format( positionX, positionY, positionZ )
-    				print '			' + str(viewPoint ) + str( viewDirection )
-    				f.write( str(viewPoint ) + str( viewDirection ) + '\n' )
+    				f.write( str( viewPoint ) + str( viewDirection ) + ' \n' )
+    				l.write( str( laneNumber) + ' ' + str( rowNumber ) + ' \n' )
     	             	
                 	
         f.close( )
+        l.close( )
         
-        cmd1 = "rtrace -h -I /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/illuminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawIlluminances.txt"
+        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/illuminanceCoordinates.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawIlluminances.txt"
         os.system( cmd1 )
-        cmd2 = "rlam " + self.workingDirPath + self.radDirPrefix + "/illuminanceCoordinates.pos " + self.workingDirPath + self.radDirPrefix + "/rawIlluminances.txt > " + self.workingDirPath + self.radDirPrefix + "/illuminances.txt"
+        cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.workingDirPath + self.radDirPrefix )
         os.system( cmd2 )
-        print "Illuminance values successfully calculated"
+        print "Done."
     
     
-    #System call to radiance framework for the actual rendering of the images
     def makePic(self):
             if( not os.path.isdir( self.rootDirPath + self.picDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix )
@@ -223,9 +230,91 @@ class evaluator:
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )              
             
             #make pic without target for later evaluation
-            print 'out.hdr'
-            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out.hdr '.format( self.rootDirPath + self.octDirSuffix , self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+            print 'out_radiance.hdr'
+            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.rootDirPath + self.octDirSuffix , self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
             os.system( cmd1 )
+            print 'out_irradiance.hdr'
+            cmd2 = 'rpict -i -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.rootDirPath + self.octDirSuffix , self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+            os.system( cmd2 )
+            
+    def makeFalsecolor( self ):
+    		print 'falsecolor_luminance.hdr'
+    		cmd0 = 'falsecolor -i {0}/out_radiance.hdr -log 5 -l cd/m^2 > {0}/falsecolor_luminance.hdr'.format( self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix )
+    		os.system( cmd0 )
+    		print 'falsecolor_illuminance.hdr'
+    		cmd1 = 'falsecolor -i {0}/out_irradiance.hdr -log 5 -l lx > {0}/falsecolor_illuminance.hdr'.format( self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix )
+    		os.system( cmd1 )
+    		
+    def evalLuminance( self ):
+    	print 'Evaluate luminances...'    	    	
+    	
+    	L_min_ = []
+    	L_m_ = []
+    	U_0_ = []
+    	
+    	L_l_min_ = []
+    	L_l_m_ = []
+    	U_l_ = []
+    	
+    	for lane in range( self.scene.NumLanes ):
+    		print '	lane: ' + str( lane )
+    		lumFile = open( self.workingDirPath + self.radDirPrefix + '/luminances.txt', 'r')
+    		lumReader = csv.reader( lumFile, delimiter = ' ' )
+    		L = []
+    		L_l = []
+    		L_m_lane = 0
+    		L_l_m_lane = 0
+    		L_m_values = 0
+    		L_l_values = 0
+    		for row in lumReader:
+    			if( float( row[0] ) == float( lane ) ):
+    				L_row = float( row[8] )
+    				L_m_lane += float( row[8] )
+    				L_m_values += 1
+    				L.append( L_row)
+    				if( float( row[1] ) == 1 ):
+    						L_l_row = float( row[8] )
+    						L_l_values += 1
+    						L_l_m_lane += float( row[8] )
+    						L_l.append( L_l_row )
+    		L_m_.append( L_m_lane / L_m_values )
+    		L_m_lane = L_m_lane / L_m_values
+    		L_min_lane = min( L )
+    		L_min_.append( L_min_lane )
+    		U_0_.append( L_min_lane / L_m_lane )
+    		print '		L_m of lane ' + str( lane ) + ':			' + str( L_m_lane )
+    		print '		L_min of lane ' + str( lane ) + ':		' + str( L_min_[lane] )
+    		print '		U_0 of lane ' + str( lane ) + ':			' + str( U_0_[lane] )
+    		#
+    		L_l_m_.append( L_l_m_lane / L_l_values )
+    		L_l_m_lane = L_l_m_lane / L_l_values
+    		L_l_min_lane = min( L_l )
+    		L_l_min_.append( L_l_min_lane )
+    		U_l_.append( L_l_min_lane / L_l_m_lane )
+    		print '		L_m lengthwise of lane ' + str( lane ) + ':	' + str( L_l_m_lane )
+    		print '		L_min lengthwise of lane ' + str( lane ) + ':	' + str( L_l_min_[lane] )
+    		print '		U_l of lane ' + str( lane ) + ':			' + str( U_l_[lane] )
+    		#
+    		#
+    		lumFile.close( )
+        		
+		L_m = min( L_m_ )
+		L_min = min( L_min_ )
+        U_0 = min( U_0_ )
+        U_l = min( U_l_ )
+        print '	L_m = ' + str( L_m )
+        print '	U_0 = ' + str( U_0 )
+        print '	U_l = ' + str( U_l )
+        lumOut = open( self.workingDirPath + self.radDirPrefix + '/evaluatedLuminances.txt', 'a+' )
+        lumOut.write( str( L_m ) + '\n' )
+        lumOut.write( str( U_0 ) + '\n' )
+        lumOut.write( str( U_l ) + '\n' )
+            
+        lumFile.close()  
+        lumOut.close()
+        print "Done."			
+
+    	
             
 
 
