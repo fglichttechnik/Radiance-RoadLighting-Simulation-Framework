@@ -150,38 +150,47 @@ class evaluator:
     	directionZ = 0 - self.viewPointHeight   
     	viewerYPosition = - self.viewPointDistance
     	viewerZPosition = self.viewPointHeight
-        f = open( self.workingDirPath + self.radDirPrefix + '/luminanceCoordinates.pos', "w" )
-        l = open( self.workingDirPath + self.radDirPrefix + '/luminanceLanes.pos', "w" )
+    	
+        f = open( self.workingDirPath + self.evalDirSuffix + '/luminanceCoordinates.pos', "w" )
+        l = open( self.workingDirPath + self.evalDirSuffix + '/luminanceLanes.pos', "w" )
         
-    	for laneNumber in range( self.scene.NumLanes ):    		        
-			#
-        	print "	lane: " + str( laneNumber + 1 )
-        	#
-        	#calc view direction according to DIN standard observer
-        	viewerXPosition = ( self.scene.LaneWidth * (laneNumber + 0.5 ) )
-        	print '		viewer X position: ' + str( viewerXPosition )
-        	viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
-        	distanceOfMeasRows = self.scene.LaneWidth / 3
-        	#
-        	for rowNumber in range( 3 ):        		
-        		rowXPosition = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
-        		print '		row x position: ' + str( rowXPosition )
-        		directionX = rowXPosition - viewerXPosition
-        		#
-        		for measPointNumber in range( self.numberOfMeasurementPoints ):
-        			directionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth ) - viewerYPosition
-        			viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
-        			f.write( str( viewPoint ) + str( viewDirection ) + ' \n')
-        			l.write( str( laneNumber) + ' ' + str( rowNumber ) + ' \n' )
-                	
-                	
+    	for laneInOneDirection in range( self.scene.NumLanes ):
+    		
+    		for laneNumber in range( self.scene.NumLanes ):   
+    			
+    			viewerXPosition = ( self.scene.LaneWidth * (laneInOneDirection + 0.5 ) )
+    			viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
+    			distanceOfMeasRows = self.scene.LaneWidth / 3
+    			
+    			for rowNumber in range( 3 ):
+    				rowXPosition = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
+    				directionX = rowXPosition - viewerXPosition
+    				
+    				for measPointNumber in range( self.numberOfMeasurementPoints ):
+    					directionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth ) - viewerYPosition
+    					viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
+    					
+    					f.write( str( viewPoint ) + str( viewDirection ) + ' \n')
+    					l.write( str( laneInOneDirection ) + ' ' + str( laneNumber ) + ' ' + str( rowNumber ) + ' \n' )
+    		    		
+  			
+        		
         f.close( )
         l.close( )
         
-        cmd1 = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawLuminances.txt"
+        
+        
+        cmd1 = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.evalDirSuffix + "/rawLuminances.txt"
         os.system( cmd1 )
-        cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.workingDirPath + self.radDirPrefix )
+        cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.system( cmd2 )
+        cmd3 = "{0}/luminanceLanes.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd3 )
+        cmd4 = "{0}/luminanceCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd4 )
+        cmd4 = "{0}/rawLuminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd4 )
+        
         print "Done."
         
     #Prints view point files for every lane
@@ -213,8 +222,8 @@ class evaluator:
     		
     	print "	number of measurement rows per lane: " + str( self.numberOfMeasurementRows )
     	
-    	f = open( self.workingDirPath + self.radDirPrefix + '/illuminanceCoordinates.pos', "w" )
-    	l = open( self.workingDirPath + self.radDirPrefix + '/illuminanceLanes.pos', "w" )
+    	f = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceCoordinates.pos', "w" )
+    	l = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceLanes.pos', "w" )
     	
     	for laneNumber in range( self.scene.NumLanes ):
     		#
@@ -231,10 +240,18 @@ class evaluator:
         f.close( )
         l.close( )
         
-        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.radDirPrefix + "/illuminanceCoordinates.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.radDirPrefix + "/rawIlluminances.txt"
+        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/illuminanceCoordinates.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.evalDirSuffix + "/rawIlluminances.txt"
         os.system( cmd1 )
-        cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.workingDirPath + self.radDirPrefix )
+        cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.system( cmd2 )
+        cmd3 = "{0}/illuminanceLanes.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd3 )
+        cmd4 = "{0}/illuminanceCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd4 )
+        cmd4 = "{0}/rawIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd4 )
+        
+        
         print "Done."
     
     
@@ -262,77 +279,90 @@ class evaluator:
     		    
     
     def evalLuminance( self ):
-    	print 'Evaluate luminances...'    	    	
-    	
-    	L_min_ = []
+    
+    	print 'Evaluate luminances...'
     	L_m_ = []
+    	L_min_ = []
     	U_0_ = []
-    	
-    	L_l_min_ = []
-    	L_l_m_ = []
     	U_l_ = []
     	
-    	for lane in range( self.scene.NumLanes ):
-    		print '	lane: ' + str( lane )
-    		lumFile = open( self.workingDirPath + self.radDirPrefix + '/luminances.txt', 'r')
-    		lumReader = csv.reader( lumFile, delimiter = ' ' )
+    	for laneInOneDirection in range( self.scene.NumLanes ):
     		
-    		L = []
-    		L_l = []
+    		print 'Viewer on lane number: ' + str( laneInOneDirection )
     		
-    		L_m_lane = 0
-    		L_l_m_lane = 0
+    		L_m = 0
+    		L_min__ = []
+    		L_l_min_ = []
+    		L_l_m_ = []
     		
-    		L_m_values = 0
-    		L_l_values = 0
     		
-    		for row in lumReader:
-    			if( float( row[0] ) == float( lane ) ):
-    				L_row = float( row[8] )
-    				L_m_lane += float( row[8] )
-    				L_m_values += 1
-    				L.append( L_row)
-    				#
-    				if( float( row[1] ) == 1 ):
-    						L_l_row = float( row[8] )
+    		for lane in range( self.scene.NumLanes ):
+    			print '	lane: ' + str( lane )
+    			lumFile = open( self.workingDirPath + self.evalDirSuffix + '/luminances.txt', 'r')
+    			lumReader = csv.reader( lumFile, delimiter = ' ' )
+    			L = []
+    			L_l = []
+    			
+    			L_m_lane = 0
+    			L_l_m_lane = 0
+    			
+    			L_m_values = 0
+    			L_l_values = 0
+    			
+    			for row in lumReader:
+    				if( float( row[1] ) == float( lane ) ) and ( float( row[0] )== float( laneInOneDirection ) ):
+    					L_row = float( row[9] )
+    					L_m_lane += float( row[9] )
+    					L_m_values += 1
+    					L.append( L_row)
+    					#
+    					if( float( row[2] ) == 1 ):
+    						L_l_row = float( row[9] )
     						L_l_values += 1
-    						L_l_m_lane += float( row[8] )
+    						L_l_m_lane += float( row[9] )
     						L_l.append( L_l_row )
-    		#
-    		L_m_.append( L_m_lane / L_m_values )
-    		L_m_lane = L_m_lane / L_m_values
-    		L_min_lane = min( L )
-    		L_min_.append( L_min_lane )
-    		U_0_.append( L_min_lane / L_m_lane )
-    		#
-    		print '		L_m of lane ' + str( lane ) + ':			' + str( L_m_lane )
-    		print '		L_min of lane ' + str( lane ) + ':		' + str( L_min_[lane] )
-    		print '		U_0 of lane ' + str( lane ) + ':			' + str( U_0_[lane] )
-    		#
-    		L_l_m_.append( L_l_m_lane / L_l_values )
-    		L_l_m_lane = L_l_m_lane / L_l_values
-    		L_l_min_lane = min( L_l )
-    		L_l_min_.append( L_l_min_lane )
-    		U_l_.append( L_l_min_lane / L_l_m_lane )
-    		#
-    		print '		L_m lengthwise of lane ' + str( lane ) + ':	' + str( L_l_m_lane )
-    		print '		L_min lengthwise of lane ' + str( lane ) + ':	' + str( L_l_min_[lane] )
-    		print '		U_l of lane ' + str( lane ) + ':			' + str( U_l_[lane] )
-    		#
-    		lumFile.close( )
-        		
-		L_m = min( L_m_ )
-		L_min = min( L_min_ )
-        U_0 = min( U_0_ )
-        U_l = min( U_l_ )
+    						
+    			L_m = L_m + (L_m_lane / L_m_values )
+    			L_m_lane = L_m_lane / L_m_values
+    			L_min_lane = min( L )
+    			L_min__.append( L_min_lane )
+    			U_0__ = L_min_lane / L_m_lane 
+    			
+    			print '		L_m of lane ' + str( lane ) + ':			' + str( L_m_lane )
+    			print '		L_min of lane ' + str( lane ) + ':		' + str( L_min__[lane] )
+    			print '		U_0 of lane ' + str( lane ) + ':			' + str( U_0__)
+    			
+    			L_l_m_.append( L_l_m_lane / L_l_values )
+    			L_l_m_lane = L_l_m_lane / L_l_values
+    			L_l_min_lane = min( L_l )
+    			L_l_min_.append( L_l_min_lane )
+    			U_l_.append( L_l_min_lane / L_l_m_lane )
+    			
+    			print '		L_m lengthwise of lane ' + str( lane ) + ':	' + str( L_l_m_lane )
+    			print '		L_min lengthwise of lane ' + str( lane ) + ':	' + str( L_l_min_[lane] )
+    			print '		U_l of lane ' + str( lane ) + ':			' + str( U_l_[lane] )
+    			
+    			lumFile.close( )
+    		
+    		L_m = L_m / self.scene.NumLanes
+    		L_m_.append( L_m )
+    		L_min_ = min( L_min__ )
+    		U_0_.append( L_min_ / L_m )
+    		U_l = min( U_l_ )
+    		
+    		print '	L_m = ' + str( L_m )
+    		print '	L_min = ' + str( L_min_ )
+    		print '	U_0 = ' + str( L_min_ / L_m )
+    		print '	U_l = ' + str( U_l )
+    	
+       	self.meanLuminance = min( L_m_ )
+        self.uniformityOfLuminance = min( U_0_)
+        self.lengthwiseUniformityOfLuminance = min( U_l_ )
         
-        print '	L_m = ' + str( L_m )
-        print '	U_0 = ' + str( U_0 )
-        print '	U_l = ' + str( U_l )
-        
-        self.meanLuminance = L_m
-        self.uniformityOfLuminance = U_0
-        self.lengthwiseUniformityOfLuminance = U_l
+        print 'L_m = ' + str( self.meanLuminance )
+    	print 'L_min = ' + str( min( L_min__ ) )
+    	print 'U_0 = ' + str( min( U_0_) )
+    	print 'U_l = ' + str( min( U_l_ ) )
         
         print "Done."			
         
@@ -340,12 +370,12 @@ class evaluator:
     	print 'Evaluate illuminances...'    	    	
     	
     	E_min_ = []
-    	E_m_ = []
+    	E_m_ = 0
     	g_1_ = []
     	    	
     	for lane in range( self.scene.NumLanes ):
     		print '	lane: ' + str( lane )
-    		lumFile = open( self.workingDirPath + self.radDirPrefix + '/illuminances.txt', 'r')
+    		lumFile = open( self.workingDirPath + self.evalDirSuffix + '/illuminances.txt', 'r')
     		lumReader = csv.reader( lumFile, delimiter = ' ' )
     		
     		E = []    		
@@ -358,22 +388,22 @@ class evaluator:
     				E_m_lane += float( row[8] )
     				E_m_values += 1
     				E.append( E_row)
-    		#
-    		E_m_.append( E_m_lane / E_m_values )
+    		
+    		E_m_ = E_m_ + ( E_m_lane / E_m_values )
     		E_m_lane = E_m_lane / E_m_values
     		E_min_lane = min( E )
     		E_min_.append( E_min_lane )
     		g_1_.append( E_min_lane / E_m_lane )
-    		#
+    		
     		print '		E_m of lane ' + str( lane ) + ':			' + str( E_m_lane )
     		print '		E_min of lane ' + str( lane ) + ':		' + str( E_min_[lane] )
     		print '		g_1 of lane ' + str( lane ) + ':			' + str( g_1_[lane] )
-    		#
+    		
     		lumFile.close( )
         		
-		E_m = min( E_m_ )
+		E_m = E_m_ / self.scene.NumLanes
 		E_min = min( E_min_ )
-        g_1 = min( g_1_ )
+        g_1 = E_min / E_m
         
         print '	E_m = ' + str( E_m )
         print '	E_min = ' + str( E_min)
