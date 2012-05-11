@@ -61,6 +61,7 @@ class evaluator:
         self.evalLuminance( )
         self.evalIlluminance( )
         self.makeXML( )
+        self.checkStandards( )
 
         return
     
@@ -421,10 +422,8 @@ class evaluator:
     		if( not os.path.isdir( self.rootDirPath + self.evalDirSuffix ) ):
     			os.mkdir( self.rootDirPath + self.evalDirSuffix )
     		
-    		xml_name = 'Evaluation'
-    		
     		implement = dom.getDOMImplementation( )
-    		doc = implement.createDocument( None, xml_name, None );
+    		doc = implement.createDocument( None, 'Evaluation', None );
     		
     		descr_element = doc.createElement( "Description" )
     		descr_element.setAttribute( "Title", self.title )
@@ -460,11 +459,71 @@ class evaluator:
     		uniformityIllum_element.setAttribute( "g1", str( self.uniformityOfIlluminance ) )
     		illum_element.appendChild( uniformityIllum_element )
     		
-    		f = open( self.rootDirPath + self.evalDirSuffix + '/' + xml_name + '.xml', "w" )
+    		f = open( self.rootDirPath + self.evalDirSuffix + '/Evaluation.xml', "w" )
     		doc.writexml( f, "\n", "	")
     		f.close( )   		
     		
     		print 'Done.'
+    		
+    def checkStandards( self ):
+		print 'Check DIN EN 13201-2 classes...'
+			
+		checktree = parse( os.getcwd() + "/Standard_classes.xml" )
+		for node in checktree.getElementsByTagName( 'ME-Class' ):
+			Lm = node.getAttribute( 'Lm' )
+			U0 = node.getAttribute( 'U0' )
+			Ul = node.getAttribute( 'Ul' )
+			
+			if( float( self.meanLuminance ) >= float( Lm ) and float( self.uniformityOfLuminance ) >= float( U0 ) and float( self.lengthwiseUniformityOfLuminance ) >= float( Ul ) ):
+				lumDIN = node.getAttribute( 'name' )
+				break
+			else:
+				lumDIN = 'None'
+				continue
+				
+		print '	ME-Class fullfillment: 	' + str( lumDIN )
+		
+		evaltree = parse( self.rootDirPath + self.evalDirSuffix + '/Evaluation.xml' )
+		child1 = evaltree.createElement( "ClassFullfillment" )
+		child1.setAttribute( "class", lumDIN )
+		node1 = evaltree.getElementsByTagName( 'Luminance')
+		node1.item(0).appendChild( child1 )
+		
+		
+		for node in checktree.getElementsByTagName( 'S-Class' ):
+			Em = node.getAttribute( 'Em' )
+			Emin = node.getAttribute( 'Emin' )
+			g1 = node.getAttribute( 'g1' )
+			
+			if( float( self.meanIlluminance ) >= float( Em ) and float( self.minIlluminance ) >= float( Emin ) ):
+				illumDIN = node.getAttribute( 'name' )
+				break
+			else:
+				illumDIN = 'None'
+				continue
+		
+		print '	S-Class fullfillment: 	' + str( illumDIN	)
+		
+	
+		child2 = evaltree.createElement( "ClassFullfillment" )
+		child2.setAttribute( "class", illumDIN )
+		node2 = evaltree.getElementsByTagName( 'Illuminance')
+		node2.item(0).appendChild( child2 )
+		
+		child3 = evaltree.createElement( "UniformityCriteria" )
+		child3.setAttribute( "true", "Yes" )		
+		if ( float( self.uniformityOfIlluminance ) < float( g1 ) ):
+			print '				Uniformity criteria not fullfilled! '
+			child3.setAttribute( "true", "No" )			
+		node3 = evaltree.getElementsByTagName( 'Illuminance')
+		node3.item(0).appendChild( child3 )
+			
+		
+		f = open( self.rootDirPath + self.evalDirSuffix + '/Evaluation.xml', "w" )
+		evaltree.writexml( f, "\n", "	")
+		f.close( )
+		
+		print 'Done.'
 
     	
             
