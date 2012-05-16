@@ -185,6 +185,10 @@ class evaluator:
         os.system( cmd1 )
         cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.system( cmd2 )
+        with open( self.workingDirPath + self.evalDirSuffix + "/luminances.txt", "r+" ) as illumfile:
+     		old = illumfile.read() # read everything in the file
+     		illumfile.seek(0) # rewind
+     		illumfile.write("viewer_onLane measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z luminance\n" + old) # write the new line before
         cmd3 = "{0}/luminanceLanes.pos".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd3 )
         cmd4 = "{0}/luminanceCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
@@ -245,6 +249,11 @@ class evaluator:
         os.system( cmd1 )
         cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.system( cmd2 )
+        with open( self.workingDirPath + self.evalDirSuffix + "/illuminances.txt", "r+" ) as illumfile:
+     		old = illumfile.read() # read everything in the file
+     		illumfile.seek(0) # rewind
+     		illumfile.write("measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z illuminance\n" + old) # write the new line before
+        
         cmd3 = "{0}/illuminanceLanes.pos".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd3 )
         cmd4 = "{0}/illuminanceCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
@@ -301,6 +310,8 @@ class evaluator:
     			print '	lane: ' + str( lane )
     			lumFile = open( self.workingDirPath + self.evalDirSuffix + '/luminances.txt', 'r')
     			lumReader = csv.reader( lumFile, delimiter = ' ' )
+    			headerline = lumReader.next()
+    			
     			L = []
     			L_l = []
     			
@@ -316,7 +327,7 @@ class evaluator:
     					L_m_lane += float( row[9] )
     					L_m_values += 1
     					L.append( L_row)
-    					#
+    					
     					if( float( row[2] ) == 1 ):
     						L_l_row = float( row[9] )
     						L_l_values += 1
@@ -326,11 +337,13 @@ class evaluator:
     			L_m = L_m + (L_m_lane / L_m_values )
     			L_m_lane = L_m_lane / L_m_values
     			L_min_lane = min( L )
+    			L_max_lane = max( L )
     			L_min__.append( L_min_lane )
     			U_0__ = L_min_lane / L_m_lane 
     			
     			print '		L_m of lane ' + str( lane ) + ':			' + str( L_m_lane )
     			print '		L_min of lane ' + str( lane ) + ':		' + str( L_min__[lane] )
+    			print '		L_max of lane ' + str( lane ) + ':		' + str( L_max_lane )
     			print '		U_0 of lane ' + str( lane ) + ':			' + str( U_0__)
     			
     			L_l_m_.append( L_l_m_lane / L_l_values )
@@ -341,6 +354,7 @@ class evaluator:
     			
     			print '		L_m lengthwise of lane ' + str( lane ) + ':	' + str( L_l_m_lane )
     			print '		L_min lengthwise of lane ' + str( lane ) + ':	' + str( L_l_min_[lane] )
+    			print '		L_max lengthwise of lane ' + str( lane ) + ':	' + str( max( L_l ) )
     			print '		U_l of lane ' + str( lane ) + ':			' + str( U_l_[lane] )
     			
     			lumFile.close( )
@@ -353,6 +367,7 @@ class evaluator:
     		
     		print '	L_m = ' + str( L_m )
     		print '	L_min = ' + str( L_min_ )
+    		print '	L_max = ' + str( max( L ) )
     		print '	U_0 = ' + str( L_min_ / L_m )
     		print '	U_l = ' + str( U_l )
     	
@@ -362,6 +377,7 @@ class evaluator:
         
         print 'L_m = ' + str( self.meanLuminance )
     	print 'L_min = ' + str( min( L_min__ ) )
+    	print 'L_max = ' + str( max( L ) )
     	print 'U_0 = ' + str( min( U_0_) )
     	print 'U_l = ' + str( min( U_l_ ) )
         
@@ -378,6 +394,7 @@ class evaluator:
     		print '	lane: ' + str( lane )
     		lumFile = open( self.workingDirPath + self.evalDirSuffix + '/illuminances.txt', 'r')
     		lumReader = csv.reader( lumFile, delimiter = ' ' )
+    		headerline = lumReader.next()
     		
     		E = []    		
     		E_m_lane = 0    		
@@ -398,6 +415,7 @@ class evaluator:
     		
     		print '		E_m of lane ' + str( lane ) + ':			' + str( E_m_lane )
     		print '		E_min of lane ' + str( lane ) + ':		' + str( E_min_[lane] )
+    		print '		E_max of lane ' + str( lane ) + ':		' + str( max( E ) )
     		print '		g_1 of lane ' + str( lane ) + ':			' + str( g_1_[lane] )
     		
     		lumFile.close( )
@@ -408,6 +426,7 @@ class evaluator:
         
         print '	E_m = ' + str( E_m )
         print '	E_min = ' + str( E_min)
+        print '	E_max = ' + str( max( E ) )
         print '	g_1 = ' + str( g_1 )
         
         self.meanIlluminance = E_m
