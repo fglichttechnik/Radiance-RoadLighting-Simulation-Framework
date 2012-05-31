@@ -72,6 +72,12 @@ class simulator:
         shutil.copy( self.rootDirPath + "/SceneDescription.xml", self.rootDirPath + self.LMKSetMat )
         shutil.copy( os.getcwd() + "/LMKSetMat.dtd", self.rootDirPath + self.LMKSetMat )#copy DTD for LMKSetMat XML
         
+        
+        veilLumDesc = dom.getElementsByTagName( 'Calculation' )
+        if( veilLumDesc[0].attributes ):
+        	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
+        	self.tresholdFactor = veilLumDesc[0].attributes["TresholdLuminanceFactor"].value        
+        
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             viewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
@@ -159,18 +165,68 @@ class simulator:
                 if self.fixedVPMode == True:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-					cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                    #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                    
+					cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
                 os.system( cmd0 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
-            
-                #cmd1 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -vu 0 0 1 -vh 6 -vv 3 -vs 0 -vl 0 -x 3000 -y 1500 {0}/scene.oct | pfilt -r .6 -x 800 -y 400 -1 -e 5 > {0}/scene1.pic'.format( entry )
-                #os.system( cmd1 )
-            
-                #cmd2 = 'rpict -x 500 -y 2000 -vtl -vp 18 -150 4 -vd 0 0 -1 -vu 0 1 0 -vh 100 -vv 400 -vs 0 -vl 0 {0}/scene.oct | pfilt -x 200 -y 800 -r .6 -1 -e 200 > {0}/scene2.pic'.format( entry )
-                #print cmd
+                
+                #include veiling luminance if whished
+                if self.isVeil == 'on':
+                	print 'generating veiling luminance'
+                	starttime = datetime.datetime.now()
+                	glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix ) 
+                	os.system( glareCmd )
+                	glareFile = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
+                	glaresources = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
+                	isGlaresource = 0
+                	for line in glareFile:
+                		begin = 'BEGIN glare source'
+                		if begin in line:
+                			isGlaresource = 1
+                			continue
+                		end = 'END glare source'
+                		if end in line:
+                			isGlaresource = 0
+                			break
+                		if isGlaresource == 1:
+                			glaresources.write( line )
+                	glareFile.close( )
+                	glaresources.close( )                	
+                	
+                	xdirection = []
+                	ydirection = []
+                	zdirection = []
+                	illuminance = []
+                	
+                	glaretable = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'r')
+            		tablereader = csv.reader( glaretable, delimiter = '	' )
+                	for row in tablereader:
+                		direction = row[1].split( ' ' )
+                		xdirection.append( direction[0] )
+                		ydirection.append( direction[1]  )
+                		zdirection.append( direction[2]  )
+                		illuminance.append( float( row[2] ) * float( row[3] ) )
+                	glaretable.close( )
+                	
+                	glares = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal', 'a' )
+                	glares.write( 'SDx(i): select(i, ' + ', '.join( xdirection ) + ' );\n' )
+                	glares.write( 'SDy(i): select(i, ' + ', '.join( ydirection ) + ' );\n' )
+                	glares.write( 'SDz(i): select(i, ' + ', '.join( zdirection ) + ' );\n' )
+                	glares.write( 'I(i): select(i, ' + ', '.join( map( str, illuminance ) ) + ' );\n' )
+                	glares.write( 'N : I(0);' )
+                	glares.close( )
+                	
+                	veilCmd = 'pcomb -f {1}/out{0}_glares.cal -f {2}/veil.cal {1}/out{0}.hdr > {1}/out{0}_veil.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirPrefix )
+                	os.system( veilCmd )                	
+                	
+                	os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr' )
+                	os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr' )
+                	os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal' )
+                	#os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '.hdr' )
+                	
+                	print 'done.'
+                	print datetime.datetime.now() - starttime
+                	
             
             #make pic for view up and down the raod
             print 'generating pics for view up and down'

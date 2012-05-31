@@ -56,7 +56,7 @@ class evaluator:
         self.makeOct( )
         self.calcLuminances( )
         self.calcIlluminances( )
-        #self.makePic( )
+        self.makePic( )
         #self.makeFalsecolor( )
         self.evalLuminance( )
         self.evalIlluminance( )

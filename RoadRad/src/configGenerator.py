@@ -61,6 +61,7 @@ class configGenerator:
             self.printRView( )
             self.printTarget( )
             self.printTargets( )
+            self.veilCal( )
             
 
     #Scene description xml parser.
@@ -69,6 +70,10 @@ class configGenerator:
         configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
         dom = parse( configfile )
         configfile.close( )
+        
+        veilLumDesc = dom.getElementsByTagName( 'Calculation' )
+        if( veilLumDesc[0].attributes ):
+        	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
         
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
@@ -547,6 +552,32 @@ class configGenerator:
                 f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
                 f.close( )
                 dist = dist + self.measurementStepWidth
+                
+    def veilCal( self ):
+		if self.isVeil == 'on':
+			f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
+			f.write( 'PI : 3.14159265358979323846;\n' )
+			f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
+			f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
+			
+			f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
+			
+			f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
+			
+			f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
+			
+			f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
+			
+			f.write( 'veil = le(1)/179 * sum(N);\n\n' )
+			
+			f.write( 'ro = ri(1) + veil;\n' )
+			f.write( 'go = gi(1) + veil;\n' )
+			f.write( 'bo = bi(1) + veil;\n' )
+			
+			f.write( 'V(i) : select(i, veil);\n' )
+			f.write( 'Lv = V(0);\n' )
+			
+			f.close( )
         
         
 
