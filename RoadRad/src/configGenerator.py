@@ -72,8 +72,10 @@ class configGenerator:
         configfile.close( )
         
         veilLumDesc = dom.getElementsByTagName( 'Calculation' )
-        if( veilLumDesc[0].attributes ):
+        if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
         	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
+        else:
+        	self.isVeil = 'off'
         
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
