@@ -75,7 +75,7 @@ class simulator:
         
         veilLumDesc = dom.getElementsByTagName( 'Calculation' )
         if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
-           	self.isVeil = veilLumDesc[0].getAttribute["VeilingLuminance"].value           	
+           	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value           	
            	self.tresholdFactor = veilLumDesc[0].attributes["TresholdLuminanceFactor"].value 
         else:
         	self.isVeil = 'off'

@@ -130,7 +130,10 @@ class evaluator:
     
     #Prints view point files for every lane
     #Based on the viewpoint mode, one of several viewpoints are written
-    def calcLuminances( self ):    
+    def calcLuminances( self ):
+    
+    	if( not os.path.isdir( self.rootDirPath + self.evalDirSuffix ) ):
+            os.mkdir( self.rootDirPath + self.evalDirSuffix )   
 		
     	print 'Generating: luminance values according to DIN EN 13201-3'
 		
@@ -181,7 +184,7 @@ class evaluator:
         
         
         
-        cmd1 = "rtrace -h -oo -od -ov /Users/sandy/Desktop/Development/RoadRad/RoadRad/scenes/Treskowstr_LED_RP8_4/Octs/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.evalDirSuffix + "/rawLuminances.txt"
+        cmd1 = "rtrace -h -oo -od -ov " + self.workingDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.workingDirPath + self.evalDirSuffix + "/rawLuminances.txt"
         os.system( cmd1 )
         cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.system( cmd2 )

@@ -2,7 +2,7 @@
 # start this shell script with ./RoadRad_batch.sh from the src directory
 
 # please add the folder names of your scenes in the following array (devided by space characters):
-dirArray=(Treskowstr_LED_RP8_4)
+dirArray=(Sebastian_Juri_Simulation)
 
 # please add your LMK database directory:		
 dirOfDatabase="/Users/sandy/Desktop/Development/LMK/LMK_Data_evaluation/database"
