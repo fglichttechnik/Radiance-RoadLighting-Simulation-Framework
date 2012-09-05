@@ -10,6 +10,12 @@ import csv
 import struct
 import shutil
 import sys
+from select import select
+
+#user input ambient calculation timer
+import thread
+import threading
+
 #import pymorph
 
 
@@ -53,7 +59,7 @@ class simulator:
         self.numberOfSubimages = targetCount
         print "found " + str( self.numberOfSubimages ) + "target files"
         #overwrite standardValue (for testing: will generate 1 image only)
-        #self.numberOfSubimages = 1	#14 images will be rendered (should be the same as in configGenerator
+        #self.numberOfSubimages = 1    #14 images will be rendered (should be the same as in configGenerator
        
         self.focalLength = 0
         self.fixedVPMode = True
@@ -72,15 +78,6 @@ class simulator:
         shutil.copy( self.rootDirPath + "/SceneDescription.xml", self.rootDirPath + self.LMKSetMat )
         shutil.copy( os.getcwd() + "/LMKSetMat.dtd", self.rootDirPath + self.LMKSetMat )#copy DTD for LMKSetMat XML
         
-        
-        veilLumDesc = dom.getElementsByTagName( 'Calculation' )
-        if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
-           	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value           	
-           	self.tresholdFactor = veilLumDesc[0].attributes["TresholdLuminanceFactor"].value 
-        else:
-        	self.isVeil = 'off'
-       
-        
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             viewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
@@ -95,8 +92,8 @@ class simulator:
         if( descriptionDesc[0].attributes ):
             self.title = descriptionDesc[0].attributes["Title"].value
             self.spratio = descriptionDesc[0].attributes["SPRatio"].value
-    	
-    	focalLengthDesc = dom.getElementsByTagName( 'FocalLength' )
+            
+        focalLengthDesc = dom.getElementsByTagName( 'FocalLength' )
         if( descriptionDesc[0].attributes ):
             self.focalLength = focalLengthDesc[0].attributes["FL"].value     
             
@@ -108,10 +105,10 @@ class simulator:
         if( targetSizeDesc[0].attributes ):
             self.targetSize = targetSizeDesc[0].attributes["Size"].value  
             
-       	numPoleFieldsDesc = dom.getElementsByTagName( 'Road' )
+           numPoleFieldsDesc = dom.getElementsByTagName( 'Road' )
         if(numPoleFieldsDesc[0].attributes ):
-        	self.numPoleFields = numPoleFieldsDesc[0].attributes["NumPoleFields"].value
-        
+            self.numPoleFields = numPoleFieldsDesc[0].attributes["NumPoleFields"].value
+            
         self.makeOct( )
         self.makePic( )
         self.makeFalsecolorPic( )
@@ -147,7 +144,7 @@ class simulator:
         #make octs for scene without targets
         cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
         os.system(cmd)
-    	cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.refOctDirSuffix )
+        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.refOctDirSuffix )
         os.system(cmd)
         print 'generated oct without targets for view up and down'
     
@@ -165,115 +162,79 @@ class simulator:
                 starttime = datetime.datetime.now()
                 cmd0 = ''
                 
-                if self.fixedVPMode == True:
-                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                print 'Please enter y(yes) or n(no) for ambient calculation: '
+                timeout = 10
+                print 'You choose:',
+                rlist, _, _ = select([sys.stdin], [], [], timeout)
+                if rlist:
+                    ambCalc = sys.stdin.readline()
+                    print ambCalc
                 else:
-					cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
+                    print 'No input. None ambient calculation...
+                
+                if ambCalc == 'y':
+                    if self.fixedVPMode == True:
+                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
+                    else:
+                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                        
+                       #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
+                elif ambCalc == 'yes':
+                    if self.fixedVPMode == True:
+                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
+                    else:
+                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )    
+                else:    
+                    if self.fixedVPMode == True:
+                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    else:
+                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    
                 os.system( cmd0 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
-                
-                #include veiling luminance if whished
-                if self.isVeil == 'on':
-                		print 'generating veiling luminance'
-                		starttime = datetime.datetime.now()
-                		glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix ) 
-                		os.system( glareCmd )
-                		glareFile = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
-                		glaresources = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
-                		isGlaresource = 0
-                		for line in glareFile:
-                			begin = 'BEGIN glare source'
-                			if begin in line:
-                				isGlaresource = 1
-                				continue
-                			end = 'END glare source'
-                			if end in line:
-                				isGlaresource = 0
-                				break
-                			if isGlaresource == 1:
-                				glaresources.write( line )
-                		glareFile.close( )
-                		glaresources.close( )
-                		
-                		xdirection = []
-                		ydirection = []
-                		zdirection = []
-                		illuminance = []
-                		
-                		glaretable = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'r')
-                		tablereader = csv.reader( glaretable, delimiter = '	' )
-                		for row in tablereader:
-                			direction = row[1].split( ' ' )
-                			xdirection.append( direction[0] )
-                			ydirection.append( direction[1]  )
-                			zdirection.append( direction[2]  )
-                			illuminance.append( float( row[2] ) * float( row[3] ) )
-                		glaretable.close( )
-                		
-                		glares = open( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal', 'a' )
-                		glares.write( 'SDx(i): select(i, ' + ', '.join( xdirection ) + ' );\n' )
-                		glares.write( 'SDy(i): select(i, ' + ', '.join( ydirection ) + ' );\n' )
-                		glares.write( 'SDz(i): select(i, ' + ', '.join( zdirection ) + ' );\n' )
-                		glares.write( 'I(i): select(i, ' + ', '.join( map( str, illuminance ) ) + ' );\n' )
-                		glares.write( 'N : I(0);' )
-                		glares.close( )
-                		
-                		veilCmd = 'pcomb -f {1}/out{0}_glares.cal -f {2}/veil.cal {1}/out{0}.hdr > {1}/out{0}_veil.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirPrefix )
-                		os.system( veilCmd ) 
-                		
-                		os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr' )
-                		os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr' )
-                		os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal' )
-                		#os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '.hdr' )
-                		
-                		print 'done.'
-                		print datetime.datetime.now() - starttime
-                	
+            
+                #cmd1 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -vu 0 0 1 -vh 6 -vv 3 -vs 0 -vl 0 -x 3000 -y 1500 {0}/scene.oct | pfilt -r .6 -x 800 -y 400 -1 -e 5 > {0}/scene1.pic'.format( entry )
+                #os.system( cmd1 )
+            
+                #cmd2 = 'rpict -x 500 -y 2000 -vtl -vp 18 -150 4 -vd 0 0 -1 -vu 0 1 0 -vh 100 -vv 400 -vs 0 -vl 0 {0}/scene.oct | pfilt -x 200 -y 800 -r .6 -1 -e 200 > {0}/scene2.pic'.format( entry )
+                #print cmd
             
             #make pic for view up and down the raod
             print 'generating pics for view up and down'
-            
             starttime = datetime.datetime.now()
-            
-            cmdUp = 'rpict -x 2000 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
             os.system( cmdUp )
-            
             cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdUpTiff)
-            
-            cmdDown = 'rpict -x 500 -y 500 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
+            cmdDown = 'rpict -x 2000 -y 2000 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.rootDirPath + self.octDirSuffix, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix )
             os.system( cmdDown )
-            
             cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdDownTiff)
-            
-            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
-            os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
-            
+            #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
+            #os.remove( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
             print 'done.'
             print datetime.datetime.now() - starttime
              
     #System call to radiance framework for creating a falsecolor image
     def makeFalsecolorPic(self):  
-    	if self.makeFalsecolor == True:
-    		for i in range( self.numberOfSubimages ):
-    			print 'generating falsecolor pic# ' + str( i )
-    			starttime = datetime.datetime.now()
-    			cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 -l cd/m^2 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-    			#cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-    			os.system( cmd0 )
-    			#os.system( cmd1 )
-    			cmd2 = 'ra_tiff {1}/false_out{0}.hdr {2}/false_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix)
-    			os.system( cmd2 )
-    			
-    			print 'done.'
-    			print datetime.datetime.now() - starttime
-    		
-    		dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
-    		for file in dirList:
-    			if( file.endswith( ".hdr" ) ):
-    				os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
+        if self.makeFalsecolor == True:
+            for i in range( self.numberOfSubimages ):
+                print 'generating falsecolor pic# ' + str( i )
+                starttime = datetime.datetime.now()
+                cmd0 = 'falsecolor -i {1}/out{0}.hdr -log 5 -l cd/m^2 > {2}/false_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                #cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+                os.system( cmd0 )
+                #os.system( cmd1 )
+                cmd2 = 'ra_tiff {1}/false_out{0}.hdr {2}/false_out{0}.tiff'.format( i, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix, self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix)
+                os.system( cmd2 )
+                
+                print 'done.'
+                print datetime.datetime.now() - starttime
+            
+            dirList = os.listdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
+            for file in dirList:
+                if( file.endswith( ".hdr" ) ):
+                    os.remove( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix + "/" + file )
     
     #system call to render the refernce images
     def makeRefPic(self):
@@ -292,7 +253,7 @@ class simulator:
                 if self.fixedVPMode == True:
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 else:
-                	cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                     #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.refOctDirSuffix , i, self.rootDirPath + self.refPicDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
                 
                 
@@ -359,22 +320,22 @@ class simulator:
 
             for x in range(width):
                 for y in range(height):
-                	#this checks if each value in each channels of the current pixel is above the certain threshold
+                    #this checks if each value in each channels of the current pixel is above the certain threshold
                     if( pix[ x, y ][ 0 ] > THRESH and pix[ x, y ][ 1 ] > THRESH and pix[ x, y ][ 2 ] > THRESH ):
                         if( xmin == 0 ):
-                        	xmin = x
+                            xmin = x
                         else:
-                        	if (x > xmax ):
-								xmax = x
+                            if (x > xmax ):
+                                xmax = x
                             
                         if( ymin == 0 ):                            
                             ymin = y
                         else:
-                        	if (y > ymax ):
-                        		ymax = y
+                            if (y > ymax ):
+                                ymax = y
                             
                     #if( i == 11 and xmin != 0 ):
-            			#print str( xmax )
+                        #print str( xmax )
             
             #debug: save region to image:
             #draw.line(xy, options)
@@ -404,7 +365,7 @@ class simulator:
     #These values are dumped into a text file. the text file is then parsed and
     #are written into the final binary output pf file with the predefined header.
     def postRenderProcessing( self ):
-    	#create direction for temporarily save luminance txt files
+        #create direction for temporarily save luminance txt files
         if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix +self.lumSubDirPrefix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.picSubDirSuffix + self.lumSubDirPrefix )
         
@@ -417,7 +378,7 @@ class simulator:
                     processingList.append( entry )
         
         #using pvalue (radiance) to determine the luminance values of each pixel (-b option 
-    	#gives radiance values, rcalc converts them to luminance values) and save them into txt file.
+        #gives radiance values, rcalc converts them to luminance values) and save them into txt file.
         print "dumping pvalues:"
         for pic in processingList:
             print "File: " + pic
@@ -456,7 +417,7 @@ class simulator:
                 pfOut.write( struct.pack( 'f', pixel[0] ) )
             
             pfOut.close()
-            print "done"				
+            print "done"                
         return
         
                 #clean up and delete txt files
