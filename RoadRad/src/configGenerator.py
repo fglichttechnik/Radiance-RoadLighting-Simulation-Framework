@@ -27,9 +27,9 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
-        self.sceneLength = 8000	#length of road !important for ambient calculation        
-        self.sidewalkHeight = 0.1	#height of sidewalk
-        self.poleRadius = 0.05		#radius of pole cylinder
+        self.sceneLength = 8000    #length of road !important for ambient calculation        
+        self.sidewalkHeight = 0.1    #height of sidewalk
+        self.poleRadius = 0.05        #radius of pole cylinder
         self.numberOfLightsPerArray = 9 #was 4
         self.numberOfLightsBeforeMeasurementArea = 3 #was 1
         
@@ -39,7 +39,7 @@ class configGenerator:
         self.measFieldLength = 0
         
         #ldc rotation
-        self.ldcRotation = -90;	#was -90
+        self.ldcRotation = -90;    #was -90
         
         #millimeter
         self.sensorHeight = 8.9
@@ -61,7 +61,7 @@ class configGenerator:
             self.printRView( )
             self.printTarget( )
             self.printTargets( )
-            #self.veilCal( )
+            self.veilCal( )
             
 
     #Scene description xml parser.
@@ -71,9 +71,11 @@ class configGenerator:
         dom = parse( configfile )
         configfile.close( )
         
-        #veilLumDesc = dom.getElementsByTagName( 'Calculation' )
-        #if( veilLumDesc[0].attributes ):
-        #	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
+        veilLumDesc = dom.getElementsByTagName( 'Calculation' )
+        if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
+            self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
+        else:
+            self.isVeil = 'off'
 
         #parse data for road description and add a new factor LLF, 0 = new, 1 = almost new, 2 = moderate, 3 = old, 4 = older       
         roadDesc = dom.getElementsByTagName( 'Road' )
@@ -89,7 +91,7 @@ class configGenerator:
         if( backgroundDesc[0].attributes ):
             self.scene.Background = backgroundDesc[0].attributes["Context"].value
         
-		#parse data for point of view 
+        #parse data for point of view 
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             self.scene.ViewpointDistance = float( viewpointDesc[0].attributes["Distance"].value )
@@ -166,10 +168,10 @@ class configGenerator:
         
         #adjust number of subimages if stepwidth is > 5m (according to RP 8 00)
         if( self.measurementStepWidth > 5 ):
-        	self.measurementStepWidth = 5;
-        	self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
-        	self.numberOfSubimages = self.numberOfSubimages + 4
-        	
+            self.measurementStepWidth = 5;
+            self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
+            self.numberOfSubimages = self.numberOfSubimages + 4
+            
         self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
         
         print "selected Pole array: " +  str( selectedArray )
@@ -369,7 +371,7 @@ class configGenerator:
 #                 f.write( "ex2_dist light ex2_light\n\n" )
 #                 f.write( "0\n" )
 #                 f.write( "0\n" )
-#                 f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
+#                 f.write( "3 2.492 2.492 2.492\n\n" )    #TODO: this shall be taken from original file
 #                 f.write( "ex2_light sphere ex2.s\n" )
 #                 f.write( "0\n" )
 #                 f.write( "0\n" )
@@ -453,30 +455,30 @@ class configGenerator:
                 f.write( "0\n" )
                 f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
-			elif self.scene.Surfacetype == 'C1':
+            elif self.scene.Surfacetype == 'C1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
-			elif self.scene.Surfacetype == 'C2':
+            elif self.scene.Surfacetype == 'C2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
-			elif self.scene.Surfacetype == 'C2W3':
+            elif self.scene.Surfacetype == 'C2W3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-			
-			elif self.scene.Surfacetype == 'C2W4':
+            
+            elif self.scene.Surfacetype == 'C2W4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-			
+            
             elif self.scene.Surfacetype == 'BRDF1345':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
@@ -514,7 +516,7 @@ class configGenerator:
             f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} '.format( self.scene.TargetReflectency ) + str( self.scene.TargetSpecularity ) +" "+ str( self.scene.TargetRoughness ) + " \n\n" )	#R G B spec rough 0.016 0.25
+            f.write( '5 {0} {0} {0} '.format( self.scene.TargetReflectency ) + str( self.scene.TargetSpecularity ) +" "+ str( self.scene.TargetRoughness ) + " \n\n" )    #R G B spec rough 0.016 0.25
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -531,21 +533,21 @@ class configGenerator:
         print 'Generating: eye.vp'
         #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? tempPole.PoleSpacing
         #-vd 0 1 -0.01 better horizont and measurement 
-		#view first to self.scene.ViewpointDistance
+        #view first to self.scene.ViewpointDistance
         if self.scene.Viewdirection == 'first':
-        	ViewValueY = self.scene.ViewpointDistance /  math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
-        	ViewValueZ = self.scene.ViewpointHeight / math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
-        	viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )
+            ViewValueY = self.scene.ViewpointDistance /  math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
+            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
+            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )
         
         #view last to self.measFieldLength
         elif self.scene.Viewdirection == 'last':
-        	ViewValueY = ( self.scene.ViewpointDistance + self.measFieldLength ) /  math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
-        	ViewValueZ = self.scene.ViewpointHeight / math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
-        	viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )    
+            ViewValueY = ( self.scene.ViewpointDistance + self.measFieldLength ) /  math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
+            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
+            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )    
         
-		#view fixed 1 degree by 1.45 height and 83 distance (RP800)
-		else:
-        	viewDirection = "0 0.999847 -0.017467 " 
+        #view fixed 1 degree by 1.45 height and 83 distance (RP800)
+        else:
+            viewDirection = "0 0.999847 -0.017467 " 
         
         #viewDirection = "0 0 0"
         #debug
@@ -608,9 +610,9 @@ class configGenerator:
             elif self.scene.TargetOrientation == "Right":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
             else:
-            	print "unrecognized Target Position " + self.scene.TargetOrientation
-            	print "possible values: Center, Left, Right"
-            	print "WILL EXIT"
+                print "unrecognized Target Position " + self.scene.TargetOrientation
+                print "possible values: Center, Left, Right"
+                print "WILL EXIT"
                 sys.exit(0)
                 
             targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
@@ -634,31 +636,28 @@ class configGenerator:
                 f.close( )
                 dist = dist + self.measurementStepWidth
                 
-#    def veilCal( self ):
-#		if self.isVeil == 'on':
-#			f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
-#			f.write( 'PI : 3.14159265358979323846;\n' )
-#			f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
-#			f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
-#			
-#			f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
-#			
-#			f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
-#			
-#			f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
-#			
-#			f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
-#			
-#			f.write( 'veil = le(1)/179 * sum(N);\n\n' )
-#			
-#			f.write( 'ro = ri(1) + veil;\n' )
-#			f.write( 'go = gi(1) + veil;\n' )
-#			f.write( 'bo = bi(1) + veil;\n' )
-#			
-#			f.write( 'V(i) : select(i, veil);\n' )
-#			f.write( 'Lv = V(0);\n' )			
-#			f.close( )
-        
-        
-
-
+    def veilCal( self ):
+        if self.isVeil == 'on':
+            f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
+            f.write( 'PI : 3.14159265358979323846;\n' )
+            f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
+            f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
+            
+            f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
+            
+            f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
+            
+            f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
+            
+            f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
+            
+            f.write( 'veil = le(1)/179 * sum(N);\n\n' )
+            
+            f.write( 'ro = ri(1) + veil;\n' )
+            f.write( 'go = gi(1) + veil;\n' )
+            f.write( 'bo = bi(1) + veil;\n' )
+            
+            f.write( 'V(i) : select(i, veil);\n' )
+            f.write( 'Lv = V(0);\n' )
+            
+            f.close( )
