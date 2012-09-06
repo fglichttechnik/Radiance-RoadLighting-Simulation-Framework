@@ -157,21 +157,24 @@ class simulator:
             if( not os.path.isdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix ) ):
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
                 
+            print 'Please enter y(yes) or n(no) for ambient calculation: '
+            timeout = 10
+            print 'You choose:',
+            rlist, _, _ = select([sys.stdin], [], [], timeout)
+            if rlist:
+            	ambCalc = sys.stdin.readline()
+            	print ambCalc
+            else:
+        		print 'No input. None ambient calculation...'
+        		ambCalc = 'n'                
+            
+            
             for i in range( self.numberOfSubimages ):
                 print 'generating pic# ' + str( i )
                 starttime = datetime.datetime.now()
                 cmd0 = ''
                 
-                print 'Please enter y(yes) or n(no) for ambient calculation: '
-                timeout = 10
-                print 'You choose:',
-                rlist, _, _ = select([sys.stdin], [], [], timeout)
-                if rlist:
-                    ambCalc = sys.stdin.readline()
-                    print ambCalc
-                else:
-                    print 'No input. None ambient calculation...'
-                
+                            
                 if ambCalc == 'y':
                     if self.fixedVPMode == True:
                         cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
