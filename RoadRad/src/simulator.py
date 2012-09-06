@@ -105,7 +105,7 @@ class simulator:
         if( targetSizeDesc[0].attributes ):
             self.targetSize = targetSizeDesc[0].attributes["Size"].value  
             
-           numPoleFieldsDesc = dom.getElementsByTagName( 'Road' )
+        numPoleFieldsDesc = dom.getElementsByTagName( 'Road' )
         if(numPoleFieldsDesc[0].attributes ):
             self.numPoleFields = numPoleFieldsDesc[0].attributes["NumPoleFields"].value
             
@@ -170,7 +170,7 @@ class simulator:
                     ambCalc = sys.stdin.readline()
                     print ambCalc
                 else:
-                    print 'No input. None ambient calculation...
+                    print 'No input. None ambient calculation...'
                 
                 if ambCalc == 'y':
                     if self.fixedVPMode == True:
