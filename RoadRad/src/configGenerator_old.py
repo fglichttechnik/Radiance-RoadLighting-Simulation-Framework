@@ -27,9 +27,9 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
-        self.sceneLength = 8000    #length of road !important for ambient calculation        
-        self.sidewalkHeight = 0.1    #height of sidewalk
-        self.poleRadius = 0.05        #radius of pole cylinder
+        self.sceneLength = 240000	#length of road        
+        self.sidewalkHeight = 0.1	#height of sidewalk
+        self.poleRadius = 0.05		#radius of pole cylinder
         self.numberOfLightsPerArray = 9 #was 4
         self.numberOfLightsBeforeMeasurementArea = 3 #was 1
         
@@ -39,7 +39,7 @@ class configGenerator:
         self.measFieldLength = 0
         
         #ldc rotation
-        self.ldcRotation = -90;    #was -90
+        self.ldcRotation = -90;	#was -90
         
         #millimeter
         self.sensorHeight = 8.9
@@ -73,11 +73,10 @@ class configGenerator:
         
         veilLumDesc = dom.getElementsByTagName( 'Calculation' )
         if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
-            self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
+        	self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
         else:
-            self.isVeil = 'off'
-
-        #parse data for road description and add a new factor LightLossFactor, 0 = new, 1 = almost new, 2 = moderate, 3 = old, 4 = older       
+        	self.isVeil = 'off'
+        
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
@@ -85,33 +84,25 @@ class configGenerator:
             self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
             self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
-            self.scene.LightLossFactor = float( roadDesc[0].attributes["LightLossFactor"].value ) 
         
         backgroundDesc = dom.getElementsByTagName( 'Background' )
         if( backgroundDesc[0].attributes ):
             self.scene.Background = backgroundDesc[0].attributes["Context"].value
         
-        #parse data for point of view 
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
             self.scene.ViewpointDistance = float( viewpointDesc[0].attributes["Distance"].value )
             self.scene.ViewpointHeight = float( viewpointDesc[0].attributes["Height"].value )
             self.scene.ViewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
-            self.scene.ViewpointXOffset = float( viewpointDesc[0].attributes["XOffset"].value )
-            self.scene.Viewdirection = viewpointDesc[0].attributes["ViewDirection"].value
         
-        #parse data for a modified target
         targetDesc = dom.getElementsByTagName( 'Target' )
         if( targetDesc[0].attributes ):
             self.scene.TargetSize = float( targetDesc[0].attributes["Size"].value )
             self.scene.TargetReflectency = float( targetDesc[0].attributes["Reflectancy"].value )
-            self.scene.TargetRoughness = float( targetDesc[0].attributes["Roughness"].value )
-            self.scene.TargetSpecularity = float( targetDesc[0].attributes["Specularity"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
-        
-        #check if the scene parameter "numlane" and "target position" make sense
-        if( self.scene.NumLanes - self.scene.TargetPosition < 0):
+            
+        if self.scene.NumLanes - self.scene.TargetPosition != 1:
             print "Numlanes and TargetPosition Parameters are impossible"
             sys.exit(0)
         
@@ -168,10 +159,10 @@ class configGenerator:
         
         #adjust number of subimages if stepwidth is > 5m (according to RP 8 00)
         if( self.measurementStepWidth > 5 ):
-            self.measurementStepWidth = 5;
-            self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
-            self.numberOfSubimages = self.numberOfSubimages + 4
-            
+        	self.measurementStepWidth = 5;
+        	self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
+        	self.numberOfSubimages = self.numberOfSubimages + 4
+        	
         self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
         
         print "selected Pole array: " +  str( selectedArray )
@@ -180,10 +171,6 @@ class configGenerator:
         print "measurementStepWidth: " + str( self.measurementStepWidth ) 
         print "measFieldLength: " + str( self.measFieldLength ) 
         print "numberOfSubimages: " + str( self.numberOfSubimages ) 
-        
-        #print the Light Loss factor of pavement surface
-        self.scene.SurfaceDirt = self.scene.LightLossFactor / 10
-        print "Light Loss Factor: " + str( 1 - self.scene.SurfaceDirt )
         
         print 'Sucessfully Parsed.'
 
@@ -225,7 +212,7 @@ class configGenerator:
         f.write( "!genbox concrete curb1 %d %d %f | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.SidewalkWidth, self.sceneLength / 2 ) )
         f.write( "!genbox concrete curb2 %d %d %f | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2 ) )
         #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -120 .001 -a 40 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "!xform -e -t %d -120 .001 -a 2000 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
         f.write( "-%d -%d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
@@ -371,7 +358,7 @@ class configGenerator:
 #                 f.write( "ex2_dist light ex2_light\n\n" )
 #                 f.write( "0\n" )
 #                 f.write( "0\n" )
-#                 f.write( "3 2.492 2.492 2.492\n\n" )    #TODO: this shall be taken from original file
+#                 f.write( "3 2.492 2.492 2.492\n\n" )	#TODO: this shall be taken from original file
 #                 f.write( "ex2_light sphere ex2.s\n" )
 #                 f.write( "0\n" )
 #                 f.write( "0\n" )
@@ -415,78 +402,27 @@ class configGenerator:
             f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
             
-            #road surface with Light Loss Factor (LLF)
-            #the accumulation of dirt on luminaires results in a loss in light output on the roadway LDD RP 8 00
-            #surfaces: R1-R4, BRDF 1-4.5°, plastic (100 diffus), C1, C2 C2W3 C2W4
-
+            #road surface
             if self.scene.Surfacetype == 'plastic':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 0.7 - self.scene.SurfaceDirt )+ " " + str( 0.7 - self.scene.SurfaceDirt ) +" "+ str( 0.7 - self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 .07 .07 .07 0 0\n\n" )
                 
-            elif self.scene.Surfacetype == 'plastic_improvedPhilips':            
+            if self.scene.Surfacetype == 'plastic_improvedPhilips':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 0.7 - self.scene.SurfaceDirt )+ " " + str( 0.7 - self.scene.SurfaceDirt ) +" "+ str( 0.7 - self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
-                
-            elif self.scene.Surfacetype == 'R4':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl r4-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "5 .07 .07 .07 0.002 0.001\n\n" )
             
             elif self.scene.Surfacetype == 'R3':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-                
-            elif self.scene.Surfacetype == 'R2':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl r2-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-                
-            elif self.scene.Surfacetype == 'R1':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl r1-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-                
-            elif self.scene.Surfacetype == 'C1':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-            
-            elif self.scene.Surfacetype == 'C2':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-            
-            elif self.scene.Surfacetype == 'C2W3':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-            
-            elif self.scene.Surfacetype == 'C2W4':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
-            
-            elif self.scene.Surfacetype == 'BRDF1345':
-                f.write( "void metdata pavement\n" )
-                f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
-                f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 .5 .5 .5 1 \n\n" )
 
             else:
-                print 'no valid surfacetype given (R1-R4, BRDF1345, C1, C2 C2W3 C2W4 or plastic, plastic_improvedPhilips)'
+                print 'no valid surfacetype given (R3 or plastic, plastic_improvedPhilips)'
                 print 'surface type is ' + self.scene.Surfacetype
                 sys.exit( 0 )
             
@@ -516,7 +452,7 @@ class configGenerator:
             f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} '.format( self.scene.TargetReflectency ) + str( self.scene.TargetSpecularity ) +" "+ str( self.scene.TargetRoughness ) + " \n\n" )    #R G B spec rough 0.016 0.25
+            f.write( '5 {0} {0} {0} 0 0\n\n'.format( self.scene.TargetReflectency ) )	#R G B spec rough 0.016 0.25
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -531,40 +467,23 @@ class configGenerator:
     #Based on the viewpoint mode, one of several viewpoints are written
     def printRView( self ):
         print 'Generating: eye.vp'
-        #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? tempPole.PoleSpacing
-        #-vd 0 1 -0.01 better horizont and measurement 
-        #view first to self.scene.ViewpointDistance
-        if self.scene.Viewdirection == 'first':
-            ViewValueY = self.scene.ViewpointDistance /  math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
-            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
-            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )
         
-        #view last to self.measFieldLength
-        elif self.scene.Viewdirection == 'last':
-            ViewValueY = ( self.scene.ViewpointDistance + self.measFieldLength ) /  math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
-            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
-            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )    
-        
-        #view fixed 1 degree by 1.45 height and 83 distance (RP800)
-        else:
-            viewDirection = "0 0.999847 -0.017467 " 
-        
+        #-vd 0 0.9999856 -0.0169975 is this 1 degree down???
+        viewDirection = "0 0.9999856 -0.0169975"
         #viewDirection = "0 0 0"
         #debug
-        
-        #add x-offset point of view
-        print "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        print "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
         
         if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
             f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")            
-            f.write( "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+            f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
             f.close( )
         else:
             for i in range( self.numberOfSubimages  ):
                 f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.write( "rview -vtv -vp " + str( self.scene.LaneWidth * (self.scene.TargetPosition + 0.5 ) ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
                 f.close( )
                 
         #print view point files for plan view of the roadway
@@ -610,9 +529,9 @@ class configGenerator:
             elif self.scene.TargetOrientation == "Right":
                 targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
             else:
-                print "unrecognized Target Position " + self.scene.TargetOrientation
-                print "possible values: Center, Left, Right"
-                print "WILL EXIT"
+            	print "unrecognized Target Position " + self.scene.TargetOrientation
+            	print "possible values: Center, Left, Right"
+            	print "WILL EXIT"
                 sys.exit(0)
                 
             targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
@@ -637,27 +556,30 @@ class configGenerator:
                 dist = dist + self.measurementStepWidth
                 
     def veilCal( self ):
-        if self.isVeil == 'on':
-            f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
-            f.write( 'PI : 3.14159265358979323846;\n' )
-            f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
-            f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
-            
-            f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
-            
-            f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
-            
-            f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
-            
-            f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
-            
-            f.write( 'veil = le(1)/179 * sum(N);\n\n' )
-            
-            f.write( 'ro = ri(1) + veil;\n' )
-            f.write( 'go = gi(1) + veil;\n' )
-            f.write( 'bo = bi(1) + veil;\n' )
-            
-            f.write( 'V(i) : select(i, veil);\n' )
-            f.write( 'Lv = V(0);\n' )
-            
-            f.close( )
+		if self.isVeil == 'on':
+			f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
+			f.write( 'PI : 3.14159265358979323846;\n' )
+			f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
+			f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
+			
+			f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
+			
+			f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
+			
+			f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
+			
+			f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
+			
+			f.write( 'veil = le(1)/179 * sum(N);\n\n' )
+			
+			f.write( 'ro = ri(1) + veil;\n' )
+			f.write( 'go = gi(1) + veil;\n' )
+			f.write( 'bo = bi(1) + veil;\n' )
+			
+			f.write( 'V(i) : select(i, veil);\n' )
+			f.write( 'Lv = V(0);\n' )
+			
+			f.close( )
+        
+        
+

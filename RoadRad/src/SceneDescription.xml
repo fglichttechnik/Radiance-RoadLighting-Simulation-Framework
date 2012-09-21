@@ -1,7 +1,7 @@
 <RoadScene>
 	<SceneDescription>
 		<Description Title="LED R1 2070lm 35m VDL" SPRatio="1.71"/>
-		<Road NumLanes="2" NumPoleFields="1" LaneWidth="3" SidewalkWidth="1" Surface="R1" DirtFactor="0" />
+		<Road NumLanes="2" NumPoleFields="1" LaneWidth="3" SidewalkWidth="1" Surface="R1" LightLossFactor="0" />
 		<Background Context="Grass"/>
 		<Calculation Method="standard" VeilingLuminance="off" TresholdLuminanceFactor="7"/><!--Method can be standard, rp800 or reflectancy, VeilingLuminance can be on and off-->
 	</SceneDescription>
@@ -14,7 +14,7 @@
 	<LDCs>
 	<!--10W kaltweiss, 7.10.2010-->
 		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED"/>
-	</LDCs>	
+	</LDCs>
 	<Poles>
 		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
 		<!--<PoleSingle PoleHeight="9" PoleOverhang="-4" LDC="HellaEcoLight_2070lm_LDT" PositionX="27.7" Side="Right"/>-->
