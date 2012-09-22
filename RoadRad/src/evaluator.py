@@ -57,6 +57,7 @@ class evaluator:
         self.makeOct( )
         self.calcLuminances( )
         self.calcIlluminances( )
+        self.calcSideIlluminances( )
         self.makePic( )
         #self.makeFalsecolor( )
         self.evalLuminance( )
@@ -160,6 +161,7 @@ class evaluator:
         viewerYPosition = - self.viewPointDistance
         viewerZPosition = self.viewPointHeight
         
+        # open writable position files
         f = open( self.workingDirPath + self.evalDirSuffix + '/luminanceCoordinates.pos', "w" )
         l = open( self.workingDirPath + self.evalDirSuffix + '/luminanceLanes.pos', "w" )
         
@@ -167,10 +169,12 @@ class evaluator:
             
             for laneNumber in range( self.scene.NumLanes ):   
                 
+                # middle viewer x-position for every lane 
                 viewerXPosition = ( self.scene.LaneWidth * (laneInOneDirection + 0.5 ) )
                 viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
                 distanceOfMeasRows = self.scene.LaneWidth / 3
                 
+                # three x-position per lanewidth on x = 25%, 50% and 75% 
                 for rowNumber in range( 3 ):
                     rowXPosition = self.scene.LaneWidth * (laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
                     directionX = rowXPosition - viewerXPosition
@@ -179,6 +183,7 @@ class evaluator:
                         directionY = ( ( measPointNumber + 0.5 ) * self.measurementStepWidth ) - viewerYPosition
                         viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
                         
+                        # write data to luminanceCoordinates and luminanceLanes.pos
                         f.write( str( viewPoint ) + str( viewDirection ) + ' \n')
                         l.write( str( laneInOneDirection ) + ' ' + str( laneNumber ) + ' ' + str( rowNumber ) + ' \n' )
                                     
@@ -263,6 +268,90 @@ class evaluator:
         os.remove( cmd4 )
         cmd4 = "{0}/rawIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd4 )
+        
+        print "Done."
+    
+    #Prints view point files for left and right side
+    #Based on the viewpoint mode, one of several viewpoints are written
+    def calcSideIlluminances( self ):    
+        
+        print 'Generating: illuminance values at left and right side of measurementfield'
+        
+        #according to DIN EN 13201
+        print "    pole spacing: " + str( self.Poles[0].PoleSpacing )
+        self.measFieldLength = self.Poles[0].PoleSpacing * self.scene.NumPoleFields   
+        
+        self.numberOfMeasurementPoints = 10
+        if( self.Poles[0].PoleSpacing > 30 ):
+            while ( self.Poles[0].PoleSpacing / self.numberOfMeasurementPoints ) > 3:
+                self.numberOfMeasurementPoints = self.numberOfMeasurementPoints + 1
+        
+        print "    number of measurement points: " + str( self.numberOfMeasurementPoints )
+        self.measurementStepWidth = self.measFieldLength / self.numberOfMeasurementPoints
+        print "    measurement step width: " + str( self.measurementStepWidth ) 
+        print "    measurment field length: " + str( self.measFieldLength ) 
+    
+        # fixed view direction for illuminance
+        viewDirectionLeftX = '1 0 0'
+        viewDirectionRightX = '-1 0 0'
+        
+        # fixed x position depend on lanenumber and lanewidth
+        positionLeftX = '0.02'
+        positionRightX = ( self.scene.NumLanes * self.scene.LaneWidth ) - 0.02
+        print "    x-position of the right sensor: " + str( positionRightX ) 
+        
+        fLeft = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceLeftSideCoordinates.pos', "w" )
+        fRight = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceRightSideCoordinates.pos', "w" )
+        r = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceRows.pos', "w" )
+        
+        for rowNumber in range( 3 ):
+            # three z side position for illuminance at 0.66, 1.33 and 2 meters
+            positionZ = ( rowNumber + 1 ) * ( 2 / 3 )
+            print positionZ
+            
+            for measPointNumber in range( self.numberOfMeasurementPoints ):
+                positionY = ( measPointNumber + 0.5 ) * self.measurementStepWidth 
+                
+                viewPointLeft = '{0} {1} {2} '.format( positionLeftX, positionY, positionZ )
+                viewPointRight = ' {0} {1} {2} '.format( positionRightX, positionY, positionZ )
+                
+                fLeft.write( str( viewPointLeft ) + str( viewDirectionLeftX ) + ' \n' )
+                fRight.write( str( viewPointRight ) + str( viewDirectionRightX ) + ' \n' )
+                r.write( str( rowNumber ) + ' \n' )
+                         
+        fLeft.close( )
+        fRight.close( )
+        r.close( )
+        
+        # calculate left side 
+        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/illuminanceLeftSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.workingDirPath + self.evalDirSuffix + "/rawLeftIlluminances.txt"
+        os.system( cmd1 )
+        
+        # calculate right side
+        cmd2 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/illuminanceRightSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.workingDirPath + self.evalDirSuffix + "/rawRightIlluminances.txt"
+        os.system( cmd2 )
+        
+        # combine all txt files to one
+        cmd3 = "rlam -t  {0}/illuminanceRows.pos {0}/illuminanceLeftSideCoordinates.pos {0}/rawLeftIlluminances.txt {0}/illuminanceRightSideCoordinates.pos {0}/rawRightIlluminances.txt > {0}/sideIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.system( cmd3 )
+        
+        # add heading to the illuminance.txt table 
+        with open( self.workingDirPath + self.evalDirSuffix + "/sideIlluminances.txt", "r+" ) as illumfile:
+             old = illumfile.read() # read everything in the file
+             illumfile.seek(0) # rewind
+             illumfile.write("measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight\n" + old) # write the new line before
+        
+        # delete all useless txt files
+        cmd4 = "{0}/illuminanceRows.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd4 )
+        cmd5 = "{0}/illuminanceLeftSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd5 )
+        cmd5 = "{0}/illuminanceRightSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd5 )
+        cmd6 = "{0}/rawLeftIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd6 )
+        cmd6 = "{0}/rawRightIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd6 )
         
         print "Done."
     
