@@ -294,33 +294,45 @@ class evaluator:
         # fixed view direction for illuminance
         viewDirectionLeftX = '1 0 0'
         viewDirectionRightX = '-1 0 0'
+        viewDirectionUpperZ = '0 0 -1'
         
-        # fixed x position depend on lanenumber and lanewidth
+        # fixed x position depend on lane number and lane width
         positionLeftX = '0.02'
         positionRightX = ( self.scene.NumLanes * self.scene.LaneWidth ) - 0.02
+        # fixed z position depend on the pole height
+        for entry in self.Poles:
+            positionUpperZ = entry.PoleHeight
+         
         print "    x-position of the right sensor: " + str( positionRightX ) 
+        print "    x-position of the left sensor: " + str( positionLeftX ) 
+        print "    z-position of the upper sensor: " + str( positionUpperZ ) 
         
         fLeft = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceLeftSideCoordinates.pos', "w" )
         fRight = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceRightSideCoordinates.pos', "w" )
+        fUpper = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceUpperSideCoordinates.pos', "w" )
         r = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceRows.pos', "w" )
         
         for rowNumber in range( 3 ):
             # three z side position for illuminance at 0.66, 1.33 and 2 meters
-            positionZ = ( rowNumber + 1 ) * ( 2 / 3 )
-            print positionZ
+            positionZ = ( rowNumber + 1 ) * 0.666
+            # three x upper position for illuminance at x = 25%, 50% and 75% lane width
+            positionUpperX = self.scene.LaneWidth * self.scene.NumLanes * (( rowNumber + 1 ) * 0.25 ) 
             
             for measPointNumber in range( self.numberOfMeasurementPoints ):
                 positionY = ( measPointNumber + 0.5 ) * self.measurementStepWidth 
                 
                 viewPointLeft = '{0} {1} {2} '.format( positionLeftX, positionY, positionZ )
                 viewPointRight = ' {0} {1} {2} '.format( positionRightX, positionY, positionZ )
+                viewPointUpper = ' {0} {1} {2} '.format( positionUpperX, positionY, positionUpperZ )
                 
                 fLeft.write( str( viewPointLeft ) + str( viewDirectionLeftX ) + ' \n' )
                 fRight.write( str( viewPointRight ) + str( viewDirectionRightX ) + ' \n' )
+                fUpper.write( str( viewPointUpper ) + str( viewDirectionUpperZ ) + ' \n' )
                 r.write( str( rowNumber ) + ' \n' )
                          
         fLeft.close( )
         fRight.close( )
+        fUpper.close( )
         r.close( )
         
         # calculate left side 
@@ -331,27 +343,37 @@ class evaluator:
         cmd2 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/illuminanceRightSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.workingDirPath + self.evalDirSuffix + "/rawRightIlluminances.txt"
         os.system( cmd2 )
         
-        # combine all txt files to one
-        cmd3 = "rlam -t  {0}/illuminanceRows.pos {0}/illuminanceLeftSideCoordinates.pos {0}/rawLeftIlluminances.txt {0}/illuminanceRightSideCoordinates.pos {0}/rawRightIlluminances.txt > {0}/sideIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        # calculate upper side
+        cmd3 = "rtrace -h -I+ -w -ab 1 " + self.rootDirPath + self.octDirSuffix + "/scene_din.oct < " + self.workingDirPath + self.evalDirSuffix + "/illuminanceUpperSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.workingDirPath + self.evalDirSuffix + "/rawUpperIlluminances.txt"
         os.system( cmd3 )
+        
+        # combine all txt files to one
+        cmd4 = "rlam -t  {0}/illuminanceRows.pos {0}/illuminanceLeftSideCoordinates.pos {0}/rawLeftIlluminances.txt {0}/illuminanceRightSideCoordinates.pos {0}/rawRightIlluminances.txt {0}/illuminanceUpperSideCoordinates.pos {0}/rawUpperIlluminances.txt > {0}/sideIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.system( cmd4 )
         
         # add heading to the illuminance.txt table 
         with open( self.workingDirPath + self.evalDirSuffix + "/sideIlluminances.txt", "r+" ) as illumfile:
              old = illumfile.read() # read everything in the file
              illumfile.seek(0) # rewind
-             illumfile.write("measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight\n" + old) # write the new line before
+             illumfile.write("measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight viewPositionUpper_x viewPositionUpper_y viewPositionUpper_z viewDirectionUpper_x viewDirectionUpper_y viewDirectionUpper_z illuminanceUpper\n" + old) # write the new line before
+        
+        print "Delete temporary illumninance files"
         
         # delete all useless txt files
-        cmd4 = "{0}/illuminanceRows.pos".format( self.workingDirPath + self.evalDirSuffix )
-        os.remove( cmd4 )
-        cmd5 = "{0}/illuminanceLeftSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        cmd5 = "{0}/illuminanceRows.pos".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd5 )
-        cmd5 = "{0}/illuminanceRightSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
-        os.remove( cmd5 )
-        cmd6 = "{0}/rawLeftIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        cmd6 = "{0}/illuminanceLeftSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd6 )
-        cmd6 = "{0}/rawRightIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        cmd6 = "{0}/illuminanceRightSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
         os.remove( cmd6 )
+        cmd6 = "{0}/illuminanceUpperSideCoordinates.pos".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd6 )
+        cmd7 = "{0}/rawLeftIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd7 )
+        cmd7 = "{0}/rawRightIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd7 )
+        cmd7 = "{0}/rawUpperIlluminances.txt".format( self.workingDirPath + self.evalDirSuffix )
+        os.remove( cmd7 )
         
         print "Done."
     
