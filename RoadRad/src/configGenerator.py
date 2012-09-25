@@ -30,8 +30,8 @@ class configGenerator:
         self.sceneLength = 240000	#length of road        
         self.sidewalkHeight = 0.1	#height of sidewalk
         self.poleRadius = 0.05		#radius of pole cylinder
-        self.numberOfLightsPerArray = 9 #was 4
-        self.numberOfLightsBeforeMeasurementArea = 3 #was 1
+        self.numberOfLightsPerArray = 9 #was 9
+        self.numberOfLightsBeforeMeasurementArea = 3 #was 3
         
         #calculated
         self.measurementStartPosition = 0
