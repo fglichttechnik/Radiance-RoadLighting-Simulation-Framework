@@ -27,19 +27,11 @@ class configGenerator:
         self.verticalAngle = 0
         self.horizontalAngle = 0
         self.focalLength = 0
-<<<<<<< HEAD
-        self.sceneLength = 240000	#length of road        
-        self.sidewalkHeight = 0.1	#height of sidewalk
-        self.poleRadius = 0.05		#radius of pole cylinder
-        self.numberOfLightsPerArray = 9 #was 9
-        self.numberOfLightsBeforeMeasurementArea = 3 #was 3
-=======
-        self.sceneLength = 8000    #length of road !important for ambient calculation        
+        self.sceneLength = 8000    #length of road !important for ambient calculation was 240000        
         self.sidewalkHeight = 0.1    #height of sidewalk
         self.poleRadius = 0.05        #radius of pole cylinder
         self.numberOfLightsPerArray = 9 #was 4
         self.numberOfLightsBeforeMeasurementArea = 3 #was 1
->>>>>>> a88b6c3ef5c9132495b9399d1604872cc04dfd2a
         
         #calculated
         self.measurementStartPosition = 0
