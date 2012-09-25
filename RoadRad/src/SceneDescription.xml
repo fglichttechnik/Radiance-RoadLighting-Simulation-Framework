@@ -1,0 +1,24 @@
+<RoadScene>
+	<SceneDescription>
+		<Description Title="LED R1 2070lm 35m VDL" SPRatio="1.71"/>
+		<Road NumLanes="2" NumPoleFields="1" LaneWidth="3" SidewalkWidth="1" Surface="R1" LightLossFactor="0" />
+		<Background Context="Grass"/>
+		<Calculation Method="standard" VeilingLuminance="off" TresholdLuminanceFactor="7"/><!--Method can be standard, rp800 or reflectancy, VeilingLuminance can be on and off-->
+	</SceneDescription>
+	<TargetParameters>
+	<!--fixedTargetDistance or fixedViewPoint-->
+		<ViewPoint Distance="35" Height="1.2" TargetDistanceMode="fixedViewPoint" XOffset="0" ViewDirection="auto" /><!---->
+		<Target Size="0.3" Reflectancy="0.04" Specularity="0" Roughness="0" Position="Center" OnLane="1"/>
+		<!--<Target Size="0.18" Reflectancy="0.5" Position="Centre" OnLane="1"/>-->
+	</TargetParameters>
+	<LDCs>
+	<!--10W kaltweiss, 7.10.2010-->
+		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED"/>
+	</LDCs>
+	<Poles>
+		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
+		<!--<PoleSingle PoleHeight="9" PoleOverhang="-4" LDC="HellaEcoLight_2070lm_LDT" PositionX="27.7" Side="Right"/>-->
+		<!--<PoleSingle PoleHeight="9" PoleOverhang="-4" LDC="HellaEcoLight_2070lm_LDT" PositionX="-9" Side="Right"/>-->
+	</Poles>
+	<FocalLength FL="25"></FocalLength>
+</RoadScene>

@@ -9,6 +9,7 @@ class Scene:
     LaneWidth = 0
     SidewalkWidth = 0
     Surfacetype = ""
+    LightLossFactor = 0
     
     Title = ""    
     SPRatio = ""    
@@ -22,6 +23,8 @@ class Scene:
     #Target Variables
     TargetSize = 0
     TargetReflectency = 0
+    TargetRoughness = 0
+    TargetSpecularity = 0
     TargetPosition = 0
     TargetOrientation = 0
         
