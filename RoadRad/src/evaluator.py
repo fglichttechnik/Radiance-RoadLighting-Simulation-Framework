@@ -62,6 +62,7 @@ class evaluator:
         #self.makeFalsecolor( )
         self.evalLuminance( )
         self.evalIlluminance( )
+        self.evalSideIlluminance( )
         self.makeXML( )
         self.checkStandards( )
 
@@ -302,9 +303,9 @@ class evaluator:
         # fixed z position depend on the pole height
         for entry in self.Poles:
             positionUpperZ = entry.PoleHeight
-         
+        
+        print "    x-position of the left sensor: " + str( positionLeftX )  
         print "    x-position of the right sensor: " + str( positionRightX ) 
-        print "    x-position of the left sensor: " + str( positionLeftX ) 
         print "    z-position of the upper sensor: " + str( positionUpperZ ) 
         
         fLeft = open( self.workingDirPath + self.evalDirSuffix + '/illuminanceLeftSideCoordinates.pos', "w" )
@@ -314,7 +315,7 @@ class evaluator:
         
         for rowNumber in range( 3 ):
             # three z side position for illuminance at 0.66, 1.33 and 2 meters
-            positionZ = ( rowNumber + 1 ) * 0.666
+            positionZ = ( rowNumber + 1 ) * positionUpperZ / 3.0
             # three x upper position for illuminance at x = 25%, 50% and 75% lane width
             positionUpperX = self.scene.LaneWidth * self.scene.NumLanes * (( rowNumber + 1 ) * 0.25 ) 
             
@@ -524,7 +525,7 @@ class evaluator:
                     E_row = float( row[8] )
                     E_m_lane += float( row[8] )
                     E_m_values += 1
-                    E.append( E_row)
+                    E.append( E_row )
             
             E_m_ = E_m_ + ( E_m_lane / E_m_values )
             E_m_lane = E_m_lane / E_m_values
@@ -552,6 +553,66 @@ class evaluator:
         self.minIlluminance = E_min        
         self.uniformityOfIlluminance = g_1
         
+        print "Done."    
+        
+    def evalSideIlluminance( self ):
+        print 'Evaluate side and upper illuminances...'                
+        
+        # average side and upper illuminance
+        E_m_SideLeft_ = 0
+        E_m_SideRight_ = 0
+        E_m_SideUpper_ = 0
+                
+        lumFile = open( self.workingDirPath + self.evalDirSuffix + '/sideIlluminances.txt', 'r')
+        lumReader = csv.reader( lumFile, delimiter = ' ' )
+        headerline = lumReader.next()
+        
+        E_Left = []
+        E_Right = []
+        E_Upper = []
+        E_m_lane_Left = 0
+        E_m_lane_Right = 0
+        E_m_lane_Upper = 0
+        E_m_values = 0
+        
+        for Zrow in range(3):
+            for row in lumReader:
+                if( float( row[0] ) == float( Zrow ) ):
+                    E_Left_row = float( row[7] )
+                    E_Right_row = float( row[14] )
+                    E_Upper_row = float( row[21] )
+                    E_m_lane_Left += float( row[7] )
+                    E_m_lane_Right += float( row[14] )
+                    E_m_lane_Upper += float( row[21] )
+                    E_m_values += 1
+                    E_Left.append( E_Left_row )
+                    E_Right.append( E_Right_row )
+                    E_Upper.append( E_Upper_row )
+        
+            E_m_SideLeft_ = E_m_SideLeft_ + ( E_m_lane_Left / E_m_values )
+            E_m_lane_Left = E_m_lane_Left / E_m_values
+            E_m_SideRight_ = E_m_SideRight_ + ( E_m_lane_Right / E_m_values )
+            E_m_lane_Right = E_m_lane_Right / E_m_values
+            E_m_SideUpper_ = E_m_SideUpper_ + ( E_m_lane_Upper / E_m_values )
+            E_m_lane_Upper = E_m_lane_Upper / E_m_values
+        
+            print '        E_m of left z position ' + str( Zrow ) + ':            ' + str( E_m_lane_Left )
+            print '        E_m of right z position ' + str( Zrow ) + ':            ' + str( E_m_lane_Right )
+            print '        E_m of upper x position ' + str( Zrow ) + ':            ' + str( E_m_lane_Upper )
+        
+        lumFile.close( )
+                
+        E_m_SideLeft = E_m_SideLeft_ / 3.0
+        E_m_SideRight = E_m_SideRight_ / 3.0
+        E_m_SideUpper = E_m_SideUpper_ / 3.0
+        
+        print '    E_m_Left = ' + str( E_m_SideLeft )
+        print '    E_m_Right = ' + str( E_m_SideRight )
+        print '    E_m_Upper = ' + str( E_m_SideUpper )
+        
+        self.meanIlluminanceLeft = E_m_SideLeft
+        self.meanIlluminanceRight = E_m_SideRight
+        self.meanIlluminanceUpper = E_m_SideUpper
         print "Done."    
     
     def makeXML( self ):
@@ -586,6 +647,9 @@ class evaluator:
             
             meanIllum_element = doc.createElement( "meanIlluminance" )
             meanIllum_element.setAttribute( "Em", str( self.meanIlluminance ) )
+            meanIllum_element.setAttribute( "Em_Left", str( self.meanIlluminanceLeft ) )
+            meanIllum_element.setAttribute( "Em_Right", str( self.meanIlluminanceRight ) )
+            meanIllum_element.setAttribute( "Em_Upper", str( self.meanIlluminanceUpper ) )
             illum_element.appendChild( meanIllum_element )
             
             minIllum_element = doc.createElement( "minIlluminance" )
@@ -639,7 +703,7 @@ class evaluator:
                 illumDIN = 'None'
                 continue
         
-        print '    S-Class fullfillment:     ' + str( illumDIN    )
+        print '    S-Class fullfillment:     ' + str( illumDIN )
         
     
         child2 = evaltree.createElement( "ClassFullfillment" )
