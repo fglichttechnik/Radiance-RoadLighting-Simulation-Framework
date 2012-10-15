@@ -77,7 +77,7 @@ class configGenerator:
         else:
             self.isVeil = 'off'
 
-        #parse data for road description and add a new factor LightLossFactor, 0 = new, 1 = almost new, 2 = moderate, 3 = old, 4 = older       
+        #parse data for road description and add a new factor qZero, 0 = new, 1 = almost new, 2 = moderate, 3 = old, 4 = older       
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
@@ -85,7 +85,7 @@ class configGenerator:
             self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
             self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
-            self.scene.LightLossFactor = float( roadDesc[0].attributes["LightLossFactor"].value ) 
+            self.scene.qZero = float( roadDesc[0].attributes["qZero"].value ) 
         
         backgroundDesc = dom.getElementsByTagName( 'Background' )
         if( backgroundDesc[0].attributes ):
@@ -181,10 +181,32 @@ class configGenerator:
         print "measFieldLength: " + str( self.measFieldLength ) 
         print "numberOfSubimages: " + str( self.numberOfSubimages ) 
         
-        #print the Light Loss factor of pavement surface
-        self.scene.SurfaceDirt = self.scene.LightLossFactor / 10
-        print "Light Loss Factor: " + str( 1 - self.scene.SurfaceDirt )
+        #print the q0 factor of pavement surface depend on r-table
+        if self.scene.Surfacetype == 'R1' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.1
         
+        elif self.scene.Surfacetype == 'R2' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.07
+        
+        elif self.scene.Surfacetype == 'R3' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.07
+        
+        elif self.scene.Surfacetype == 'R4' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.08
+        
+        elif self.scene.Surfacetype == 'C1' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.1
+        
+        elif self.scene.Surfacetype == 'C2' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.07
+        
+        elif self.scene.Surfacetype == 'plastic' and self.scene.qZero != 0.00:
+            self.scene.SurfaceDirt = self.scene.qZero / 0.07
+        
+        else:
+            self.scene.SurfaceDirt = 1.0 - ( self.scene.qZero * 10.0 )
+        
+        print "qZero aging factor: " + str( self.scene.SurfaceDirt )
         print 'Sucessfully Parsed.'
 
     #calculate the horizontal and vertical opening angle of the camera required for the rendering
@@ -423,67 +445,67 @@ class configGenerator:
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 0.7 - self.scene.SurfaceDirt )+ " " + str( 0.7 - self.scene.SurfaceDirt ) +" "+ str( 0.7 - self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt )+ " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
                 
             elif self.scene.Surfacetype == 'plastic_improvedPhilips':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 0.7 - self.scene.SurfaceDirt )+ " " + str( 0.7 - self.scene.SurfaceDirt ) +" "+ str( 0.7 - self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt )+ " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
                 
             elif self.scene.Surfacetype == 'R4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'R3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'R2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'R1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'C1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2W3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2W4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'BRDF1345':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ str( 1 - self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
 
             else:
                 print 'no valid surfacetype given (R1-R4, BRDF1345, C1, C2 C2W3 C2W4 or plastic, plastic_improvedPhilips)'

@@ -9,7 +9,7 @@ class Scene:
     LaneWidth = 0
     SidewalkWidth = 0
     Surfacetype = ""
-    LightLossFactor = 0
+    qZero = 0.00
     
     Title = ""    
     SPRatio = ""    
