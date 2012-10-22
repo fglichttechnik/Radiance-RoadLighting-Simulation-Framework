@@ -128,7 +128,7 @@ class simulator:
             os.mkdir( self.rootDirPath + self.octDirSuffix )
         
         for i in range( self.numberOfSubimages ):
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
             os.system(cmd)
             print 'generated oct# ' + str( i )
         
@@ -142,7 +142,7 @@ class simulator:
                 print 'generated reference oct# ' + str( i )
                 
         #make octs for scene without targets
-        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
         os.system(cmd)
         cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.refOctDirSuffix )
         os.system(cmd)

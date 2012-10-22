@@ -13,7 +13,7 @@
 	</TargetParameters>
 	<LDCs>
 	<!--10W kaltweiss, 7.10.2010-->
-		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED"/>
+		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor ="0.0"/>
 	</LDCs>
 	<Poles>
 		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LDC="HellaEcoLight_2070lm_LDT" Side="Right"/>

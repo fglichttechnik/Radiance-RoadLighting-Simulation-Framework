@@ -56,6 +56,7 @@ class configGenerator:
             self.printDashedWhiteRad( )
             self.printPoleConfig( )
             self.printLightsRad( )
+            self.printCarlightsRad( )
             self.printNightSky( )
             self.printMaterialsRad( )
             self.printRView( )
@@ -109,6 +110,14 @@ class configGenerator:
             self.scene.TargetSpecularity = float( targetDesc[0].attributes["Specularity"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
+            
+        carDesc = dom.getElementsByTagName( 'Headlight' )
+        if( carDesc[0].attributes ):
+            self.scene.CarLight = carDesc[0].attributes["CarLight"].value 
+            self.scene.CarDistance = float( carDesc[0].attributes["CarDistance"].value )
+            self.scene.CarHeight = float( carDesc[0].attributes["CarHeight"].value )
+            self.scene.CarWidth = float( carDesc[0].attributes["CarWidth"].value )    
+            self.scene.CarCalc =  carDesc[0].attributes["CarCalc"].value 
         
         #check if the scene parameter "numlane" and "target position" make sense
         if( self.scene.NumLanes - self.scene.TargetPosition < 0):
@@ -121,6 +130,7 @@ class configGenerator:
                 tempLDC = LDC.LDC( )
                 tempLDC.LDCName = LDCEntry.attributes["Name"].value
                 tempLDC.LDCLightSource = LDCEntry.attributes["LightSource"].value
+                tempLDC.LDCLightLossFactor = float( LDCEntry.attributes["LightLossFactor"].value )
                 self.lights.append(tempLDC)
             
         poleDesc = dom.getElementsByTagName( 'Poles' )
@@ -281,13 +291,15 @@ class configGenerator:
                 sys.exit(0)
             
             iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
-            print "Creating radiance LDC for light source type" + entry.LDCLightSource
-            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            print "Creating radiance LDC for light source type " + entry.LDCLightSource
+            print "Given light loss factor: " + str( entry.LDCLightLossFactor )
+            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -m ' + str( entry.LDCLightLossFactor ) + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath  
             #-dm for meters
             #-t for lightsource type in lamp.tab (radiance dir)
             #-l library dir prefix for pathes in generated .rad file?
+            #-m for an output factor -- light loss factor
             #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
-            print "ies2rad command:"
+            print "ies2rad lights command:"
             print cmd
             os.system( cmd )
             
@@ -305,9 +317,36 @@ class configGenerator:
                     datfile_new.write( line )
                 else:
                     datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
-    
+        
+        # headlight initial            
+        if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies' ) ):
+                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
+                sys.exit(0)
+                            
+    	iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
+        
+        cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+        print "ies2rad headlight command:"
+        print cmd
+        os.system( cmd )
+        
+        radpath_old = iesPath.replace( '.ies', '.rad' )
+        radpath_new = iesPath.replace( '.ies', '.txt' )
+        print radpath_old
+        print radpath_new
+        os.rename(radpath_old, radpath_new )
+            
+        datfile_old = open( radpath_new, 'r' )
+        datfile_new = open( radpath_old, 'w' )
+            
+        for line in datfile_old.readlines():
+            if line.find( self.scene.CarLight + '.dat' ) == -1:
+                datfile_new.write( line )
+            else:
+                datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+            
     #White paint line that divides the lanes
-    def printDashedWhiteRad(self):
+    def printDashedWhiteRad( self ):
             print 'Generating: dashed_white.rad'
             self.markingWidth = 0.1
             self.markingLength = 4
@@ -380,6 +419,20 @@ class configGenerator:
             #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
+    # print Headlights from Car 
+    def printCarlightsRad( self ):
+    		print 'Generating: Carlights'
+    		print 'CarHeight: ' + str( self.scene.CarHeight )
+    		print 'CarWidth: ' + str( self.scene.CarWidth )
+    		print 'CarDistance: ' + str( self.scene.CarDistance )
+    		if self.scene.CarCalc == 'on':
+    			f = open( self.workingDirPath + self.radDirPrefix + '/headlight.rad', "w" )
+    			f.write( "######headlight.rad######\n" )
+    			# left car light
+    			f.write( "!xform -e -rx 90 -t " + str( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+    			# right car light
+    			#f.write( "!xform -e -ry 90 -t " + str( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+    			f.close( )
     
     # def printLuminaireRad( self ):
 #             print 'Generating: LDC Rad files'
@@ -445,67 +498,67 @@ class configGenerator:
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt )+ " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
                 
             elif self.scene.Surfacetype == 'plastic_improvedPhilips':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt )+ " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
                 
             elif self.scene.Surfacetype == 'R4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'R3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'R2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'R1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
                 
             elif self.scene.Surfacetype == 'C1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2W3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'C2W4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
             
             elif self.scene.Surfacetype == 'BRDF1345':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
 
             else:
                 print 'no valid surfacetype given (R1-R4, BRDF1345, C1, C2 C2W3 C2W4 or plastic, plastic_improvedPhilips)'
