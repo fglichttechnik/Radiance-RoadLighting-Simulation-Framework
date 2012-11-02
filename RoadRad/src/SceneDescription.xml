@@ -8,12 +8,15 @@
 	<TargetParameters>
 	<!--fixedTargetDistance or fixedViewPoint-->
 		<ViewPoint Distance="35" Height="1.2" TargetDistanceMode="fixedViewPoint" XOffset="0" ViewDirection="auto" /><!---->
-		<Target Size="0.3" Reflectancy="0.04" Specularity="0" Roughness="0" Position="Center" OnLane="1"/>
+		<Target Size="0.3" Reflectancy="0.04" Specularity="0" Roughness="0" Position="Center" OnLane="2"/>
 		<!--<Target Size="0.18" Reflectancy="0.5" Position="Centre" OnLane="1"/>-->
 	</TargetParameters>
+	<Headlights>
+		<Headlight CarLight="HeadLight" CarDistance="30" CarHeight="0.7" CarWidth="1.9" SlopeAngle="1.2" CarCalc="on" TwoWayTraffic="on" TrafficLane="1" />
+	</Headlights>
 	<LDCs>
 	<!--10W kaltweiss, 7.10.2010-->
-		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor ="0.0"/>
+		<LDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor ="0.1"/>
 	</LDCs>
 	<Poles>
 		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LDC="HellaEcoLight_2070lm_LDT" Side="Right"/>

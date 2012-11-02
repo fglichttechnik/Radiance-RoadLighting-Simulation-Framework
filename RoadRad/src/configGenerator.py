@@ -109,15 +109,18 @@ class configGenerator:
             self.scene.TargetRoughness = float( targetDesc[0].attributes["Roughness"].value )
             self.scene.TargetSpecularity = float( targetDesc[0].attributes["Specularity"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
-            self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value )
+            self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value ) - 1
             
         carDesc = dom.getElementsByTagName( 'Headlight' )
         if( carDesc[0].attributes ):
             self.scene.CarLight = carDesc[0].attributes["CarLight"].value 
             self.scene.CarDistance = float( carDesc[0].attributes["CarDistance"].value )
             self.scene.CarHeight = float( carDesc[0].attributes["CarHeight"].value )
-            self.scene.CarWidth = float( carDesc[0].attributes["CarWidth"].value )    
-            self.scene.CarCalc =  carDesc[0].attributes["CarCalc"].value 
+            self.scene.CarWidth = float( carDesc[0].attributes["CarWidth"].value )  
+            self.scene.SlopeAngle = float( carDesc[0].attributes["SlopeAngle"].value )
+            self.scene.CarCalc =  carDesc[0].attributes["CarCalc"].value
+            self.scene.TwoWayTraffic = carDesc[0].attributes["TwoWayTraffic"].value 
+            self.scene.TrafficLane = int( carDesc[0].attributes["TrafficLane"].value  ) - 1
         
         #check if the scene parameter "numlane" and "target position" make sense
         if( self.scene.NumLanes - self.scene.TargetPosition < 0):
@@ -318,33 +321,34 @@ class configGenerator:
                 else:
                     datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
         
-        # headlight initial            
-        if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies' ) ):
-                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
-                sys.exit(0)
-                            
-    	iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
-        
-        cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
-        print "ies2rad headlight command:"
-        print cmd
-        os.system( cmd )
-        
-        radpath_old = iesPath.replace( '.ies', '.rad' )
-        radpath_new = iesPath.replace( '.ies', '.txt' )
-        print radpath_old
-        print radpath_new
-        os.rename(radpath_old, radpath_new )
+        # headlight initial
+        if self.scene.CarCalc == 'on':
+            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies' ) ):
+                    print self.scene.CarLight + " LDC not found in the designated LDCs directory. Terminating."
+                    sys.exit(0)
+                                
+            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
             
-        datfile_old = open( radpath_new, 'r' )
-        datfile_new = open( radpath_old, 'w' )
+            cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+            print "ies2rad headlight command:"
+            print cmd
+            os.system( cmd )
             
-        for line in datfile_old.readlines():
-            if line.find( self.scene.CarLight + '.dat' ) == -1:
-                datfile_new.write( line )
-            else:
-                datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
-            
+            radpath_old = iesPath.replace( '.ies', '.rad' )
+            radpath_new = iesPath.replace( '.ies', '.txt' )
+            print radpath_old
+            print radpath_new
+            os.rename(radpath_old, radpath_new )
+                
+            datfile_old = open( radpath_new, 'r' )
+            datfile_new = open( radpath_old, 'w' )
+                
+            for line in datfile_old.readlines():
+                if line.find( self.scene.CarLight + '.dat' ) == -1:
+                    datfile_new.write( line )
+                else:
+                    datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+                
     #White paint line that divides the lanes
     def printDashedWhiteRad( self ):
             print 'Generating: dashed_white.rad'
@@ -397,7 +401,7 @@ class configGenerator:
             for index, poleArray in enumerate(self.Poles):
                 if poleArray.isSingle == True:
                     if poleArray.PoleSide == "Left":
-                        f.write( "!xform  -t -1 " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -t -1 " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                     else:
                         f.write( "!xform -rz -180 -t "+ str( self.scene.NumLanes * self.scene.LaneWidth + 1 )+" " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_" + str(index) + "_light_pole.rad\n" )
                 elif poleArray.PoleSide == "Left":
@@ -407,32 +411,43 @@ class configGenerator:
             #f.write( "!xform -e -t -1 -"+ str(self.Poles[0].PoleSpacing) +" 0 -a 4 -t 0 "+ str(self.Poles[0].PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -t -1 -" + str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -t -1 -" + str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                 else:
                     print "making right poles"
                     if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform  -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
             #f.write( "!xform -e -t -1 -120 0 -a 4 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
             f.close( )
     
     # print Headlights from Car 
     def printCarlightsRad( self ):
-    		print 'Generating: Carlights'
-    		print 'CarHeight: ' + str( self.scene.CarHeight )
-    		print 'CarWidth: ' + str( self.scene.CarWidth )
-    		print 'CarDistance: ' + str( self.scene.CarDistance )
-    		if self.scene.CarCalc == 'on':
-    			f = open( self.workingDirPath + self.radDirPrefix + '/headlight.rad', "w" )
-    			f.write( "######headlight.rad######\n" )
-    			# left car light
-    			f.write( "!xform -e -rx 90 -t " + str( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-    			# right car light
-    			#f.write( "!xform -e -ry 90 -t " + str( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-    			f.close( )
+            if self.scene.CarCalc == 'on':
+                print 'Generating: Carlights'
+                print 'Car on Lane: ' + str( self.scene.TrafficLane + 1 )
+                print 'CarHeight: ' + str( self.scene.CarHeight )
+                print 'CarWidth: ' + str( self.scene.CarWidth )
+                print 'CarDistance: ' + str( self.scene.CarDistance )
+                print 'Angle of Slope: ' + str( self.scene.SlopeAngle )
+                f = open( self.workingDirPath + self.radDirPrefix + '/headlight.rad', "w" )
+                f.write( "######headlight.rad######\n" )
+                if self.scene.TwoWayTraffic == 'on':
+                    print 'TwoWayTraffic: on'
+                    # left car light
+                    f.write( "!xform -n leftLight -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    # right car light
+                    f.write( "!xform -n rightLight -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                else:
+                    print 'TwoWayTraffic: off'
+                    # left car light
+                    f.write( "!xform -n leftLight -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    # right car light
+                    f.write( "!xform -n rightLight -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                
+                f.close( )
     
     # def printLuminaireRad( self ):
 #             print 'Generating: LDC Rad files'
