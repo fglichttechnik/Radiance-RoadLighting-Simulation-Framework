@@ -86,7 +86,11 @@ class simulator:
         
         LDCDesc = dom.getElementsByTagName( 'LDC' )
         if( LDCDesc[0].attributes ):
-            self.lightType = LDCDesc[0].attributes["LightSource"].value            
+            self.lightType = LDCDesc[0].attributes["LightSource"].value     
+            
+        carDesc = dom.getElementsByTagName( 'Headlight' )
+        if( carDesc[0].attributes ):
+            self.CarCalc = carDesc[0].attributes["CarCalc"].value                
             
         descriptionDesc = dom.getElementsByTagName( 'Description' )
         if( descriptionDesc[0].attributes ):
@@ -123,14 +127,20 @@ class simulator:
     #system call to radiance framework to generate oct files out of the various rads
     # both for the actual simulated image and the refernce pictures to determine the 
     # pixel position of the target objects
-    def makeOct(self):
+    def makeOct( self ):
         if( not os.path.isdir( self.rootDirPath + self.octDirSuffix ) ):
             os.mkdir( self.rootDirPath + self.octDirSuffix )
         
-        for i in range( self.numberOfSubimages ):
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
-            os.system(cmd)
-            print 'generated oct# ' + str( i )
+        if self.CarCalc == 'on':
+            for i in range( self.numberOfSubimages ):
+                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
+                os.system(cmd)
+                print 'generated oct# ' + str( i )
+        else:
+            for i in range( self.numberOfSubimages ):
+                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.rootDirPath + self.radDirSuffix, i, self.rootDirPath + self.octDirSuffix )
+                os.system(cmd)
+                print 'generated oct# ' + str( i )        
         
         if( not self.willSkipRefPic ):
             if( not os.path.isdir( self.rootDirPath + self.refOctDirSuffix ) ):
@@ -142,8 +152,12 @@ class simulator:
                 print 'generated reference oct# ' + str( i )
                 
         #make octs for scene without targets
-        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
-        os.system(cmd)
+        if self.CarCalc == 'on':
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+            os.system(cmd)
+        else:
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+            os.system(cmd)
         cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.refOctDirSuffix )
         os.system(cmd)
         print 'generated oct without targets for view up and down'
@@ -174,17 +188,11 @@ class simulator:
                 starttime = datetime.datetime.now()
                 cmd0 = ''
                 
-                if ambCalc == 'y':
+                if ambCalc == 'y' or ambCalc == 'ye' or ambCalc == 'yes':
                     if self.fixedVPMode == True:
                         cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
                     else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                        
-                       #cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -vd 0 0.999856 -0.0169975 -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
-                elif ambCalc == 'yes':
-                    if self.fixedVPMode == True:
-                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
-                    else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )    
+                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                                         
                 else:    
                     if self.fixedVPMode == True:
                         cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )

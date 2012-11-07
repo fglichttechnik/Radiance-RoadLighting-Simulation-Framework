@@ -123,7 +123,7 @@ class configGenerator:
             self.scene.TrafficLane = int( carDesc[0].attributes["TrafficLane"].value  ) - 1
         
         #check if the scene parameter "numlane" and "target position" make sense
-        if( self.scene.NumLanes - self.scene.TargetPosition < 0):
+        if( self.scene.NumLanes - self.scene.TargetPosition < 0 ):
             print "Numlanes and TargetPosition Parameters are impossible"
             sys.exit(0)
         
@@ -219,7 +219,7 @@ class configGenerator:
         else:
             self.scene.SurfaceDirt = 1.0 - ( self.scene.qZero * 10.0 )
         
-        print "qZero aging factor: " + str( self.scene.SurfaceDirt )
+        print "qZero aging multiplying factor: " + str( self.scene.SurfaceDirt )
         print 'Sucessfully Parsed.'
 
     #calculate the horizontal and vertical opening angle of the camera required for the rendering
@@ -287,67 +287,67 @@ class configGenerator:
         if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
             print "LDCs directory not found. Terminating."
             sys.exit(0)
-        
-        for entry in self.lights:
-            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies' ) ):
-                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
-                sys.exit(0)
-            
-            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
-            print "Creating radiance LDC for light source type " + entry.LDCLightSource
-            print "Given light loss factor: " + str( entry.LDCLightLossFactor )
-            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -m ' + str( entry.LDCLightLossFactor ) + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath  
-            #-dm for meters
-            #-t for lightsource type in lamp.tab (radiance dir)
-            #-l library dir prefix for pathes in generated .rad file?
-            #-m for an output factor -- light loss factor
-            #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
-            print "ies2rad lights command:"
-            print cmd
-            os.system( cmd )
-            
-            radpath_old = iesPath.replace( '.ies', '.rad' )
-            radpath_new = iesPath.replace( '.ies', '.txt' )
-            print radpath_old
-            print radpath_new
-            os.rename(radpath_old, radpath_new )
-            
-            datfile_old = open( radpath_new, 'r' )
-            datfile_new = open( radpath_old, 'w' )
-            
-            for line in datfile_old.readlines():
-                if line.find( entry.LDCName + '.dat' ) == -1:
-                    datfile_new.write( line )
-                else:
-                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+        else:
+	        for entry in self.lights:
+	            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies' ) ):
+	                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
+	                sys.exit(0)
+	            else:
+		            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
+		            print "Creating radiance LDC for light source type " + entry.LDCLightSource
+		            print "Given light loss factor: " + str( entry.LDCLightLossFactor )
+		            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -m ' + str( entry.LDCLightLossFactor ) + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath  
+		            #-dm for meters
+		            #-t for lightsource type in lamp.tab (radiance dir)
+		            #-l library dir prefix for pathes in generated .rad file?
+		            #-m for an output factor -- light loss factor
+		            #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
+		            print "ies2rad lights command:"
+		            print cmd
+		            os.system( cmd )
+		            
+		            radpath_old = iesPath.replace( '.ies', '.rad' )
+		            radpath_new = iesPath.replace( '.ies', '.txt' )
+		            print radpath_old
+		            print radpath_new
+		            os.rename(radpath_old, radpath_new )
+		            
+		            datfile_old = open( radpath_new, 'r' )
+		            datfile_new = open( radpath_old, 'w' )
+		            
+		            for line in datfile_old.readlines():
+		                if line.find( entry.LDCName + '.dat' ) == -1:
+		                    datfile_new.write( line )
+		                else:
+		                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
         
         # headlight initial
         if self.scene.CarCalc == 'on':
             if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies' ) ):
                     print self.scene.CarLight + " LDC not found in the designated LDCs directory. Terminating."
-                    sys.exit(0)
-                                
-            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
-            
-            cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
-            print "ies2rad headlight command:"
-            print cmd
-            os.system( cmd )
-            
-            radpath_old = iesPath.replace( '.ies', '.rad' )
-            radpath_new = iesPath.replace( '.ies', '.txt' )
-            print radpath_old
-            print radpath_new
-            os.rename(radpath_old, radpath_new )
-                
-            datfile_old = open( radpath_new, 'r' )
-            datfile_new = open( radpath_old, 'w' )
-                
-            for line in datfile_old.readlines():
-                if line.find( self.scene.CarLight + '.dat' ) == -1:
-                    datfile_new.write( line )
-                else:
-                    datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+                    #sys.exit(0)
+            else:                    
+	            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
+	            
+	            cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
+	            print "ies2rad headlight command:"
+	            print cmd
+	            os.system( cmd )
+	            
+	            radpath_old = iesPath.replace( '.ies', '.rad' )
+	            radpath_new = iesPath.replace( '.ies', '.txt' )
+	            print radpath_old
+	            print radpath_new
+	            os.rename(radpath_old, radpath_new )
+	                
+	            datfile_old = open( radpath_new, 'r' )
+	            datfile_new = open( radpath_old, 'w' )
+	                
+	            for line in datfile_old.readlines():
+	                if line.find( self.scene.CarLight + '.dat' ) == -1:
+	                    datfile_new.write( line )
+	                else:
+	                    datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
                 
     #White paint line that divides the lanes
     def printDashedWhiteRad( self ):
@@ -426,7 +426,7 @@ class configGenerator:
     # print Headlights from Car 
     def printCarlightsRad( self ):
             if self.scene.CarCalc == 'on':
-                print 'Generating: Carlights'
+                print 'Generating: Carlights: ' + str( self.scene.CarLight )
                 print 'Car on Lane: ' + str( self.scene.TrafficLane + 1 )
                 print 'CarHeight: ' + str( self.scene.CarHeight )
                 print 'CarWidth: ' + str( self.scene.CarWidth )
@@ -436,17 +436,13 @@ class configGenerator:
                 f.write( "######headlight.rad######\n" )
                 if self.scene.TwoWayTraffic == 'on':
                     print 'TwoWayTraffic: on'
-                    # left car light
-                    f.write( "!xform -n leftLight -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-                    # right car light
-                    f.write( "!xform -n rightLight -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    # twoWayTraffic observer position headlamps
+                    f.write( "!xform -rz -90 -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
                 else:
                     print 'TwoWayTraffic: off'
-                    # left car light
-                    f.write( "!xform -n leftLight -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-                    # right car light
-                    f.write( "!xform -n rightLight -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) + ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-                
+                    # observer position headlamp
+                    f.write( "!xform -rz 90 -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    
                 f.close( )
     
     # def printLuminaireRad( self ):

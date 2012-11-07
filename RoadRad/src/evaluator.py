@@ -78,6 +78,10 @@ class evaluator:
         descriptionDesc = dom.getElementsByTagName( 'Description' )
         if( descriptionDesc[0].attributes ):
             self.title = descriptionDesc[0].attributes["Title"].value
+            
+        carDesc = dom.getElementsByTagName( 'Headlight' )
+        if( carDesc[0].attributes ):
+            self.CarCalc = carDesc[0].attributes["CarCalc"].value          
         
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
@@ -132,9 +136,13 @@ class evaluator:
             os.mkdir( self.rootDirPath + self.octDirSuffix )        
         
         #make oct for scene without targets for din evaluation
-        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
-        os.system(cmd)
-    
+        if self.CarCalc == 'on':
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+            os.system(cmd)
+        else:    
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+            os.system(cmd)
+            
     #Prints view point files for every lane
     #Based on the viewpoint mode, one of several viewpoints are written
     def calcLuminances( self ):
