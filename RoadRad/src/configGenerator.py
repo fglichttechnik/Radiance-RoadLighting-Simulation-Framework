@@ -69,6 +69,7 @@ class configGenerator:
             self.printTarget( )
             self.printTargets( )
             self.veilCal( )
+            self.calcOpeningAngle( )
             
 
     #Scene description xml parser.
@@ -78,12 +79,11 @@ class configGenerator:
         dom = parse( configfile )
         configfile.close( )
         
-        veilLumDesc = dom.getElementsByTagName( 'Calculation' )
-        if( veilLumDesc[0].hasAttribute( 'VeilingLuminance' ) ):
-            self.isVeil = veilLumDesc[0].attributes["VeilingLuminance"].value
-        else:
-            self.isVeil = 'off'
-
+        sceneDesc = dom.getElementsByTagName( 'SceneDescription' )
+        if( sceneDesc[0].attributes ):
+        	self.scene.Environment = sceneDesc[0].attributes["Environment"].value
+        	self.scene.FocalLength = sceneDesc[0].attributes["FocalLength"].value
+       
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
@@ -91,12 +91,15 @@ class configGenerator:
             self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
             self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
             self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
-            self.scene.qZero = float( roadDesc[0].attributes["qZero"].value ) 
-        
-        backgroundDesc = dom.getElementsByTagName( 'Background' )
-        if( backgroundDesc[0].attributes ):
-            self.scene.Background = backgroundDesc[0].attributes["Context"].value
-        
+            self.scene.qZero = float( roadDesc[0].attributes["qZero"].value )             
+            
+        calcDesc = dom.getElementsByTagName( 'Calculation' )
+        if( calcDesc[0].attributes):
+            self.isVeil = calcDesc[0].attributes["VeilingLuminance"].value
+            self.isDIN = calcDesc[0].attributes["DIN13201"].value
+            self.VeilingLuminanceMethod = calcDesc[0].attributes["VeilingLuminanceMethod"].value
+            self.TresholdLuminanceFactor = calcDesc[0].attributes["TresholdLuminanceFactor"].value
+               
         #parse data for point of view 
         viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
         if( viewpointDesc[0].attributes ):
@@ -115,31 +118,36 @@ class configGenerator:
             self.scene.TargetSpecularity = float( targetDesc[0].attributes["Specularity"].value )
             self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
             self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value ) - 1
-            
-        carDesc = dom.getElementsByTagName( 'Headlight' )
-        if( carDesc[0].attributes ):
-            self.scene.CarLight = carDesc[0].attributes["CarLight"].value 
-            self.scene.CarDistance = float( carDesc[0].attributes["CarDistance"].value )
-            self.scene.CarHeight = float( carDesc[0].attributes["CarHeight"].value )
-            self.scene.CarWidth = float( carDesc[0].attributes["CarWidth"].value )  
-            self.scene.SlopeAngle = float( carDesc[0].attributes["SlopeAngle"].value )
-            self.scene.CarCalc =  carDesc[0].attributes["CarCalc"].value
-            self.scene.TwoWayTraffic = carDesc[0].attributes["TwoWayTraffic"].value 
-            self.scene.TrafficLane = int( carDesc[0].attributes["TrafficLane"].value  ) - 1
-        
+
         #check if the scene parameter "numlane" and "target position" make sense
         if( self.scene.NumLanes - self.scene.TargetPosition < 0 ):
             print "Numlanes and TargetPosition Parameters are impossible"
             sys.exit(0)
-        
-        LDCDesc = dom.getElementsByTagName( 'LDC' )
-        for LDCEntry in LDCDesc:
-            if( LDCEntry.attributes ):
-                tempLDC = LDC.LDC( )
-                tempLDC.LDCName = LDCEntry.attributes["Name"].value
-                tempLDC.LDCLightSource = LDCEntry.attributes["LightSource"].value
-                tempLDC.LDCLightLossFactor = float( LDCEntry.attributes["LightLossFactor"].value )
-                self.lights.append(tempLDC)
+            
+        HeadlightDesc = dom.getElementsByTagName( 'Headlight' )
+        for HeadlightEntry in HeadlightDesc:
+	        if( HeadlightEntry.attributes ):
+	        	tempHeadlight = Headlight.Headlight( )
+	            tempHeadlight.LIDC = carDesc[0].attributes["LIDC"].value 
+	            tempHeadlight.HeadlightDistanceMode = carDesc[0].attributes["HeadlightDistanceMode"].value 
+	            tempHeadlight.Distance = float( carDesc[0].attributes["Distance"].value )
+	            tempHeadlight.Height = float( carDesc[0].attributes["Height"].value )
+	            tempHeadlight.Width = float( carDesc[0].attributes["Width"].value )  
+	            tempHeadlight.SlopeAngle = float( carDesc[0].attributes["SlopeAngle"].value )
+	            tempHeadlight.Calculation =  carDesc[0].attributes["Calculation"].value
+	            tempHeadlight.LightDirection = carDesc[0].attributes["LightDirection"].value 
+	            tempHeadlight.OnLane = int( carDesc[0].attributes["OnLane"].value  ) - 1
+	            self.headlights.append( tempHeadlight )
+          
+        LIDCDesc = dom.getElementsByTagName( 'LIDC' )
+        for LIDCEntry in LIDCDesc:
+            if( LIDCEntry.attributes ):
+                tempLIDC = LIDC.LIDC( )
+                tempLIDC.LIDCName = LIDCEntry.attributes["Name"].value
+                tempLIDC.LIDCLightSource = LIDCEntry.attributes["LightSource"].value
+                tempLIDC.LIDCLightLossFactor = float( LIDCEntry.attributes["LightLossFactor"].value )
+                tempLIDC.LIDCSPRatio = float( LIDCEntry.attributes["SPRatio"].value )
+                self.lights.append( tempLIDC )
             
         poleDesc = dom.getElementsByTagName( 'Poles' )
         for pole in poleDesc[0].childNodes:
@@ -160,13 +168,8 @@ class configGenerator:
                 tempPole.PoleLDC = pole.attributes["LDC"].value
                 tempPole.PoleOverhang = float(pole.attributes["PoleOverhang"].value )
                 self.Poles.append(tempPole)
-        
-        focalLen = dom.getElementsByTagName( 'FocalLength' )
-        if( focalLen[ 0 ].attributes ):
-            self.focalLength = float( focalLen[ 0 ].attributes["FL"].value )
-            self.calcOpeningAngle( )
-        
-            
+                    
+          
         #calculate necessary measures
         selectedArray = -1
         #select the first nonSingle pole
