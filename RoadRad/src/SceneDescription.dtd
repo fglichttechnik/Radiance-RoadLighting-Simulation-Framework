@@ -1,10 +1,11 @@
-<!ELEMENT RoadScene (SceneDescription, TargetParameters, LDCs, Poles, FocalLength)>
+<!ELEMENT RoadScene (Scene, TargetParameters, LIDCs, Headlights, Poles)>
 
-<!ELEMENT SceneDescription (Description, Road, Background, Calculation)>
-<!ELEMENT Description (#PCDATA)>
+<!ELEMENT Scene (SceneDescription, Road, Calculation)>
+<!ELEMENT SceneDescription (#PCDATA)>
 <!ATTLIST Description
     Title CDATA #REQUIRED
-    SPRatio CDATA #REQUIRED
+    Context CDATA #REQUIRED
+    FocalLength CDATA #REQUIRED
 >
 <!ELEMENT Road (#PCDATA)>
 <!ATTLIST Road
@@ -13,16 +14,16 @@
     SidewalkWidth CDATA #REQUIRED
     Surface CDATA #REQUIRED
     NumPoleFields CDATA #REQUIRED
->
-<!ELEMENT Background (#PCDATA)>
-<!ATTLIST Background
-    Context CDATA #REQUIRED
->
-<!ELEMENT Calculation (#PCDATA)>
-<!ATTLIST Calculation
-    Method CDATA #REQUIRED
+    qZero CDATA #REQUIRED
 >
 
+<!ELEMENT Calculation (#PCDATA)>
+<!ATTLIST Calculation
+	DIN13201 CDATA #REQUIRED
+	VeilingLuminance CDATA #REQUIRED
+    VeilingLuminanceMethod CDATA #REQUIRED
+    TresholdLuminanceFactor CDATA #REQUIRED
+>
 
 <!ELEMENT TargetParameters (ViewPoint, Target)>
 <!ELEMENT ViewPoint (#PCDATA)>
@@ -30,20 +31,32 @@
     Distance CDATA #REQUIRED
     Height CDATA #REQUIRED
     TargetDistanceMode CDATA #REQUIRED
+    XOffset CDATA #REQUIRED
+    ViewDirection CDATA #REQUIRED
 >
 <!ELEMENT Target (#PCDATA)>
 <!ATTLIST Target
     Size CDATA #REQUIRED
     Reflectancy CDATA #REQUIRED
+    Specularity CDATA #REQUIRED
+    Roughness CDATA #REQUIRED
     Position CDATA #REQUIRED
     OnLane CDATA #REQUIRED
 >
 
-<!ELEMENT LDCs (LDC+)>
-<!ELEMENT LDC (#PCDATA)>
-<!ATTLIST LDC
+<!ELEMENT LIDCs (LIDC+)>
+<!ELEMENT LIDC (#PCDATA)>
+<!ATTLIST LIDC
 	Name CDATA #REQUIRED
     LightSource CDATA #REQUIRED
+    LightLossFactor CData #REQUIRED
+    SPRatio CData #REQUIRED
+>
+
+<!ELEMENT Headlights (Headlight+)>
+<!ELEMENT Headlight (#PCDATA)>
+<!ATTLIST Headlight
+	Calculation CDATA #REQUIRED
 >
 
 <!ELEMENT Poles (PoleArray)>
@@ -55,9 +68,4 @@
     IsStaggered CDATA #REQUIRED
     LDC CDATA #REQUIRED
     Side CDATA #REQUIRED
->
-
-<!ELEMENT FocalLength (#PCDATA)>
-<!ATTLIST FocalLength
-	FL CDATA #REQUIRED
 >

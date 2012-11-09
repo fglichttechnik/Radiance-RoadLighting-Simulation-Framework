@@ -13,10 +13,16 @@ import LDC
 
 class configGenerator:
     
+    #roadScene = []
+    
+    
     def __init__( self, path ):
         #retrieve working directory info
         self.workingDirPath = path
         print 'Working Directory: ' + self.workingDirPath
+        
+        
+        #self.roadScene = RoadScene.RoadScene( path )
         
         self.dirIndex = []
         
@@ -78,7 +84,6 @@ class configGenerator:
         else:
             self.isVeil = 'off'
 
-        #parse data for road description and add a new factor qZero, 0 = new, 1 = almost new, 2 = moderate, 3 = old, 4 = older       
         roadDesc = dom.getElementsByTagName( 'Road' )
         if( roadDesc[0].attributes ):
             self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
@@ -437,11 +442,11 @@ class configGenerator:
                 if self.scene.TwoWayTraffic == 'on':
                     print 'TwoWayTraffic: on'
                     # twoWayTraffic observer position headlamps
-                    f.write( "!xform -rz -90 -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    f.write( "!xform -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
                 else:
                     print 'TwoWayTraffic: off'
                     # observer position headlamp
-                    f.write( "!xform -rz 90 -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
+                    f.write( "!xform -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
                     
                 f.close( )
     
@@ -657,7 +662,9 @@ class configGenerator:
         #view down on the roadway
         f = open( self.workingDirPath + self.radDirPrefix + '/eye_down.vp', "w" )
         f.write( "######eye.vp######\n" )
-        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
+        #f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
+        f.write( "rview -vtl -vp " + str( self.scene.LaneWidth ) + " 1 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20 -vs 0 -vl 0\n" )
+
         f.close( )
         #view up from the roadway
         f = open( self.workingDirPath + self.radDirPrefix + '/eye_up.vp', "w" )

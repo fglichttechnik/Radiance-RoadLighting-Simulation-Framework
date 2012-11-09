@@ -153,7 +153,8 @@ class simulator:
                 
         #make octs for scene without targets
         if self.CarCalc == 'on':
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+#            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
             os.system(cmd)
         else:
             cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.rootDirPath + self.radDirSuffix, self.rootDirPath + self.octDirSuffix )
@@ -172,36 +173,36 @@ class simulator:
                 os.mkdir( self.rootDirPath + self.picDirSuffix + self.falsecolorSubDirSuffix )
                 
             # choosing between high accurate ambient and normal simulation
-            print 'Please enter y(yes) or n(no) for ambient calculation: '
-            timeout = 10
-            print 'You choose:',
-            rlist, _, _ = select([sys.stdin], [], [], timeout)
-            if rlist:
-                ambCalc = sys.stdin.readline()
-                print ambCalc
-            else:
-                print 'No input. None ambient calculation...'
-                ambCalc = 'n'                
-            
-            for i in range( self.numberOfSubimages ):
-                print 'generating pic# ' + str( i )
-                starttime = datetime.datetime.now()
-                cmd0 = ''
-                
-                if ambCalc == 'y' or ambCalc == 'ye' or ambCalc == 'yes':
-                    if self.fixedVPMode == True:
-                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
-                    else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                                         
-                else:    
-                    if self.fixedVPMode == True:
-                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                    else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
-                    
-                os.system( cmd0 )
-                print 'done.'
-                print datetime.datetime.now() - starttime
+#            print 'Please enter y(yes) or n(no) for ambient calculation: '
+#            timeout = 10
+#            print 'You choose:',
+#            rlist, _, _ = select([sys.stdin], [], [], timeout)
+#            if rlist:
+#                ambCalc = sys.stdin.readline()
+#                print ambCalc
+#            else:
+#                print 'No input. None ambient calculation...'
+#                ambCalc = 'n'                
+#            
+#            for i in range( self.numberOfSubimages ):
+#                print 'generating pic# ' + str( i )
+#                starttime = datetime.datetime.now()
+#                cmd0 = ''
+#                
+#                if ambCalc == 'y' or ambCalc == 'ye' or ambCalc == 'yes':
+#                    if self.fixedVPMode == True:
+#                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                    
+#                    else:
+#                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )                                         
+#                else:    
+#                    if self.fixedVPMode == True:
+#                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+#                    else:
+#                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.rootDirPath + self.octDirSuffix , i, self.rootDirPath + self.picDirSuffix +self.picSubDirSuffix, self.rootDirPath + self.radDirSuffix, self.horizontalRes, self.verticalRes )
+#                    
+#                os.system( cmd0 )
+#                print 'done.'
+#                print datetime.datetime.now() - starttime
             
                 #cmd1 = 'rpict -vtv -vp 18 -273 4.75 -vd 0 0.999856 -0.0169975 -vu 0 0 1 -vh 6 -vv 3 -vs 0 -vl 0 -x 3000 -y 1500 {0}/scene.oct | pfilt -r .6 -x 800 -y 400 -1 -e 5 > {0}/scene1.pic'.format( entry )
                 #os.system( cmd1 )
