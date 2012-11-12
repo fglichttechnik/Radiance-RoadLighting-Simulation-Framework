@@ -70,7 +70,7 @@ class configGenerator:
             self.printTargets( )
             self.veilCal( )
             self.calcOpeningAngle( )
-            
+       
 
     #Scene description xml parser.
     def parseConfig( self ):
@@ -180,7 +180,7 @@ class configGenerator:
                 
         if selectedArray == -1:
             print "No Pole array defined, cannot position the object. terminating"
-            sys.exit(0)             
+            sys.exit( 0 )             
             
         #according to DIN EN 13201 / RP 8 00 (max 5 m)
         self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;
