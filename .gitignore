@@ -3,6 +3,7 @@
 *.oct
 RoadRad/scenes
 RoadRad/src/scenes
+RoadRad/Backup
 *.pf
 *.hdr
 *.pic

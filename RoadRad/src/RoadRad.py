@@ -39,7 +39,7 @@ import sys
 import shutil
 import datetime
 
-import configGenerator
+import ConfigGenerator as modulConfigGenerator
 import simulator
 import EnvVarSetter
 import evaluator;
@@ -61,7 +61,7 @@ def cleanSceneDir( path ):
     RadsDir = cwd + '/scenes/' + path + "/Rads"
     RefOctsDir = cwd + '/scenes/' + path + "/RefOcts"
     RefPicsDir = cwd + '/scenes/' + path + "/RefPics"
-#    LDCsDir = cwd + '/scenes/' + path + "/LDCs"
+    LDCsDir = cwd + '/scenes/' + path + "/LDCs"
     if( os.path.exists( LMKSetMatDir ) ):
         shutil.rmtree( LMKSetMatDir )
     if( os.path.exists( OctsDir ) ):
@@ -74,11 +74,11 @@ def cleanSceneDir( path ):
         shutil.rmtree( RefOctsDir )
     if( os.path.exists( RefPicsDir ) ):
         shutil.rmtree( RefPicsDir )
-#    if( os.path.exists( LDCsDir ) ):
-#        dirList = os.listdir( LDCsDir )
-#        for file in dirList:
-#            if( file.endswith( ".dat" ) or file.endswith( ".rad" ) or file.endswith( ".txt" ) ):
-#                os.remove( LDCsDir + "/" + file )
+    if( os.path.exists( LDCsDir ) ):
+        dirList = os.listdir( LDCsDir )
+        for file in dirList:
+            if( file.endswith( ".dat" ) or file.endswith( ".rad" ) or file.endswith( ".txt" ) ):
+                os.remove( LDCsDir + "/" + file )
                 
 usage = "usage: %prog [options]"
 version = "%prog 0.1"
@@ -105,9 +105,9 @@ if( options.cleanDir ):
     
 elif( options.dir ):
     cleanSceneDir( options.dir )
-    configGen = configGenerator.configGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
-    sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
-    ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
+    configGen = modulConfigGenerator.ConfigGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
+    #sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
+    #ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
 
 else:
     oparser.print_usage( )

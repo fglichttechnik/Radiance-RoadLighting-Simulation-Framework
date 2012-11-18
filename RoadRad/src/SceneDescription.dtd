@@ -1,12 +1,12 @@
 <!ELEMENT RoadScene (Scene, TargetParameters, LIDCs, Headlights, Poles)>
 
-<!ELEMENT Scene (SceneDescription, Road, Calculation)>
-<!ELEMENT SceneDescription (#PCDATA)>
+<!ELEMENT Scene (Description, Road, Calculation)>
+<!ELEMENT Description (#PCDATA)>
 <!ATTLIST Description
     Title CDATA #REQUIRED
-    Context CDATA #REQUIRED
-    FocalLength CDATA #REQUIRED
->
+    Environment CDATA #REQUIRED
+    FocalLength CDATA #REQUIRED>
+
 <!ELEMENT Road (#PCDATA)>
 <!ATTLIST Road
     NumLanes CDATA #REQUIRED
@@ -14,16 +14,14 @@
     SidewalkWidth CDATA #REQUIRED
     Surface CDATA #REQUIRED
     NumPoleFields CDATA #REQUIRED
-    qZero CDATA #REQUIRED
->
+    qZero CDATA #REQUIRED>
 
 <!ELEMENT Calculation (#PCDATA)>
 <!ATTLIST Calculation
-	DIN13201 CDATA #REQUIRED
-	VeilingLuminance CDATA #REQUIRED
+    DIN13201 CDATA #REQUIRED
+    VeilingLuminance CDATA #REQUIRED
     VeilingLuminanceMethod CDATA #REQUIRED
-    TresholdLuminanceFactor CDATA #REQUIRED
->
+    TresholdLuminanceFactor CDATA #REQUIRED>
 
 <!ELEMENT TargetParameters (ViewPoint, Target)>
 <!ELEMENT ViewPoint (#PCDATA)>
@@ -32,8 +30,8 @@
     Height CDATA #REQUIRED
     TargetDistanceMode CDATA #REQUIRED
     XOffset CDATA #REQUIRED
-    ViewDirection CDATA #REQUIRED
->
+    ViewDirection CDATA #REQUIRED>
+
 <!ELEMENT Target (#PCDATA)>
 <!ATTLIST Target
     Size CDATA #REQUIRED
@@ -41,31 +39,45 @@
     Specularity CDATA #REQUIRED
     Roughness CDATA #REQUIRED
     Position CDATA #REQUIRED
-    OnLane CDATA #REQUIRED
->
+    OnLane CDATA #REQUIRED>
 
 <!ELEMENT LIDCs (LIDC+)>
 <!ELEMENT LIDC (#PCDATA)>
 <!ATTLIST LIDC
-	Name CDATA #REQUIRED
+    Name CDATA #REQUIRED
     LightSource CDATA #REQUIRED
-    LightLossFactor CData #REQUIRED
-    SPRatio CData #REQUIRED
->
+    LightLossFactor CDATA #REQUIRED
+    SPRatio CDATA #REQUIRED>
 
-<!ELEMENT Headlights (Headlight+)>
+<!ELEMENT Headlights (Headlight*)>
+
 <!ELEMENT Headlight (#PCDATA)>
 <!ATTLIST Headlight
-	Calculation CDATA #REQUIRED
->
+    Calculation CDATA #REQUIRED
+    LIDC CDATA #IMPLIED
+    HeadlightDistanceMode CDATA #IMPLIED
+    Distance CDATA #IMPLIED
+    Height CDATA #IMPLIED
+    Width CDATA #IMPLIED
+    SlopeAngle CDATA #IMPLIED
+    LightDirection CDATA #IMPLIED
+    OnLane CDATA #IMPLIED>
 
-<!ELEMENT Poles (PoleArray)>
+<!ELEMENT Poles (PoleArray, PoleSingle*)>
+
 <!ELEMENT PoleArray (#PCDATA)>
 <!ATTLIST PoleArray
-	PoleHeight CDATA #REQUIRED
+    PoleHeight CDATA #REQUIRED
     PoleSpacing CDATA #REQUIRED
     PoleOverhang CDATA #REQUIRED
     IsStaggered CDATA #REQUIRED
-    LDC CDATA #REQUIRED
-    Side CDATA #REQUIRED
->
+    LIDC CDATA #REQUIRED
+    Side CDATA #REQUIRED>
+
+<!ELEMENT PoleSingle (#PCDATA)>
+<!ATTLIST PoleSingle
+    PoleHeight CDATA #REQUIRED
+    PoleOverhang CDATA #REQUIRED
+    LIDC CDATA #REQUIRED
+    PositionX CDATA #REQUIRED
+    Side CDATA #REQUIRED>

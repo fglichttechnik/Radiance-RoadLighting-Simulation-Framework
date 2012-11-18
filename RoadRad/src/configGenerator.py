@@ -4,253 +4,59 @@
 #This class reads the scenedescription.xml and generates the appropriate rad files for the rendering
 
 import os
-from xml.dom.minidom import parse
-import Scene
-import Pole
 import math
 import sys
-import LDC
+import Classes.RoadScene as modulRoadscene # import RoadScene.py from subfolder Classes
 
-class configGenerator:
+class ConfigGenerator:
     
-    #roadScene = []
+    radDirSuffix = "/Rads"
+    lidcDirSuffix = "/LIDCs"
     
-    
+    #constructor
     def __init__( self, path ):
-        #retrieve working directory info
-        self.workingDirPath = path
-        print 'Working Directory: ' + self.workingDirPath
-        
-        
-        #self.roadScene = RoadScene.RoadScene( path )
-        
-        self.dirIndex = []
-        
-        self.sceneDecriptor = "/SceneDescription.xml"
-        self.radDirPrefix = "/Rads"
-        self.LDCDirSuffix = "/LDCs"
-        self.scene = Scene.Scene
-        self.verticalAngle = 0
-        self.horizontalAngle = 0
-        self.focalLength = 0
-        self.sceneLength = 8000    #length of road !important for ambient calculation was 240000        
-        self.sidewalkHeight = 0.1    #height of sidewalk
-        self.poleRadius = 0.05        #radius of pole cylinder
-        self.numberOfLightsPerArray = 9 #was 4
-        self.numberOfLightsBeforeMeasurementArea = 3 #was 1
-        
-        #calculated
-        self.measurementStartPosition = 0
-        self.measurementStepWidth = 0
-        self.measFieldLength = 0
-        
-        #ldc rotation
-        self.ldcRotation = -90;    #was -90
-        
-        #millimeter
-        self.sensorHeight = 8.9
-        self.sensorWidth = 6.64
-        
-        self.Poles = []
-        
-        self.lights = []
+        # retrieve working directory info
+        self.xmlConfigPath = path
+        self.xmlConfigName = "SceneDescription.xml"
         
         if( self.performFileAndDirChecks( ) ):
-            self.parseConfig( )
+            # initialize XML as RoadScene object
+            self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
+            self.road = self.roadScene.scene.road
+            self.viewPoint = self.roadScene.targetParameters.viewPoint
+            self.target = self.roadScene.targetParameters.target
+            # do all config Outputs
             self.printRoadRads( )
             self.makeRadfromIES( )
             self.printDashedWhiteRad( )
             self.printPoleConfig( )
             self.printLightsRad( )
             self.printCarlightsRad( )
+            #self.printLuminaireRad( )
             self.printNightSky( )
             self.printMaterialsRad( )
             self.printRView( )
             self.printTarget( )
             self.printTargets( )
             self.veilCal( )
-            self.calcOpeningAngle( )
-       
 
-    #Scene description xml parser.
-    def parseConfig( self ):
-        print 'Begining to parse XML Config.'
-        configfile = open( self.workingDirPath + self.sceneDecriptor, 'r' )
-        dom = parse( configfile )
-        configfile.close( )
-        
-        sceneDesc = dom.getElementsByTagName( 'SceneDescription' )
-        if( sceneDesc[0].attributes ):
-        	self.scene.Environment = sceneDesc[0].attributes["Environment"].value
-        	self.scene.FocalLength = sceneDesc[0].attributes["FocalLength"].value
-       
-        roadDesc = dom.getElementsByTagName( 'Road' )
-        if( roadDesc[0].attributes ):
-            self.scene.NumLanes = int( roadDesc[0].attributes["NumLanes"].value )
-            self.scene.NumPoleFields = float( roadDesc[0].attributes["NumPoleFields"].value )
-            self.scene.LaneWidth = float( roadDesc[0].attributes["LaneWidth"].value )
-            self.scene.SidewalkWidth = float( roadDesc[0].attributes["SidewalkWidth"].value )
-            self.scene.Surfacetype = roadDesc[0].attributes["Surface"].value
-            self.scene.qZero = float( roadDesc[0].attributes["qZero"].value )             
-            
-        calcDesc = dom.getElementsByTagName( 'Calculation' )
-        if( calcDesc[0].attributes):
-            self.isVeil = calcDesc[0].attributes["VeilingLuminance"].value
-            self.isDIN = calcDesc[0].attributes["DIN13201"].value
-            self.VeilingLuminanceMethod = calcDesc[0].attributes["VeilingLuminanceMethod"].value
-            self.TresholdLuminanceFactor = calcDesc[0].attributes["TresholdLuminanceFactor"].value
-               
-        #parse data for point of view 
-        viewpointDesc = dom.getElementsByTagName( 'ViewPoint' )
-        if( viewpointDesc[0].attributes ):
-            self.scene.ViewpointDistance = float( viewpointDesc[0].attributes["Distance"].value )
-            self.scene.ViewpointHeight = float( viewpointDesc[0].attributes["Height"].value )
-            self.scene.ViewpointDistanceMode = viewpointDesc[0].attributes["TargetDistanceMode"].value
-            self.scene.ViewpointXOffset = float( viewpointDesc[0].attributes["XOffset"].value )
-            self.scene.Viewdirection = viewpointDesc[0].attributes["ViewDirection"].value
-        
-        #parse data for a modified target
-        targetDesc = dom.getElementsByTagName( 'Target' )
-        if( targetDesc[0].attributes ):
-            self.scene.TargetSize = float( targetDesc[0].attributes["Size"].value )
-            self.scene.TargetReflectency = float( targetDesc[0].attributes["Reflectancy"].value )
-            self.scene.TargetRoughness = float( targetDesc[0].attributes["Roughness"].value )
-            self.scene.TargetSpecularity = float( targetDesc[0].attributes["Specularity"].value )
-            self.scene.TargetOrientation = targetDesc[0].attributes["Position"].value
-            self.scene.TargetPosition = int( targetDesc[0].attributes["OnLane"].value ) - 1
-
-        #check if the scene parameter "numlane" and "target position" make sense
-        if( self.scene.NumLanes - self.scene.TargetPosition < 0 ):
-            print "Numlanes and TargetPosition Parameters are impossible"
-            sys.exit(0)
-            
-        HeadlightDesc = dom.getElementsByTagName( 'Headlight' )
-        for HeadlightEntry in HeadlightDesc:
-	        if( HeadlightEntry.attributes ):
-	        	tempHeadlight = Headlight.Headlight( )
-	            tempHeadlight.LIDC = carDesc[0].attributes["LIDC"].value 
-	            tempHeadlight.HeadlightDistanceMode = carDesc[0].attributes["HeadlightDistanceMode"].value 
-	            tempHeadlight.Distance = float( carDesc[0].attributes["Distance"].value )
-	            tempHeadlight.Height = float( carDesc[0].attributes["Height"].value )
-	            tempHeadlight.Width = float( carDesc[0].attributes["Width"].value )  
-	            tempHeadlight.SlopeAngle = float( carDesc[0].attributes["SlopeAngle"].value )
-	            tempHeadlight.Calculation =  carDesc[0].attributes["Calculation"].value
-	            tempHeadlight.LightDirection = carDesc[0].attributes["LightDirection"].value 
-	            tempHeadlight.OnLane = int( carDesc[0].attributes["OnLane"].value  ) - 1
-	            self.headlights.append( tempHeadlight )
-          
-        LIDCDesc = dom.getElementsByTagName( 'LIDC' )
-        for LIDCEntry in LIDCDesc:
-            if( LIDCEntry.attributes ):
-                tempLIDC = LIDC.LIDC( )
-                tempLIDC.LIDCName = LIDCEntry.attributes["Name"].value
-                tempLIDC.LIDCLightSource = LIDCEntry.attributes["LightSource"].value
-                tempLIDC.LIDCLightLossFactor = float( LIDCEntry.attributes["LightLossFactor"].value )
-                tempLIDC.LIDCSPRatio = float( LIDCEntry.attributes["SPRatio"].value )
-                self.lights.append( tempLIDC )
-            
-        poleDesc = dom.getElementsByTagName( 'Poles' )
-        for pole in poleDesc[0].childNodes:
-            if( pole.attributes ):
-                tempPole = Pole.Pole( )
-                if( pole.nodeName == "PoleSingle" ):
-                    tempPole.isSingle = True
-                    tempPole.PolePositionX = float( pole.attributes["PositionX"].value )
-                else:
-                    tempPole.isSingle = False
-                    tempPole.PoleSpacing = float( pole.attributes["PoleSpacing"].value )
-                    isStaggered = pole.attributes["IsStaggered"].value
-                    if isStaggered == "False":
-                        tempPole.IsStaggered = False
-
-                tempPole.PoleSide = pole.attributes["Side"].value
-                tempPole.PoleHeight = float( pole.attributes["PoleHeight"].value )
-                tempPole.PoleLDC = pole.attributes["LDC"].value
-                tempPole.PoleOverhang = float(pole.attributes["PoleOverhang"].value )
-                self.Poles.append(tempPole)
-                    
-          
-        #calculate necessary measures
-        selectedArray = -1
-        #select the first nonSingle pole
-        for index, pole in enumerate( self.Poles ):
-            if pole.isSingle == False:
-                selectedArray = index
-                break
-                
-        if selectedArray == -1:
-            print "No Pole array defined, cannot position the object. terminating"
-            sys.exit( 0 )             
-            
-        #according to DIN EN 13201 / RP 8 00 (max 5 m)
-        self.measFieldLength = self.Poles[selectedArray].PoleSpacing * self.scene.NumPoleFields;
-        self.measurementStepWidth =  self.measFieldLength / 10;      
-        self.numberOfSubimages = 14;
-        
-        #adjust number of subimages if stepwidth is > 5m (according to RP 8 00)
-        if( self.measurementStepWidth > 5 ):
-            self.measurementStepWidth = 5;
-            self.numberOfSubimages = int( self.measFieldLength / self.measurementStepWidth )
-            self.numberOfSubimages = self.numberOfSubimages + 4
-            
-        self.measurementStartPosition = - 3 * self.measurementStepWidth / 2
-        
-        print "selected Pole array: " +  str( selectedArray )
-        print "PoleSpacing: " + str( self.Poles[selectedArray].PoleSpacing )
-        print "measurementStartPosition: " + str( self.measurementStartPosition )
-        print "measurementStepWidth: " + str( self.measurementStepWidth ) 
-        print "measFieldLength: " + str( self.measFieldLength ) 
-        print "numberOfSubimages: " + str( self.numberOfSubimages ) 
-        
-        #print the q0 factor of pavement surface depend on r-table
-        if self.scene.Surfacetype == 'R1' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.1
-        
-        elif self.scene.Surfacetype == 'R2' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.07
-        
-        elif self.scene.Surfacetype == 'R3' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.07
-        
-        elif self.scene.Surfacetype == 'R4' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.08
-        
-        elif self.scene.Surfacetype == 'C1' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.1
-        
-        elif self.scene.Surfacetype == 'C2' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.07
-        
-        elif self.scene.Surfacetype == 'plastic' and self.scene.qZero != 0.00:
-            self.scene.SurfaceDirt = self.scene.qZero / 0.07
-        
-        else:
-            self.scene.SurfaceDirt = 1.0 - ( self.scene.qZero * 10.0 )
-        
-        print "qZero aging multiplying factor: " + str( self.scene.SurfaceDirt )
-        print 'Sucessfully Parsed.'
-
-    #calculate the horizontal and vertical opening angle of the camera required for the rendering
-    def calcOpeningAngle( self ):
-        self.verticalAngle = ( 2 * math.atan( self.sensorHeight / ( 2 * self.focalLength ) ) ) / math.pi * 180
-        self.horizontalAngle = ( 2 * math.atan( self.sensorWidth / ( 2 * self.focalLength ) ) ) / math.pi * 180
-    
     #checks the presence of a few important files and directories before begining
     def performFileAndDirChecks( self ):
-        print 'Attempting to locate configuration in: ' + self.workingDirPath + self.sceneDecriptor
+        print 'Working Directory: ' + str( self.xmlConfigPath )
+        print 'Attempting to locate configuration in: ' + str( self.xmlConfigPath ) + '/' + str( self.xmlConfigName )
         
-        if( not os.path.isdir( self.workingDirPath ) ):
+        if( not os.path.isdir( self.xmlConfigPath ) ):
             print 'Scene directory not found in the working directory, Quitting'
             return False
         
-        if( not os.path.isfile( self.workingDirPath + self.sceneDecriptor ) ):
+        if( not os.path.isfile( self.xmlConfigPath + '/' + self.xmlConfigName ) ):
             print 'No config found, Quitting'
             return False
         
-        print 'Found: ' + self.sceneDecriptor
+        print 'Found: ' + str( self.xmlConfigName )
         
-        if( not os.path.isdir( self.workingDirPath + self.radDirPrefix ) ):
-            os.mkdir( self.workingDirPath + self.radDirPrefix )
+        if( not os.path.isdir( self.xmlConfigPath + ConfigGenerator.radDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + ConfigGenerator.radDirSuffix )
             print 'Made directory Rads to output the Rad configs.'
         
         return True
@@ -258,120 +64,89 @@ class configGenerator:
     #Output the Road config files
     def printRoadRads( self ):
         print 'Generating: road.rad'
-        f = open( self.workingDirPath + self.radDirPrefix + '/road.rad', "w" )
+        f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/road.rad', "w" )
     
         f.write( '######road.rad######\npavement polygon pave_surf\n0\n0\n12\n' )
-        f.write( "%d -%d %d\n" % ( 0, self.sceneLength / 2, 0 ) )
-        f.write( "%d -%d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
-        f.write( "%d %d %d\n" % ( self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2, 0 ) )
-        f.write( "%d %d %d\n\n" % ( 0, self.sceneLength / 2, 0 ) )
-        f.write( "!genbox concrete curb1 %d %d %f | xform -e -t -%d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.SidewalkWidth, self.sceneLength / 2 ) )
-        f.write( "!genbox concrete curb2 %d %d %f | xform -e -t %d -%d 0\n" % ( self.scene.SidewalkWidth, self.sceneLength, self.sidewalkHeight, self.scene.NumLanes * self.scene.LaneWidth, self.sceneLength / 2 ) )
-        #f.write( "!xform -e -t 23.6667 -%d .001 -a 2 -t .6667 0 0 %sdashed_white.rad\n" % ( self.sceneLengths[ i ] / 2, self.rootDirPath + self.sceneDirPrefix + str( i ) + '/' ) )
-        f.write( "!xform -e -t %d -120 .001 -a 40 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.scene.LaneWidth, self.scene.LaneWidth, self.workingDirPath + self.radDirPrefix ) )
+        f.write( "%d -%d %d\n" % ( 0, self.roadScene.sceneLength / 2, 0 ) )
+        f.write( "%d -%d %d\n" % ( self.road.numLanes * self.road.laneWidth, self.roadScene.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n" % ( self.road.numLanes * self.road.laneWidth, self.roadScene.sceneLength / 2, 0 ) )
+        f.write( "%d %d %d\n\n" % ( 0, self.roadScene.sceneLength / 2, 0 ) )
+        f.write( "!genbox concrete curb1 %d %d %f | xform -e -t -%d -%d 0\n" % ( self.road.sidewalkWidth, self.roadScene.sceneLength, self.roadScene.sidewalkHeight, self.road.sidewalkWidth, self.roadScene.sceneLength / 2 ) )
+        f.write( "!genbox concrete curb2 %d %d %f | xform -e -t %d -%d 0\n" % ( self.road.sidewalkWidth, self.roadScene.sceneLength, self.roadScene.sidewalkHeight, self.road.numLanes * self.road.laneWidth, self.roadScene.sceneLength / 2 ) )
+        f.write( "!xform -e -t %d -120 .001 -a 40 -t 0 10 0 -a 1 -t %d 0 0 %s/dashed_white.rad\n\n" % ( self.road.laneWidth, self.road.laneWidth, self.xmlConfigPath + ConfigGenerator.radDirSuffix ) )
 
         f.write( 'grass polygon lawn1\n0\n0\n12\n' )
-        f.write( "-%d -%d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "-%d %d %f\n" % ( self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "-%d %d %f\n" % ( 55506, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "-%d -%d %f\n\n\n" % ( 55506, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "-%d -%d %f\n" % ( self.road.sidewalkWidth, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "-%d %d %f\n" % ( self.road.sidewalkWidth, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "-%d %d %f\n" % ( 55506, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "-%d -%d %f\n\n\n" % ( 55506, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
     
         f.write( 'grass polygon lawn2\n0\n0\n12\n' )
-        f.write( "%d -%d %f\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "%d %d %f\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "%d %d %f\n" % ( 1140, self.sceneLength / 2, self.sidewalkHeight ) )
-        f.write( "%d -%d %f\n" % ( 1140, self.sceneLength / 2, self.sidewalkHeight ) )
+        f.write( "%d -%d %f\n" % ( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "%d %d %f\n" % ( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "%d %d %f\n" % ( 1140, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
+        f.write( "%d -%d %f\n" % ( 1140, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
         
         #Adds concrete boxes to emulate road side buildings
-        if self.scene.Background == 'City':
-            f.write( "!genbox house_concrete building_left 1 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.SidewalkWidth + 2 ) )
-            f.write( "!genbox house_concrete building_right 1 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.scene.NumLanes * self.scene.LaneWidth + self.scene.SidewalkWidth + 2 ) )
+        if self.roadScene.scene.description.environment == 'City':
+            f.write( "!genbox house_concrete building_left 1 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.road.sidewalkWidth + 2 ) )
+            f.write( "!genbox house_concrete building_right 1 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth + 2 ) )
         
         f.close()
     
     #This function attempts to locate all the ies files mentioned in the scene description
     #and convert them to the RAD files necessary for the rendering
     def makeRadfromIES( self ):
-        if( not os.path.isdir( self.workingDirPath + self.LDCDirSuffix ) ):
-            print "LDCs directory not found. Terminating."
+        if( not os.path.isdir( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) ):
+            print "LIDCs directory not found. Terminating."
             sys.exit(0)
         else:
-	        for entry in self.lights:
-	            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies' ) ):
-	                print entry.LDCName + " LDC not found in the designated LDCs directory. Terminating."
-	                sys.exit(0)
-	            else:
-		            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + entry.LDCName + '.ies'
-		            print "Creating radiance LDC for light source type " + entry.LDCLightSource
-		            print "Given light loss factor: " + str( entry.LDCLightLossFactor )
-		            cmd = 'ies2rad -dm -t ' + entry.LDCLightSource + ' -m ' + str( entry.LDCLightLossFactor ) + ' -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath  
-		            #-dm for meters
-		            #-t for lightsource type in lamp.tab (radiance dir)
-		            #-l library dir prefix for pathes in generated .rad file?
-		            #-m for an output factor -- light loss factor
-		            #cmd = 'ies2Rad -t ' + entry.LDCLightSource + ' ' + iesPath
-		            print "ies2rad lights command:"
-		            print cmd
-		            os.system( cmd )
-		            
-		            radpath_old = iesPath.replace( '.ies', '.rad' )
-		            radpath_new = iesPath.replace( '.ies', '.txt' )
-		            print radpath_old
-		            print radpath_new
-		            os.rename(radpath_old, radpath_new )
-		            
-		            datfile_old = open( radpath_new, 'r' )
-		            datfile_new = open( radpath_old, 'w' )
-		            
-		            for line in datfile_old.readlines():
-		                if line.find( entry.LDCName + '.dat' ) == -1:
-		                    datfile_new.write( line )
-		                else:
-		                    datfile_new.write( line.replace( entry.LDCName + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
+            for entry in self.roadScene.lidcs:
+                if( not os.path.isfile( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + '/' + entry.name + '.ies' ) ):
+                    print entry.name + " LIDC not found in the designated LDCs directory. Terminating."
+                    sys.exit(0)
+                else:
+                    iesPath = self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + '/' + entry.name + '.ies'
+                    print "Creating radiance LIDC for light source type " + entry.lightSource
+                    print "    Given light loss factor: " + str( entry.lightLossFactor )
+                    cmd = 'ies2rad -dm -t ' + entry.lightSource + ' -m ' + str( entry.lightLossFactor ) + ' -l ' + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + ' ' + iesPath  
+                    #-dm for meters
+                    #-t for lightsource type in lamp.tab (radiance dir)
+                    #-l library dir prefix for pathes in generated .rad file?
+                    #-m for an output factor -- light loss factor
+                    #cmd = 'ies2Rad -t ' + entry.lightSource + ' ' + iesPath
+                    print '    ies2rad lights command: ' + str( cmd )
+                    os.system( cmd )
+                    
+                    radpath_old = iesPath.replace( '.ies', '.rad' )
+                    radpath_new = iesPath.replace( '.ies', '.txt' )
+                    print '    ' + str( radpath_old )
+                    print '    ' + str( radpath_new )
+                    os.rename(radpath_old, radpath_new )
+                    
+                    datfile_old = open( radpath_new, 'r' )
+                    datfile_new = open( radpath_old, 'w' )
+                    
+                    for line in datfile_old.readlines():
+                        if line.find( entry.name + '.dat' ) == -1:
+                            datfile_new.write( line )
+                        else:
+                            datfile_new.write( line.replace( entry.name + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
         
-        # headlight initial
-        if self.scene.CarCalc == 'on':
-            if( not os.path.isfile( self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies' ) ):
-                    print self.scene.CarLight + " LDC not found in the designated LDCs directory. Terminating."
-                    #sys.exit(0)
-            else:                    
-	            iesPath = self.workingDirPath + self.LDCDirSuffix + '/' + self.scene.CarLight + '.ies'
-	            
-	            cmd = 'ies2rad -dm -l ' + self.workingDirPath + self.LDCDirSuffix + ' ' + iesPath
-	            print "ies2rad headlight command:"
-	            print cmd
-	            os.system( cmd )
-	            
-	            radpath_old = iesPath.replace( '.ies', '.rad' )
-	            radpath_new = iesPath.replace( '.ies', '.txt' )
-	            print radpath_old
-	            print radpath_new
-	            os.rename(radpath_old, radpath_new )
-	                
-	            datfile_old = open( radpath_new, 'r' )
-	            datfile_new = open( radpath_old, 'w' )
-	                
-	            for line in datfile_old.readlines():
-	                if line.find( self.scene.CarLight + '.dat' ) == -1:
-	                    datfile_new.write( line )
-	                else:
-	                    datfile_new.write( line.replace( self.scene.CarLight + '.dat', radpath_old.replace( '.rad', '.dat' ) ) )
                 
     #White paint line that divides the lanes
     def printDashedWhiteRad( self ):
             print 'Generating: dashed_white.rad'
-            self.markingWidth = 0.1
-            self.markingLength = 4
-            f = open( self.workingDirPath + self.radDirPrefix + '/dashed_white.rad', "w" )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/dashed_white.rad', "w" )
             f.write( "######dashed_white.rad######\n" )
             f.write( "white_paint polygon lane_dash\n" )
             f.write( "0\n" )
             f.write( "0\n" )
             f.write( "12\n" )
-            f.write( str( -self.markingWidth / 2) + " 0 0\n")
-            f.write( str( self.markingWidth / 2 ) + " 0 0\n")
-            f.write( str( self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
-            f.write( str( -self.markingWidth / 2 ) + " " + str( self.markingLength ) + " 0\n")
+            f.write( str( -self.roadScene.markingWidth / 2) + " 0 0.01\n")
+            f.write( str( self.roadScene.markingWidth / 2 ) + " 0 0.01\n")
+            f.write( str( self.roadScene.markingWidth / 2 ) + " " + str( self.roadScene.markingLength ) + " 0.01\n")
+            f.write( str( -self.roadScene.markingWidth / 2 ) + " " + str( self.roadScene.markingLength ) + " 0.01\n")
             f.close()
     
     #Basic geometry of the pole is defined here and named on the basis of the LDC's of the light sources that
@@ -379,87 +154,83 @@ class configGenerator:
     def printPoleConfig( self ):
             print 'Generating: Light Pole Rad files'
             
-            for index, entry in enumerate( self.Poles ):
-                f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.PoleLDC + '_' + str(index)  +'_light_pole.rad', "w" )
+            for index, poleArray in enumerate( self.roadScene.poles ):
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                #str( entry.PoleHeight - self.poleRadius ) --> maybe the cylinder blocks the LDC?
-                f.write( "!xform -e -rz " + str( self.ldcRotation ) + " -t " + str( entry.PoleOverhang ) + " 0 " + str( entry.PoleHeight - self.poleRadius ) + " " + self.workingDirPath + self.LDCDirSuffix + "/" + entry.PoleLDC + ".rad\n\n" )
+                f.write( "!xform -e -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + poleArray.lidc + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
                 f.write( "7\n")
                 f.write( " 0 0 0\n")
-                f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " " + str( self.poleRadius ) + "\n\n")
+                f.write( " 0 0 " + str( poleArray.height ) + "\n")
+                f.write( " " + str( self.roadScene.poleRadius ) + "\n\n")
                 f.write( "chrome cylinder mount\n" )
                 f.write( "0\n")
                 f.write( "0\n")
                 f.write( "7\n")
-                f.write( " 0 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " "+str(entry.PoleOverhang)+" 0 " + str( entry.PoleHeight ) + "\n")
-                f.write( " " + str( self.poleRadius ) + "\n\n")
+                f.write( " 0 0 " + str( poleArray.height ) + "\n")
+                f.write( " "+str(poleArray.overhang)+" 0 " + str( poleArray.height ) + "\n")
+                f.write( " " + str( self.roadScene.poleRadius ) + "\n\n")
                 f.close( )
     
     #This function places the various poles in the scene
     def printLightsRad( self ):
             print 'Generating: light_s.rad'
             firstArrayHandled = False
-            f = open( self.workingDirPath + self.radDirPrefix + '/lights_s.rad', "w" )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
-            for index, poleArray in enumerate(self.Poles):
-                if poleArray.isSingle == True:
-                    if poleArray.PoleSide == "Left":
-                        f.write( "!xform -t -1 " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+            for index, lidcArray in enumerate( self.roadScene.poles ):
+                if lidcArray.isSingle == True:
+                    if lidcArray.side == "Left":
+                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( lidcArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
                     else:
-                        f.write( "!xform -rz -180 -t "+ str( self.scene.NumLanes * self.scene.LaneWidth + 1 )+" " + str( poleArray.PolePositionX ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + "_" + str(index) + "_light_pole.rad\n" )
-                elif poleArray.PoleSide == "Left":
+                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.roadScene.laneWidth + self.road.sidewalkWidth )+" " + str( lidcArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
+                elif lidcArray.side == "Left":
                     print "making left poles"
-                    if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform  -t -1 -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
-            #f.write( "!xform -e -t -1 -"+ str(self.Poles[0].PoleSpacing) +" 0 -a 4 -t 0 "+ str(self.Poles[0].PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+                    if firstArrayHandled == False or lidcArray.isStaggered == False:
+                        f.write( "!xform  -t -" + str( self.road.sidewalkWidth ) + " -" + str( self.roadScene.numberOfLightsBeforeMeasurementArea * lidcArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( lidcArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform -t -1 -" + str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " -" + str( self.roadScene.numberOfLightsBeforeMeasurementArea * 0.5 * lidcArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( lidcArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                 else:
                     print "making right poles"
-                    if firstArrayHandled == False or poleArray.IsStaggered == False:
-                        f.write( "!xform -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
+                    if firstArrayHandled == False or lidcArray.isStaggered == False:
+                        f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth ) + " -"+ str( self.roadScene.numberOfLightsBeforeMeasurementArea * lidcArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( lidcArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
-                        f.write( "!xform -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -"+ str( self.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.PoleSpacing ) +" 0 -a " + str( self.numberOfLightsPerArray ) + " -t 0 "+ str(poleArray.PoleSpacing) +" 0 " + self.workingDirPath + self.radDirPrefix + "/" + poleArray.PoleLDC + '_' + str(index)  + "_light_pole.rad\n" )
-            #f.write( "!xform -e -t -1 -120 0 -a 4 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
-            #f.write( "!xform -e -rz -180 -t " + str( self.scene.NumLanes * self.scene.LaneWidth + 1 ) + " -240 0 -a 10 -t 0 240 0 " + self.workingDirPath + self.radDirPrefix + "/light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth ) + " -"+ str( self.roadScene.numberOfLightsBeforeMeasurementArea * 0.5 * lidcArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( lidcArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
             f.close( )
     
     # print Headlights from Car 
     def printCarlightsRad( self ):
-            if self.scene.CarCalc == 'on':
-                print 'Generating: Carlights: ' + str( self.scene.CarLight )
-                print 'Car on Lane: ' + str( self.scene.TrafficLane + 1 )
-                print 'CarHeight: ' + str( self.scene.CarHeight )
-                print 'CarWidth: ' + str( self.scene.CarWidth )
-                print 'CarDistance: ' + str( self.scene.CarDistance )
-                print 'Angle of Slope: ' + str( self.scene.SlopeAngle )
-                f = open( self.workingDirPath + self.radDirPrefix + '/headlight.rad', "w" )
-                f.write( "######headlight.rad######\n" )
-                if self.scene.TwoWayTraffic == 'on':
-                    print 'TwoWayTraffic: on'
-                    # twoWayTraffic observer position headlamps
-                    f.write( "!xform -rx -" + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " " + str( self.scene.CarDistance + self.measFieldLength ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-                else:
-                    print 'TwoWayTraffic: off'
-                    # observer position headlamp
-                    f.write( "!xform -rx " + str( 90.0 - self.scene.SlopeAngle ) + " -t " + str( self.scene.LaneWidth * ( self.scene.TrafficLane + 0.5 ) - ( self.scene.CarWidth / 2 ) ) + " -" + str( self.scene.CarDistance ) + " " + str( self.scene.CarHeight ) + " -a 2 -t " + str( self.scene.CarWidth ) + " 0 0 " + self.workingDirPath + self.LDCDirSuffix + "/" + self.scene.CarLight + ".rad\n\n" )
-                    
-                f.close( )
+            for index, headlightArray in enumerate( self.roadScene.headlights ):
+                if headlightArray.calculation == 'on':
+                    print 'Generating: Carlight number: ' + str( index ) + ' ' + str( headlightArray.lidc )
+                    print '    Car on Lane: ' + str( headlightArray.onLane + 1 )
+                    print '    Headlight Height: ' + str( headlightArray.height )
+                    print '    Headlight Width: ' + str( headlightArray.width )
+                    print '    Headlight Distance: ' + str( headlightArray.distance )
+                    print '    Angle of Slope: ' + str( headlightArray.slopeAngle )
+                    print '    Headlight Distance Mode: ' + str( headlightArray.headlightDistanceMode )
+                    f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + str( index ) + '_headlight.rad', "w" )
+                    f.write( "######headlight.rad######\n" )
+                    if headlightArray.lightDirection == 'opposite':
+                        print '    light direction: opposite'
+                        f.write( "!xform -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
+                    else:
+                        print '    light direction: same'
+                        f.write( "!xform -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
+                        
+                    f.close( )
     
     # def printLuminaireRad( self ):
 #             print 'Generating: LDC Rad files'
 #             
 #             for entry in self.lights:
-#                 f = open( self.workingDirPath + self.radDirPrefix + '/' + entry.LDCName + '.rad', "w" )
+#                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + entry.name + '.rad', "w" )
 #                 f.write( "void brightdata ex2_dist\n" )
-#                 f.write( "6 corr " + self.workingDirPath + "/LDCs/" + entry.LDCName + ".dat" + " source.cal src_phi2 src_theta -my\n" )
+#                 f.write( "6 corr " + self.xmlConfigPath + "/LDCs/" + entry.name + ".dat" + " source.cal src_phi2 src_theta -my\n" )
 #                 f.write( "0\n" )
 #                 f.write( "1 1\n" )
 #                 f.write( "ex2_dist light ex2_light\n\n" )
@@ -475,7 +246,7 @@ class configGenerator:
     #Night sky Rad file
     def printNightSky( self ):
             print 'Generating: night_sky.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/night_sky.rad', "w" )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/night_sky.rad', "w" )
             f.write( "######night_sky.rad######\n" )
             f.write( "void brightfunc skyfunc\n" )
             f.write( "2 skybr skybright.cal\n" )
@@ -506,82 +277,82 @@ class configGenerator:
     #All the materials used in the simulation are defined here
     def printMaterialsRad( self ):
             print 'Generating: materials.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/materials.rad', "w" )
+            print 'surface type is ' + self.road.surface + ' with a qZero of ' + str( self.road.qZero )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
             
             #road surface with Light Loss Factor (LLF)
             #the accumulation of dirt on luminaires results in a loss in light output on the roadway LDD RP 8 00
             #surfaces: R1-R4, BRDF 1-4.5°, plastic (100 diffus), C1, C2 C2W3 C2W4
 
-            if self.scene.Surfacetype == 'plastic':            
+            if self.road.surface == 'plastic':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" " + "0 0\n\n" )
                 
-            elif self.scene.Surfacetype == 'plastic_improvedPhilips':            
+            elif self.road.surface == 'plastic_improvedPhilips':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" " + "0 0\n\n" )
+                f.write( "5 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" " + "0 0\n\n" )
                 
-            elif self.scene.Surfacetype == 'R4':
+            elif self.road.surface == 'R4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
             
-            elif self.scene.Surfacetype == 'R3':
+            elif self.road.surface == 'R3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
                 
-            elif self.scene.Surfacetype == 'R2':
+            elif self.road.surface == 'R2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
                 
-            elif self.scene.Surfacetype == 'R1':
+            elif self.road.surface == 'R1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl r1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
                 
-            elif self.scene.Surfacetype == 'C1':
+            elif self.road.surface == 'C1':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
             
-            elif self.scene.Surfacetype == 'C2':
+            elif self.road.surface == 'C2':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
             
-            elif self.scene.Surfacetype == 'C2W3':
+            elif self.road.surface == 'C2W3':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
             
-            elif self.scene.Surfacetype == 'C2W4':
+            elif self.road.surface == 'C2W4':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
             
-            elif self.scene.Surfacetype == 'BRDF1345':
+            elif self.road.surface == 'BRDF1345':
                 f.write( "void metdata pavement\n" )
                 f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.scene.SurfaceDirt ) + " " + str( 1.0 * self.scene.SurfaceDirt ) +" "+ str( 1.0 * self.scene.SurfaceDirt ) +" "+ "1 \n\n" )
+                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
 
             else:
                 print 'no valid surfacetype given (R1-R4, BRDF1345, C1, C2 C2W3 C2W4 or plastic, plastic_improvedPhilips)'
-                print 'surface type is ' + self.scene.Surfacetype
                 sys.exit( 0 )
             
             #sidewalk
@@ -610,7 +381,7 @@ class configGenerator:
             f.write( "void plastic targetMaterial\n" )
             f.write( "0\n" )
             f.write( "0\n" )
-            f.write( '5 {0} {0} {0} '.format( self.scene.TargetReflectency ) + str( self.scene.TargetSpecularity ) +" "+ str( self.scene.TargetRoughness ) + " \n\n" )    #R G B spec rough 0.016 0.25
+            f.write( '5 {0} {0} {0} '.format( self.target.reflectency ) + str( self.target.specularity ) +" "+ str( self.target.roughness ) + " \n\n" )    #R G B spec rough 0.016 0.25
             f.write( "void metal chrome\n" )
             f.write( "0\n" )
             f.write( "0\n" )
@@ -627,66 +398,63 @@ class configGenerator:
         print 'Generating: eye.vp'
         #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? tempPole.PoleSpacing
         #-vd 0 1 -0.01 better horizont and measurement 
-        #view first to self.scene.ViewpointDistance
-        if self.scene.Viewdirection == 'first':
-            ViewValueY = self.scene.ViewpointDistance /  math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
-            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( self.scene.ViewpointDistance**2 + self.scene.ViewpointHeight**2 )
+        #view first to self.viewPoint.distance
+        if self.viewPoint.viewDirection == 'first':
+            ViewValueY = self.viewPoint.distance /  math.sqrt( self.viewPoint.distance**2 + self.viewPoint.height**2 )
+            ViewValueZ = self.viewPoint.height / math.sqrt( self.viewPoint.distance**2 + self.viewPoint.height**2 )
             viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )
         
-        #view last to self.measFieldLength
-        elif self.scene.Viewdirection == 'last':
-            ViewValueY = ( self.scene.ViewpointDistance + self.measFieldLength ) /  math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
-            ViewValueZ = self.scene.ViewpointHeight / math.sqrt( ( self.measFieldLength + self.scene.ViewpointDistance )**2 + self.scene.ViewpointHeight**2 )
+        #view last to self.roadScene.measFieldLength
+        elif self.viewPoint.viewDirection == 'last':
+            ViewValueY = ( self.viewPoint.distance + self.roadScene.measFieldLength ) /  math.sqrt( ( self.roadScene.measFieldLength + self.viewPoint.distance )**2 + self.viewPoint.height**2 )
+            ViewValueZ = self.viewPoint.height / math.sqrt( ( self.roadScene.measFieldLength + self.viewPoint.distance )**2 + self.viewPoint.height**2 )
             viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )    
         
         #view fixed 1 degree by 1.45 height and 83 distance (RP800)
         else:
             viewDirection = "0 0.999847 -0.017467 " 
         
-        #viewDirection = "0 0 0"
-        #debug
-        
         #add x-offset point of view
-        print "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n"
+        print "rview -vtv -vp " + str( ( self.road.laneWidth * ( self.target.onLane + 0.5 ) ) + self.viewPoint.xOffset ) +" -" + str( self.viewPoint.distance ) + " " + str( self.viewPoint.height ) + " -vd " + viewDirection + " -vh " + str( self.roadScene.verticalAngle ) + " -vv " + str( self.roadScene.horizontalAngle ) + "\n"
         
-        if self.scene.ViewpointDistanceMode == 'fixedViewPoint':
-            f = open( self.workingDirPath + self.radDirPrefix + '/eye.vp', "w" )
+        if self.viewPoint.targetDistanceMode == 'fixedViewPoint':
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye.vp', "w" )
             f.write( "######eye.vp######\n")            
-            f.write( "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) +" -" + str( self.scene.ViewpointDistance ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+            f.write( "rview -vtv -vp " + str( ( self.road.laneWidth * ( self.target.onLane + 0.5 ) ) + self.viewPoint.xOffset ) +" -" + str( self.viewPoint.distance ) + " " + str( self.viewPoint.height ) + " -vd " + viewDirection + " -vh " + str( self.roadScene.verticalAngle ) + " -vv " + str( self.roadScene.horizontalAngle ) + "\n" )
             f.close( )
         else:
             for i in range( self.numberOfSubimages  ):
-                f = open( self.workingDirPath + self.radDirPrefix + '/eye' + str( i ) + '.vp', "w" )
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
-                f.write( "rview -vtv -vp " + str( ( self.scene.LaneWidth * ( self.scene.TargetPosition + 0.5 ) ) + self.scene.ViewpointXOffset ) + " " + str( ( -1 * self.scene.ViewpointDistance ) + i * self.measurementStepWidth ) + " " + str( self.scene.ViewpointHeight ) + " -vd " + viewDirection + " -vh " + str( self.verticalAngle ) + " -vv " + str( self.horizontalAngle ) + "\n" )
+                f.write( "rview -vtv -vp " + str( ( self.road.laneWidth * ( self.target.onLane + 0.5 ) ) + self.viewPoint.xOffset ) + " " + str( ( -1 * self.viewPoint.distance ) + i * self.roadScene.measurementStepWidth ) + " " + str( self.viewPoint.height ) + " -vd " + viewDirection + " -vh " + str( self.roadScene.verticalAngle ) + " -vv " + str( self.roadScene.horizontalAngle ) + "\n" )
                 f.close( )
                 
         #print view point files for plan view of the roadway
         #view down on the roadway
-        f = open( self.workingDirPath + self.radDirPrefix + '/eye_down.vp', "w" )
+        f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye_down.vp', "w" )
         f.write( "######eye.vp######\n" )
-        #f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
-        f.write( "rview -vtl -vp " + str( self.scene.LaneWidth ) + " 1 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20 -vs 0 -vl 0\n" )
+        #f.write( "rview -vtv -vp " + str( self.road.laneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
+        f.write( "rview -vtl -vp " + str( self.road.laneWidth ) + " 1 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20 -vs 0 -vl 0\n" )
 
         f.close( )
         #view up from the roadway
-        f = open( self.workingDirPath + self.radDirPrefix + '/eye_up.vp', "w" )
+        f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye_up.vp', "w" )
         f.write( "######eye.vp######\n" )
-        f.write( "rview -vtv -vp " + str( self.scene.LaneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 100\n" )
+        f.write( "rview -vtv -vp " + str( self.road.laneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 100\n" )
         f.close( )
         
     
     #Definition of the geometry of the target.
     def printTarget( self ):
             print 'Generating: target.rad'
-            f = open( self.workingDirPath + self.radDirPrefix + '/target.rad', "w" )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox targetMaterial stv_target {0} 0.05 {0}\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox targetMaterial stv_target {0} 0.05 {0}\n'.format( self.target.size ) )
             f.close( )
             
-            f = open( self.workingDirPath + self.radDirPrefix + '/self_target.rad', "w" )
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/self_target.rad', "w" )
             f.write( "######target.rad######\n")
-            f.write( '!genbox self_box stv_target {0} 0.05 {0}\n'.format( self.scene.TargetSize ) )
+            f.write( '!genbox self_box stv_target {0} 0.05 {0}\n'.format( self.target.size ) )
             f.close( )
     
     #Several files are written here to place the targets at different locations in the scene.
@@ -695,58 +463,51 @@ class configGenerator:
     #10 targets between the two consecutive poles, and 2 before the first and after the last each.
     def printTargets( self ):
             
-            dist = self.measurementStartPosition            
-            
-            targetXPos = self.scene.LaneWidth
+            dist = self.roadScene.measurementStartPosition            
+            targetXPos = self.road.laneWidth
                 
-            if self.scene.TargetOrientation == "Center":
-                targetXPos = targetXPos * (self.scene.TargetPosition + 0.5 )
-            elif self.scene.TargetOrientation == "Left":
-                targetXPos = targetXPos * (self.scene.TargetPosition + 0.25 )
-            elif self.scene.TargetOrientation == "Right":
-                targetXPos = targetXPos * (self.scene.TargetPosition + 0.75 )
+            if self.target.position == "Center":
+                targetXPos = targetXPos * (self.target.onLane + 0.5 )
+            elif self.target.position == "Left":
+                targetXPos = targetXPos * (self.target.onLane + 0.25 )
+            elif self.target.position == "Right":
+                targetXPos = targetXPos * (self.target.onLane + 0.75 )
             else:
-                print "unrecognized Target Position " + self.scene.TargetOrientation
+                print "unrecognized Target Position " + self.scene.position
                 print "possible values: Center, Left, Right"
                 print "WILL EXIT"
                 sys.exit(0)
                 
-            targetfile = open( self.workingDirPath + self.radDirPrefix + '/targetdistances.txt', "w" )
-            
-            for i in range( self.numberOfSubimages  ):
+            targetfile = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/targetdistances.txt', "w" )
+            for i in range( self.roadScene.numberOfSubimages  ):
                 targetfile.write( str(dist) + '\n')
                 print 'Generating: target_' + str( i ) + '.rad'
-                f = open( self.workingDirPath + self.radDirPrefix + '/target_' + str( i ) + '.rad', "w" )
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/target.rad\n" )
+                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/target.rad\n" )
                 f.close( )
-                dist = dist + self.measurementStepWidth
+                dist = dist + self.roadScene.measurementStepWidth
+            targetfile.close( )
             
-            targetfile.close()
-            dist = self.measurementStartPosition
-            for i in range( self.numberOfSubimages  ):
+            dist = self.roadScene.measurementStartPosition
+            for i in range( self.roadScene.numberOfSubimages  ):
                 print 'Generating: self_target_' + str( i ) + '.rad'
-                f = open( self.workingDirPath + self.radDirPrefix + '/self_target_' + str( i ) + '.rad', "w" )
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/self_target_' + str( i ) + '.rad', "w" )
                 f.write( "######target_0.rad######\n")
-                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.workingDirPath + self.radDirPrefix + "/self_target.rad\n" )
+                f.write( "!xform -e -t " + str( targetXPos ) + " " + str( dist ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/self_target.rad\n" )
                 f.close( )
-                dist = dist + self.measurementStepWidth
+                dist = dist + self.roadScene.measurementStepWidth
                 
     def veilCal( self ):
-        if self.isVeil == 'on':
-            f = open( self.workingDirPath + self.radDirPrefix + '/veil.cal', "w" )
+        if self.roadScene.scene.calculation.veilingLuminance == 'on':
+            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/veil.cal', "w" )
             f.write( 'PI : 3.14159265358979323846;\n' )
             f.write( 'bound(a,x,b) : if(a-x,a,if(x-b,b,x));\n' )
             f.write( 'Acos(x) : acos(bound(-1, x, 1));\n\n' )
-            
             f.write( 'mul(t) : if(.5*PI/180-t, 9.2/.5^2, 9.2/(180/PI)^2/(t*t));\n\n' )
-            
             f.write( 'Dx1 = Dx(1); Dy1 = Dy(1); Dz1 = Dz(1); {minor optimization}\n\n' )
-            
             f.write( 'angle(i) = Acos(SDx(i)*Dx1+SDy(i)*Dy1+SDz(i)*Dz1);\n\n' )
-            
             f.write( 'sum(i) = if(i-.5, mul(angle(i))*I(i)+sum(i-1), 0);\n\n' )
-            
             f.write( 'veil = le(1)/179 * sum(N);\n\n' )
             
             f.write( 'ro = ri(1) + veil;\n' )
@@ -755,5 +516,4 @@ class configGenerator:
             
             f.write( 'V(i) : select(i, veil);\n' )
             f.write( 'Lv = V(0);\n' )
-            
             f.close( )
