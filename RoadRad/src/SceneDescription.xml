@@ -13,7 +13,7 @@
 		<LIDC Name="lowbeam" LightSource="LED" LightLossFactor="0.1" SPRatio="1.71" />
 	</LIDCs>
 	<Headlights>
-		<Headlight Calculation="on" LIDC="lowbeam" HeadlightDistanceMode="fixedHeadlightPosition/FixedTargetDistance" Distance="20" Height="0.7" Width="1.9" SlopeAngle="0" LightDirection="same/opposite" OnLane="2" />
+		<Headlight LIDC="lowbeam" HeadlightDistanceMode="fixedHeadlightPosition/FixedTargetDistance" Distance="20" Height="0.7" Width="1.9" SlopeAngle="0" LightDirection="same/opposite" OnLane="2" />
 	</Headlights>
 	<Poles>
 		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>

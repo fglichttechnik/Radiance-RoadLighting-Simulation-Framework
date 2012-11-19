@@ -40,9 +40,10 @@ import shutil
 import datetime
 
 import ConfigGenerator as modulConfigGenerator
-import simulator
+import Simulator as modulSimulator
+import Evaluator as modulEvaluator
 import EnvVarSetter
-import evaluator;
+
 
 # Determine the current directory of executaion
 # Important step because configfiles and output directories are relative to this path
@@ -106,8 +107,8 @@ if( options.cleanDir ):
 elif( options.dir ):
     cleanSceneDir( options.dir )
     configGen = modulConfigGenerator.ConfigGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
-    #sim = simulator.simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
-    #ev = evaluator.evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
+    #sim = modulSimulator.Simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
+    ev = modulEvaluator.Evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
 
 else:
     oparser.print_usage( )

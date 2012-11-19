@@ -157,16 +157,14 @@ class RoadScene:
         #check if the scene parameter "numlane" and "target lane" make sense
         if( self.scene.road.numLanes - self.targetParameters.target.onLane < 1 ):
             print "Numlanes and TargetPosition Parameters are impossible"
-            sys.exit(0)
+            sys.exit( 0 )
             
     def loadHeadlights( self, root ):
         headlightDesc = root.getElementsByTagName( 'Headlight' )
         for headlightEntry in headlightDesc:
             if( headlightEntry.attributes ):
                 headlight = modulHeadlight.Headlight( )
-                headlight.calculation = headlightEntry.attributes["Calculation"].value
                 headlight.lidc = headlightEntry.attributes["LIDC"].value 
-                print '    name of given headlight source in XML: ' + str( headlight.lidc )
                 headlight.headlightDistanceMode = headlightEntry.attributes["HeadlightDistanceMode"].value 
                 headlight.distance = float( headlightEntry.attributes["Distance"].value )
                 headlight.height = float( headlightEntry.attributes["Height"].value )
@@ -182,7 +180,6 @@ class RoadScene:
             if( lidcEntry.attributes ):
                 lidc = modulLIDC.LIDC( )
                 lidc.name = lidcEntry.attributes["Name"].value
-                print '    name of given LIDC in XML: ' + str( lidc.name )
                 lidc.lightSource = lidcEntry.attributes["LightSource"].value
                 lidc.lightLossFactor = float( lidcEntry.attributes["LightLossFactor"].value )
                 lidc.spRatio = float( lidcEntry.attributes["SPRatio"].value )
@@ -205,7 +202,6 @@ class RoadScene:
                 pole.side = poleEntry.attributes["Side"].value
                 pole.height = float( poleEntry.attributes["PoleHeight"].value )
                 pole.lidc = poleEntry.attributes["LIDC"].value
-                print '    name of given pole source in XML: ' + str( pole.lidc )
                 pole.overhang = float(poleEntry.attributes["PoleOverhang"].value )
                 self.poles.append( pole )
         

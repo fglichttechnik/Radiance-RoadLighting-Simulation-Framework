@@ -39,6 +39,8 @@ class ConfigGenerator:
             self.printTarget( )
             self.printTargets( )
             self.veilCal( )
+            print 'All Rads are successful made. Starting with Simulator ...'
+            print '---------------------------------------------------------'
 
     #checks the presence of a few important files and directories before begining
     def performFileAndDirChecks( self ):
@@ -108,6 +110,7 @@ class ConfigGenerator:
                 else:
                     iesPath = self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + '/' + entry.name + '.ies'
                     print "Creating radiance LIDC for light source type " + entry.lightSource
+                    print "    Given LIDC name: " + str( entry.name )
                     print "    Given light loss factor: " + str( entry.lightLossFactor )
                     cmd = 'ies2rad -dm -t ' + entry.lightSource + ' -m ' + str( entry.lightLossFactor ) + ' -l ' + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + ' ' + iesPath  
                     #-dm for meters
@@ -155,6 +158,7 @@ class ConfigGenerator:
             print 'Generating: Light Pole Rad files'
             
             for index, poleArray in enumerate( self.roadScene.poles ):
+                print 'Generating: PoleArray number: ' + str( index ) + ' with ' + str( poleArray.lidc )
                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
                 f.write( "!xform -e -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + poleArray.lidc + ".rad\n\n" )
@@ -204,25 +208,28 @@ class ConfigGenerator:
     
     # print Headlights from Car 
     def printCarlightsRad( self ):
-            for index, headlightArray in enumerate( self.roadScene.headlights ):
-                if headlightArray.calculation == 'on':
-                    print 'Generating: Carlight number: ' + str( index ) + ' ' + str( headlightArray.lidc )
+            print 'Generating: headlight.rad'
+            if self.roadScene.headlights.__len__() > 0:
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/headlight.rad', "w" )
+                f.write( "######headlight.rad######\n" )
+                for index, headlightArray in enumerate( self.roadScene.headlights ):
+                    print 'Generating: Carlight number: ' + str( index ) + ' with ' + str( headlightArray.lidc )
                     print '    Car on Lane: ' + str( headlightArray.onLane + 1 )
                     print '    Headlight Height: ' + str( headlightArray.height )
                     print '    Headlight Width: ' + str( headlightArray.width )
                     print '    Headlight Distance: ' + str( headlightArray.distance )
                     print '    Angle of Slope: ' + str( headlightArray.slopeAngle )
                     print '    Headlight Distance Mode: ' + str( headlightArray.headlightDistanceMode )
-                    f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + str( index ) + '_headlight.rad', "w" )
-                    f.write( "######headlight.rad######\n" )
+                    #f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + str( index ) + '_headlight.rad', "w" )
                     if headlightArray.lightDirection == 'opposite':
                         print '    light direction: opposite'
-                        f.write( "!xform -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
+                        f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
                     else:
                         print '    light direction: same'
-                        f.write( "!xform -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
-                        
-                    f.close( )
+                        f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
+                f.close( )
+            else:
+                print 'no headlights are given in the xml'
     
     # def printLuminaireRad( self ):
 #             print 'Generating: LDC Rad files'
@@ -395,6 +402,7 @@ class ConfigGenerator:
     #Prints view point files.
     #Based on the viewpoint mode, one of several viewpoints are written
     def printRView( self ):
+
         print 'Generating: eye.vp'
         #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? tempPole.PoleSpacing
         #-vd 0 1 -0.01 better horizont and measurement 

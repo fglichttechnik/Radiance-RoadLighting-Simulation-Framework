@@ -1,7 +1,6 @@
 class Headlight:
 
     def __init__( self ):
-        self.calculation = "" 
         self.lidc = "" 
         self.headlightDistanceMode = "" 
         self.distance = 0 
