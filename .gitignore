@@ -1,6 +1,9 @@
 *.DS_Store
 *.rad
 *.oct
+LMK/
+SubjectExperiment/
+RADIANCE_manPages/
 RoadRad/scenes
 RoadRad/src/scenes
 RoadRad/Backup
