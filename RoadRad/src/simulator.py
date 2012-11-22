@@ -10,7 +10,7 @@ import struct
 import shutil
 import sys
 from select import select
-import Classes.RoadScene as modulRoadscene
+import classes.RoadScene as modulRoadscene
 #user input ambient calculation timer
 import thread
 import threading
@@ -66,9 +66,7 @@ class Simulator:
             self.processRefPics( )
         self.postRenderProcessing( )
         self.deleteUnnecessaryFiles( )
-        print 'All Simualtions are successful made. Starting with Evaluator ...'
-        print '---------------------------------------------------------'
-
+        
     def checkTargetAndConfig( self ):
         path = self.xmlConfigPath + Simulator.radDirSuffix
         dirList = os.listdir( path )

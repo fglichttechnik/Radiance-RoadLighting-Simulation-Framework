@@ -6,12 +6,13 @@
 import os
 import math
 import sys
-import Classes.RoadScene as modulRoadscene # import RoadScene.py from subfolder Classes
+import classes.RoadScene as modulRoadscene # import RoadScene.py from subfolder Classes
 
 class ConfigGenerator:
     
-    radDirSuffix = "/Rads"
-    lidcDirSuffix = "/LIDCs"
+    radDirSuffix = '/Rads'
+    lidcDirSuffix = '/LIDCs'
+    rTableDatSuffix = str( os.getcwd( ) ) + '/3rdParty/' 
     
     #constructor
     def __init__( self, path ):
@@ -34,13 +35,12 @@ class ConfigGenerator:
             self.printCarlightsRad( )
             #self.printLuminaireRad( )
             self.printNightSky( )
+            self.rTableCal( )
             self.printMaterialsRad( )
             self.printRView( )
             self.printTarget( )
             self.printTargets( )
             self.veilCal( )
-            print 'All Rads are successful made. Starting with Simulator ...'
-            print '---------------------------------------------------------'
 
     #checks the presence of a few important files and directories before begining
     def performFileAndDirChecks( self ):
@@ -161,7 +161,7 @@ class ConfigGenerator:
                 print 'Generating: PoleArray number: ' + str( index ) + ' with ' + str( poleArray.lidc )
                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  +'_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + poleArray.lidc + ".rad\n\n" )
+                f.write( "!xform -e -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + str( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) + "/" + str( poleArray.lidc ) + ".rad\n\n" )
                 f.write( "chrome cylinder pole\n" )
                 f.write( "0\n")
                 f.write( "0\n")
@@ -284,79 +284,80 @@ class ConfigGenerator:
     #All the materials used in the simulation are defined here
     def printMaterialsRad( self ):
             print 'Generating: materials.rad'
-            print 'surface type is ' + self.road.surface + ' with a qZero of ' + str( self.road.qZero )
             f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/materials.rad', "w" )
             f.write( "######materials.rad######\n" )
             
             #road surface with Light Loss Factor (LLF)
             #the accumulation of dirt on luminaires results in a loss in light output on the roadway LDD RP 8 00
             #surfaces: R1-R4, BRDF 1-4.5°, plastic (100 diffus), C1, C2 C2W3 C2W4
+            
+            rTableCal = str( self.xmlConfigPath + ConfigGenerator.radDirSuffix ) + '/r-table.cal'
 
             if self.road.surface == 'plastic':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" " + "0 0\n\n" )
+                f.write( "5 0.14 0.14 0.14 0 0 \n\n" )
                 
             elif self.road.surface == 'plastic_improvedPhilips':            
                 f.write( "void plastic pavement\n" )
                 f.write( "0\n" )
                 f.write( "0\n" )
-                f.write( "5 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" " + "0 0\n\n" )
+                f.write( "5 0.14 0.14 0.14 0.03 0.01 \n\n" )
                 
             elif self.road.surface == 'R4':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl r4-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R4/r4-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'R3':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl r3-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R3/r3-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'R2':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl r2-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R2/r2-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'R1':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl r1-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R1/r1-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'C1':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl c1-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C1/c1-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2/c2-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2W3':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2w3-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2W3/c2w3-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2W4':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl c2w4-table.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2W4/c2w4-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'BRDF1345':
                 f.write( "void metdata pavement\n" )
-                f.write( "6 refl brdf1345.dat r-table.cal alfa gamma beta\n" )
+                f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "BRDF/brdf.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
-                f.write( "4 " + str( 1.0 * self.road.qZero ) + " " + str( 1.0 * self.road.qZero ) +" "+ str( 1.0 * self.road.qZero ) +" "+ "1 \n\n" )
+                f.write( "4 1 1 1 1 \n\n" )
 
             else:
                 print 'no valid surfacetype given (R1-R4, BRDF1345, C1, C2 C2W3 C2W4 or plastic, plastic_improvedPhilips)'
@@ -525,3 +526,18 @@ class ConfigGenerator:
             f.write( 'V(i) : select(i, veil);\n' )
             f.write( 'Lv = V(0);\n' )
             f.close( )
+    
+    def rTableCal( self ):
+            print 'surface type is ' + self.road.surface + ' with a qZero of ' + str( self.road.qZero )
+            if not self.road.surface == 'plastic':
+                print 'Generating r-table.cal'
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/r-table.cal', "w" )
+                f.write( 'PI : 3.14159265358979323846;\n' )
+                f.write( 'alfa(x,y,z) = (180/PI)*Asin(-Dx*Nx-Dy*Ny-Dz*Nz);\n\n' )
+                f.write( 'gamma(x,y,z) = (180/PI)*Acos(x*Nx + y*Ny + z*Nz);\n\n' )
+                f.write( 'beta(x,y,z) = if(sqrt(x^2+y^2),(180/PI)*Acos((x/sqrt(x^2+y^2))*(Dx/sqrt(Dx^2+Dy^2))+(y/sqrt(x^2+y^2))*(Dy/sqrt(Dx^2+Dy^2))),0);\n\n' )
+                if self.road.qZero > 0: 
+                    f.write( 'refl(v,x,y,z) = if((x*Nx + y*Ny + z*Nz),v*' + str( self.road.qZero ) + '/(10000*(x*Nx + y*Ny + z*Nz)^3),0);\n' )
+                else:
+                    f.write( 'refl(v,x,y,z) = if((x*Nx + y*Ny + z*Nz),v/(10000*(x*Nx + y*Ny + z*Nz)^3),0);\n' )
+                f.close( )

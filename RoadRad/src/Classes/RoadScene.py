@@ -10,9 +10,9 @@ import LIDC as modulLIDC
 import Pole as modulPole
 
 from xml.dom.minidom import parse
-from xml.parsers.xmlproc import xmlproc
-from xml.parsers.xmlproc import xmlval
-from xml.parsers.xmlproc import xmldtd
+from helper.xmlproc import xmlproc
+from helper.xmlproc import xmlval
+from helper.xmlproc import xmldtd
 
 class RoadScene:
     
@@ -124,10 +124,6 @@ class RoadScene:
                 self.scene.road.qZero = self.scene.road.qZero / 0.1
             elif self.scene.road.surface == 'C2' and self.scene.road.qZero != 0.00:
                 self.scene.road.qZero = self.scene.road.qZero / 0.07
-            elif self.scene.road.surface == 'plastic' and self.scene.road.qZero != 0.00:
-                self.scene.road.qZero = self.scene.road.qZero / 0.07
-            else:
-                self.scene.road.qZero = 1.0 - ( self.scene.road.qZero * 10.0 )
             
         calcDesc = root.getElementsByTagName( 'Calculation' )
         if( calcDesc[0].attributes):

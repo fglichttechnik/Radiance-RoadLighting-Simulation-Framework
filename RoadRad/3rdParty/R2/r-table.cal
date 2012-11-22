@@ -1,9 +1,0 @@
-alfa(x,y,z) = (180/3.14159265)*Asin(-Dx*Nx-Dy*Ny-Dz*Nz);
- 
-gamma(x,y,z) = (180/3.14159265)*Acos(x*Nx + y*Ny + z*Nz);
- 
-beta(x,y,z) = if(sqrt(x^2+y^2),(180/3.14159265)*Acos((x/sqrt(x^2+y^2))*(Dx/    
-                    sqrt(Dx^2+Dy^2))+(y/sqrt(x^2+y^2))*(Dy/sqrt(Dx^2+Dy^2))),0);
- 
-refl(v,x,y,z) = if((x*Nx + y*Ny + z*Nz),v/(10000*(x*Nx + y*Ny + z*Nz)^3),0);
-
