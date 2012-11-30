@@ -16,8 +16,8 @@
 		<Headlight LIDC="lowbeam" HeadlightDistanceMode="fixedHeadlightPosition/FixedTargetDistance" Distance="20" Height="0.7" Width="1.9" SlopeAngle="0" LightDirection="same/opposite" OnLane="2" />
 	</Headlights>
 	<Poles>
-		<PoleArray PoleHeight="5.97" PoleSpacing="39.4" PoleOverhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
-		<!--<PoleSingle PoleHeight="9" PoleOverhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionX="27.7" Side="Right"/>-->
-		<!--<PoleSingle PoleHeight="9" PoleOverhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionX="-9" Side="Right"/>-->
+		<PoleArray Height="5.97" Spacing="39.4" Overhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
+		<!--<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="27.7" Side="Right"/>-->
+		<PoleSingle PoleHeight="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="-9" Side="Right"/>
 	</Poles>
 </RoadScene>

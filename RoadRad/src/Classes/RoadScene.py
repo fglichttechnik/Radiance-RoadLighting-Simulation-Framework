@@ -46,21 +46,21 @@ class RoadScene:
         self.poles = []      # object load in function loadPoles
         
         # check xml 
-        self.validate_xml( xmlfileName, "SceneDescription.dtd" )
+        self.validate_xml( "SceneDescription.dtd" )
         self.parseConfig( )
         self.calcMeasurementField( )
         self.calcOpeningAngle( )
     
     #Validate a given XML file with a given external DTD with error report
-    def validate_xml( self, xml_filename, dtd_filename ):
-        print "    xml Filename: " + str( xml_filename )
+    def validate_xml( self, dtd_filename ):
+        print "    xml Filename: " + str( self.sceneDecriptor )
         print "    dtd Filename: " + str( dtd_filename )
         dtd = xmldtd.load_dtd( dtd_filename )
         parser = xmlproc.XMLProcessor( )
         parser.set_application( xmlval.ValidatingApp( dtd, parser ) )
         parser.dtd = dtd
         parser.ent = dtd
-        parser.parse_resource( xml_filename )
+        parser.parse_resource( str( self.workingDirPath ) + '/' + str( self.sceneDecriptor ) )
 
         if __name__ == "__main__":
             xml_filename, dtd_filename = sys.argv[1], sys.argv[2]

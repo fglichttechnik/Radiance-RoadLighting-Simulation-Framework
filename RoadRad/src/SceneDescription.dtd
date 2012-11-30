@@ -66,17 +66,17 @@
 
 <!ELEMENT PoleArray (#PCDATA)>
 <!ATTLIST PoleArray
-    PoleHeight CDATA #REQUIRED
-    PoleSpacing CDATA #REQUIRED
-    PoleOverhang CDATA #REQUIRED
+    Height CDATA #REQUIRED
+    Spacing CDATA #REQUIRED
+    Overhang CDATA #REQUIRED
     IsStaggered CDATA #REQUIRED
     LIDC CDATA #REQUIRED
     Side CDATA #REQUIRED>
 
 <!ELEMENT PoleSingle (#PCDATA)>
 <!ATTLIST PoleSingle
-    PoleHeight CDATA #REQUIRED
-    PoleOverhang CDATA #REQUIRED
+    Height CDATA #REQUIRED
+    Overhang CDATA #REQUIRED
     LIDC CDATA #REQUIRED
-    PositionX CDATA #REQUIRED
+    PositionY CDATA #REQUIRED
     Side CDATA #REQUIRED>
