@@ -159,23 +159,23 @@ class ConfigGenerator:
             
             for index, poleArray in enumerate( self.roadScene.poles ):
                 print 'Generating: PoleArray number: ' + str( index ) + ' with ' + str( poleArray.lidc )
-                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  +'_light_pole.rad', "w" )
+                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  + '_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
-                f.write( "!xform -e -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + str( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) + "/" + str( poleArray.lidc ) + ".rad\n\n" )
-                f.write( "chrome cylinder pole\n" )
-                f.write( "0\n")
-                f.write( "0\n")
-                f.write( "7\n")
-                f.write( " 0 0 0\n")
-                f.write( " 0 0 " + str( poleArray.height ) + "\n")
-                f.write( " " + str( self.roadScene.poleRadius ) + "\n\n")
-                f.write( "chrome cylinder mount\n" )
-                f.write( "0\n")
-                f.write( "0\n")
-                f.write( "7\n")
-                f.write( " 0 0 " + str( poleArray.height ) + "\n")
-                f.write( " "+str(poleArray.overhang)+" 0 " + str( poleArray.height ) + "\n")
-                f.write( " " + str( self.roadScene.poleRadius ) + "\n\n")
+                f.write( "!xform -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + str( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) + "/" + str( poleArray.lidc ) + ".rad\n\n" )
+                # f.write( "chrome cylinder pole\n" )
+                # f.write( "0\n" )
+                # f.write( "0\n" )
+                # f.write( "7\n" )
+                # f.write( "0 0 0\n" )
+                # f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                # f.write( str( self.roadScene.poleRadius ) + "\n\n")
+                # f.write( "chrome cylinder mount\n" )
+                # f.write( "0\n" )
+                # f.write( "0\n" )
+                # f.write( "7\n" )
+                # f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                # f.write( str( poleArray.overhang - self.roadScene.poleRadius  ) + " 0 " + str( poleArray.height ) + "\n" )
+                # f.write( str( self.roadScene.poleRadius ) )
                 f.close( )
     
     #This function places the various poles in the scene
@@ -405,8 +405,6 @@ class ConfigGenerator:
     def printRView( self ):
 
         print 'Generating: eye.vp'
-        #-vd 0 0.9999856 -0.0169975 is this 1 degree down??? tempPole.PoleSpacing
-        #-vd 0 1 -0.01 better horizont and measurement 
         #view first to self.viewPoint.distance
         if self.viewPoint.viewDirection == 'first':
             ViewValueY = self.viewPoint.distance /  math.sqrt( self.viewPoint.distance**2 + self.viewPoint.height**2 )

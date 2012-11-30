@@ -16,8 +16,8 @@ from helper.xmlproc import xmldtd
 
 class RoadScene:
     
-    verticalAngle = 0                       #
-    horizontalAngle = 0                     #
+    verticalAngle = 0                       # calculated by calcOpeningAngle and focalLnegth
+    horizontalAngle = 0                     # calculated by calcOpeningAngle and focalLnegth
     sceneLength = 8000                      # length of road !important for ambient calculation was 240000        
     sidewalkHeight = 0.1                    # height of sidewalk
     markingWidth = 0.1                      # dashLine width
@@ -25,10 +25,10 @@ class RoadScene:
     poleRadius = 0.05                       # radius of pole cylinder
     numberOfLightsPerArray = 9              # was 4
     numberOfLightsBeforeMeasurementArea = 3 # was 1
-    measurementStartPosition = 0            #
-    measurementStepWidth = 0                #
-    measFieldLength = 0                     #
-    lidcRotation = -90;                     # was -90
+    measurementStartPosition = 0            # calculated by calcMeasurementField
+    measurementStepWidth = 0                # calculated by calcMeasurementField
+    measFieldLength = 0                     # calculated by calcMeasurementField with pole spacing and numPoleFields
+    lidcRotation = -90                      # was -90
     sensorHeight = 8.9                      # in mm
     sensorWidth = 6.64                      # in mm
     
@@ -42,8 +42,8 @@ class RoadScene:
         self.scene = modulScene.Scene()
         self.targetParameters = modulTargetParameters.TargetParameters()
         self.headlights = [] # object load in function loadHeadlights
-        self.lidcs = [] # object load in function loadLIDCs
-        self.poles = [] # object load in function loadPoles
+        self.lidcs = []      # object load in function loadLIDCs
+        self.poles = []      # object load in function loadPoles
         
         # check xml 
         self.validate_xml( xmlfileName, "SceneDescription.dtd" )
@@ -187,18 +187,18 @@ class RoadScene:
             if( poleEntry.attributes ):
                 if( poleEntry.nodeName == "PoleSingle" ):
                     pole = modulPole.Pole( True )
-                    pole.positionX = float( poleEntry.attributes["PositionX"].value )
+                    pole.positionX = float( poleEntry.attributes["PositionY"].value )
                 else:
                     pole = modulPole.Pole( False )
-                    pole.spacing = float( poleEntry.attributes["PoleSpacing"].value )
+                    pole.spacing = float( poleEntry.attributes["Spacing"].value )
                     isStaggered = poleEntry.attributes["IsStaggered"].value
                     if isStaggered == "False":
                         pole.IsStaggered = False
 
                 pole.side = poleEntry.attributes["Side"].value
-                pole.height = float( poleEntry.attributes["PoleHeight"].value )
+                pole.height = float( poleEntry.attributes["Height"].value )
                 pole.lidc = poleEntry.attributes["LIDC"].value
-                pole.overhang = float(poleEntry.attributes["PoleOverhang"].value )
+                pole.overhang = float( poleEntry.attributes["Overhang"].value )
                 self.poles.append( pole )
         
     def calcMeasurementField( self ):
