@@ -6,7 +6,7 @@ class Pole:
             self.height = 0 
             self.spacing = 0 
             self.overhang = 0 
-            self.isStaggered = "" 
+            self.isStaggered = True 
             self.lidc = "" 
             self.side = ""
         if self.isSingle:

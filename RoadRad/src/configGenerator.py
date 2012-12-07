@@ -189,7 +189,7 @@ class ConfigGenerator:
                     if lidcArray.side == "Left":
                         f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( lidcArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
                     else:
-                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.roadScene.laneWidth + self.road.sidewalkWidth )+" " + str( lidcArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( lidcArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + lidcArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
                 elif lidcArray.side == "Left":
                     print "making left poles"
                     if firstArrayHandled == False or lidcArray.isStaggered == False:
