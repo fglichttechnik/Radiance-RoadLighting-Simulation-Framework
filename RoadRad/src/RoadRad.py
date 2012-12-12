@@ -109,10 +109,12 @@ elif( options.dir ):
     configGen = modulConfigGenerator.ConfigGenerator( extractWorkingDir( ) + '/scenes/' + options.dir )
     print 'All Rads are successful made. Starting with Simulator ...'
     print '---------------------------------------------------------'
-    #sim = modulSimulator.Simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
+    sim = modulSimulator.Simulator( extractWorkingDir( ) + '/scenes/' + options.dir, options.skipRefPics )
     print 'All Simualtions are successful made. Starting with Evaluator ...'
     print '----------------------------------------------------------------'
     ev = modulEvaluator.Evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
+    print 'All Evaluations are successful made ...'
+    print '----------------------------------------------------------------'
 
 else:
     oparser.print_usage( )

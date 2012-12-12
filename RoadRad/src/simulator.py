@@ -88,7 +88,7 @@ class Simulator:
         if( not os.path.isdir( self.xmlConfigPath + Simulator.octDirSuffix ) ):
             os.mkdir( self.xmlConfigPath + Simulator.octDirSuffix )
 
-        if self.roadScene.headlights.__len__() > 0:
+        if self.roadScene.headlights.headlights.__len__() > 0:
             for i in range( self.roadScene.numberOfSubimages ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
                 os.system(cmd)
@@ -109,7 +109,7 @@ class Simulator:
                 print 'generated reference oct# ' + str( i )
                 
         #make octs for scene without targets
-        if self.roadScene.headlights.__len__() > 0:
+        if self.roadScene.headlights.headlights.__len__() > 0:
             cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
             os.system(cmd)
         else:
@@ -243,7 +243,7 @@ class Simulator:
         xmlOut = open( self.xmlConfigPath + self.LMKSetMat + self.LMKSetMatFilename, 'w' )
         xmlOut.write( "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<!DOCTYPE LMKSetMat SYSTEM \"LMKSetMat.dtd\">\n\n<LMKSetMat>\n" )
         xmlOut.write( "<Description>\n<SceneTitle Title=\"" + str( self.roadScene.scene.description.title ) + "\"/>\n<FocalLength FL=\"" + str( self.roadScene.scene.description.focalLength ) + "\"/>\n<ViewPoint Distance=\"" + str( self.roadScene.targetParameters.viewPoint.distance ) + "\"/>\n<Target Size=\"" + str( self.roadScene.targetParameters.target.size ) + "\"/>\n" )
-        for entry in self.roadScene.lidcs:
+        for entry in self.roadScene.lidcs.lidcs:
             xmlOut.write( "<LIDC Name=\"" + str( entry.name ) + "\"/>\n<ScotopicToPhotopicRatio SPRatio=\"" + str( entry.spRatio ) + "\"/>\n" )
         xmlOut.write( "<Pole NumPoleFields=\"" + str( self.roadScene.scene.road.numPoleFields ) + "\"/>\n</Description>\n\n" )
                 

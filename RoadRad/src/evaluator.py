@@ -41,6 +41,8 @@ class Evaluator:
         self.xmlConfigName = "SceneDescription.xml"
         # initialize XML as RoadScene object
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
+        self.headlights = self.roadScene.headlights.headlights
+        self.poles = self.roadScene.poles.poles
         
         self.makeOct( )
         self.calcLuminances( )
@@ -63,7 +65,7 @@ class Evaluator:
             os.mkdir( self.xmlConfigPath + Evaluator.octDirSuffix )        
         
         #make oct for scene without targets for din evaluation
-        if self.roadScene.headlights.__len__() > 0:
+        if self.headlights.__len__() > 0:
             cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.xmlConfigPath + Evaluator.radDirSuffix, self.xmlConfigPath + Evaluator.octDirSuffix )
             os.system(cmd)
         else:    
@@ -80,7 +82,7 @@ class Evaluator:
         #calculate necessary measures
         selectedArray = -1
         #select the first nonSingle pole
-        for index, pole in enumerate( self.roadScene.poles ):
+        for index, pole in enumerate( self.poles ):
             if pole.isSingle == False:
                 selectedArray = index
                 break
@@ -89,8 +91,8 @@ class Evaluator:
             print "No Pole array defined, cannot position the object. terminating"
             sys.exit( 0 )   
 
-        if( self.roadScene.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.roadScene.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
+        if( self.poles[ selectedArray ].spacing > 30 ):            
+            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
                 Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
         
         print 'Generating: luminance values according to DIN EN 13201-3'
@@ -148,7 +150,8 @@ class Evaluator:
         cmd4 = "{0}/rawLuminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
         os.remove( cmd4 )
         
-        print "Done."
+        print '    done ...'
+        print ''
         
     #Prints view point files for every lane
     #Based on the viewpoint mode, one of several viewpoints are written
@@ -160,7 +163,7 @@ class Evaluator:
         #calculate necessary measures
         selectedArray = -1
         #select the first nonSingle pole
-        for index, pole in enumerate( self.roadScene.poles ):
+        for index, pole in enumerate( self.poles ):
             if pole.isSingle == False:
                 selectedArray = index
                 break
@@ -169,8 +172,8 @@ class Evaluator:
             print "No Pole array defined, cannot position the object. terminating"
             sys.exit( 0 )   
 
-        if( self.roadScene.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.roadScene.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
+        if( self.poles[ selectedArray ].spacing > 30 ):            
+            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
                 Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
         
     
@@ -214,7 +217,8 @@ class Evaluator:
         cmd4 = "{0}/rawIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
         os.remove( cmd4 )
         
-        print "Done."
+        print '    done ...'
+        print ''
     
     #Prints view point files for left and right side
     #Based on the viewpoint mode, one of several viewpoints are written
@@ -225,7 +229,7 @@ class Evaluator:
         #calculate necessary measures
         selectedArray = -1
         #select the first nonSingle pole
-        for index, pole in enumerate( self.roadScene.poles ):
+        for index, pole in enumerate( self.poles ):
             if pole.isSingle == False:
                 selectedArray = index
                 break
@@ -234,8 +238,8 @@ class Evaluator:
             print "No Pole array defined, cannot position the object. terminating"
             sys.exit( 0 )   
 
-        if( self.roadScene.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.roadScene.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
+        if( self.poles[ selectedArray ].spacing > 30 ):            
+            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
                 Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
 
         # fixed view direction for illuminance
@@ -248,9 +252,9 @@ class Evaluator:
         positionRightX = ( self.roadScene.scene.road.numLanes * self.roadScene.scene.road.laneWidth ) - 0.02
         # fixed z position depend on the middle pole height
         allHeights = 0
-        for entry in self.roadScene.poles:
+        for entry in self.poles:
             allHeights += entry.height
-            positionUpperZ = allHeights / self.roadScene.poles.__len__()
+            positionUpperZ = allHeights / self.poles.__len__()
         
         print "    x-position of the left sensor: " + str( positionLeftX )  
         print "    x-position of the right sensor: " + str( positionRightX ) 
@@ -306,7 +310,7 @@ class Evaluator:
              illumfile.seek(0) # rewind
              illumfile.write("measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight viewPositionUpper_x viewPositionUpper_y viewPositionUpper_z viewDirectionUpper_x viewDirectionUpper_y viewDirectionUpper_z illuminanceUpper\n" + old) # write the new line before
         
-        print "Delete temporary illumninance files"
+        print "! Delete temporary illumninance files"
         
         # delete all useless txt files
         cmd5 = "{0}/illuminanceRows.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
@@ -324,7 +328,8 @@ class Evaluator:
         cmd7 = "{0}/rawUpperIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
         os.remove( cmd7 )
         
-        print "Done."
+        print '    done ...'
+        print ''
     
     def makePic(self):
             if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix ) ):
@@ -333,14 +338,14 @@ class Evaluator:
                 os.mkdir( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )              
             
             #make pic without target for later evaluation
-            print 'out_radiance.hdr'
+            print 'make out_radiance.hdr'
             if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
                 cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
                 os.system( cmd1 )
             else:
                 cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
                 os.system( cmd1 )
-            print 'out_irradiance.hdr'
+            print 'make out_irradiance.hdr'
             if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
                 cmd2 = 'rpict -i -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
                 os.system( cmd2 )
@@ -355,8 +360,10 @@ class Evaluator:
             print 'falsecolor_illuminance.hdr'
             cmd1 = 'falsecolor -i {0}/out_irradiance.hdr -log 5 -l lx > {0}/falsecolor_illuminance.hdr'.format( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )
             os.system( cmd1 )
+            
+            print '    done ...'
+            print ''
                 
-    
     def evalLuminance( self ):
     
         print 'Evaluate luminances...'
@@ -367,7 +374,7 @@ class Evaluator:
         
         for laneInOneDirection in range( self.roadScene.scene.road.numLanes ):
             
-            print 'Viewer on lane number: ' + str( laneInOneDirection )
+            print '    Viewer on lane number: ' + str( laneInOneDirection )
             
             L_m = 0
             L_min__ = []
@@ -501,7 +508,8 @@ class Evaluator:
         Evaluator.minIlluminance = E_min        
         Evaluator.uniformityOfIlluminance = g_1
         
-        print "Done."    
+        print '    done ...'
+        print ''    
         
     def evalSideIlluminance( self ):
         print 'Evaluate side and upper illuminances...'                
@@ -561,7 +569,9 @@ class Evaluator:
         Evaluator.meanIlluminanceLeft = E_m_SideLeft
         Evaluator.meanIlluminanceRight = E_m_SideRight
         Evaluator.meanIlluminanceUpper = E_m_SideUpper
-        print "Done."    
+        
+        print '    done ...'
+        print ''   
     
     def makeXML( self ):
             print 'Generating XML: file..'
@@ -612,7 +622,8 @@ class Evaluator:
             doc.writexml( f, "\n", "    ")
             f.close( )           
             
-            print 'Done.'
+            print '    done ...'
+            print ''
             
     def checkStandards( self ):
         print 'Check DIN EN 13201-2 classes...'
@@ -672,4 +683,5 @@ class Evaluator:
         evaltree.writexml( f, "\n", "    ")
         f.close( )
         
-        print 'Done.'
+        print '    done ...'
+        print ''

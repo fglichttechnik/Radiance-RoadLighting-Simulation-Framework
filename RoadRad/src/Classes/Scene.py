@@ -4,7 +4,7 @@ import Road as modulRoad
 import Calculation as modulCalculation
 
 class Scene:
-    def __init__( self ):
-        self.description = modulDescription.Description()
-        self.road = modulRoad.Road()
-        self.calculation = modulCalculation.Calculation()
+    def __init__( self, root ):
+        self.description = modulDescription.Description( root )
+        self.road = modulRoad.Road( root )
+        self.calculation = modulCalculation.Calculation( root )
