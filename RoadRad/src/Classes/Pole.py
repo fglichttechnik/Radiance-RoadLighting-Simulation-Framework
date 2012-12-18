@@ -13,5 +13,5 @@ class Pole:
             self.height = 0 
             self.overhang = 0 
             self.lidc = "" 
-            self.positionX = 0 
+            self.positionY = 0 
             self.side = ""

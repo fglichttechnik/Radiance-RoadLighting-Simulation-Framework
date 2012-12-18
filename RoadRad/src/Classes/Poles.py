@@ -15,7 +15,7 @@ class Poles:
         for poleEntry in poleDesc:
             if( poleEntry.tag == 'PoleSingle' ):
                 pole = modulPole.Pole( True )
-                pole.positionX = float( poleEntry.get( 'PositionY' ) )
+                pole.positionY = float( poleEntry.get( 'PositionY' ) )
 
             else:
                 pole = modulPole.Pole( False )
@@ -30,4 +30,4 @@ class Poles:
             pole.overhang = float( poleEntry.get( 'Overhang' ) )
             self.poles.append( pole )
         
-        print '    headlights loaded ...' 
+        print '    poles loaded ...' 

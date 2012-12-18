@@ -176,24 +176,28 @@ class ConfigGenerator:
             print 'Generating: Light Pole Rad files'
             
             for index, poleArray in enumerate( self.poles ):
-                print '    build PoleArray number: ' + str( index ) + ' with ' + str( poleArray.lidc )
+                if poleArray.isSingle:
+                    print '    build single pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
+                else:
+                    print '    build array pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
+                    
                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  + '_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
                 f.write( "!xform -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + str( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) + "/" + str( poleArray.lidc ) + ".rad\n\n" )
-                # f.write( "chrome cylinder pole\n" )
-                # f.write( "0\n" )
-                # f.write( "0\n" )
-                # f.write( "7\n" )
-                # f.write( "0 0 0\n" )
-                # f.write( "0 0 " + str( poleArray.height ) + "\n" )
-                # f.write( str( self.roadScene.poleRadius ) + "\n\n")
-                # f.write( "chrome cylinder mount\n" )
-                # f.write( "0\n" )
-                # f.write( "0\n" )
-                # f.write( "7\n" )
-                # f.write( "0 0 " + str( poleArray.height ) + "\n" )
-                # f.write( str( poleArray.overhang - self.roadScene.poleRadius  ) + " 0 " + str( poleArray.height ) + "\n" )
-                # f.write( str( self.roadScene.poleRadius ) )
+                f.write( "chrome cylinder pole\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "7\n" )
+                f.write( "0 0 0\n" )
+                f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                f.write( str( self.roadScene.poleRadius ) + "\n\n")
+                f.write( "chrome cylinder mount\n" )
+                f.write( "0\n" )
+                f.write( "0\n" )
+                f.write( "7\n" )
+                f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                f.write( str( poleArray.overhang - self.roadScene.poleRadius  ) + " 0 " + str( poleArray.height ) + "\n" )
+                f.write( str( self.roadScene.poleRadius ) )
                 f.close( )
             
             print '    done ...'
@@ -208,9 +212,9 @@ class ConfigGenerator:
             for index, poleArray in enumerate( self.poles ):
                 if poleArray.isSingle == True:
                     if poleArray.side == "Left":
-                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
                     else:
-                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionX ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
                 elif poleArray.side == "Left":
                     print "    making left poles"
                     if firstArrayHandled == False or poleArray.isStaggered == False:
@@ -337,55 +341,55 @@ class ConfigGenerator:
                 f.write( "5 0.14 0.14 0.14 0.03 0.01 \n\n" )
                 
             elif self.road.surface == 'R4':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R4/r4-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'R3':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R3/r3-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'R2':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R2/r2-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'R1':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "R1/r1-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
                 
             elif self.road.surface == 'C1':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C1/c1-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2/c2-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2W3':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2W3/c2w3-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'C2W4':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "C2W4/c2w4-table.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
             
             elif self.road.surface == 'BRDF1345':
-                f.write( "void metdata pavement\n" )
+                f.write( "void plasdata pavement\n" )
                 f.write( "6 refl " + str( ConfigGenerator.rTableDatSuffix ) + "BRDF/brdf.dat " + str( rTableCal ) + " alfa gamma beta\n" )
                 f.write( "0\n" )
                 f.write( "4 1 1 1 1 \n\n" )
