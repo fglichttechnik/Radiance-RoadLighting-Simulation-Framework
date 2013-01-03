@@ -6,7 +6,7 @@
 import os
 import math
 import sys
-import classes.RoadScene as modulRoadscene # import RoadScene.py from subfolder Classes
+import Classes.RoadScene as modulRoadscene # import RoadScene.py from subfolder Classes
 
 class ConfigGenerator:
     
@@ -112,11 +112,13 @@ class ConfigGenerator:
     #and convert them to the RAD files necessary for the rendering
     def makeRadfromIES( self ):
         print 'Generating LIDCs from IES data'
+
         if( not os.path.isdir( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) ):
             print "LIDCs directory not found. Terminating."
             sys.exit(0)
         else:
             for lidcArray in self.lidcs:
+            
                 if( not os.path.isfile( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + '/' + lidcArray.name + '.ies' ) ):
                     print lidcArray.name + " LIDC not found in the designated LDCs directory. Terminating."
                     sys.exit(0)
@@ -174,30 +176,30 @@ class ConfigGenerator:
     #they are holding
     def printPoleConfig( self ):
             print 'Generating: Light Pole Rad files'
-            
+            print self.poles
             for index, poleArray in enumerate( self.poles ):
                 if poleArray.isSingle:
                     print '    build single pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
                 else:
                     print '    build array pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
-                    
+                
                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + poleArray.lidc + '_' + str( index )  + '_light_pole.rad', "w" )
                 f.write( "######light_pole.rad######\n" )
                 f.write( "!xform -rz " + str( self.roadScene.lidcRotation ) + " -t " + str( poleArray.overhang ) + " 0 " + str( poleArray.height - self.roadScene.poleRadius ) + " " + str( self.xmlConfigPath + ConfigGenerator.lidcDirSuffix ) + "/" + str( poleArray.lidc ) + ".rad\n\n" )
-                f.write( "chrome cylinder pole\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "7\n" )
-                f.write( "0 0 0\n" )
-                f.write( "0 0 " + str( poleArray.height ) + "\n" )
-                f.write( str( self.roadScene.poleRadius ) + "\n\n")
-                f.write( "chrome cylinder mount\n" )
-                f.write( "0\n" )
-                f.write( "0\n" )
-                f.write( "7\n" )
-                f.write( "0 0 " + str( poleArray.height ) + "\n" )
-                f.write( str( poleArray.overhang - self.roadScene.poleRadius  ) + " 0 " + str( poleArray.height ) + "\n" )
-                f.write( str( self.roadScene.poleRadius ) )
+                #f.write( "chrome cylinder pole\n" )
+                #f.write( "0\n" )
+                #f.write( "0\n" )
+                #f.write( "7\n" )
+                #f.write( "0 0 0\n" )
+                #f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                #f.write( str( self.roadScene.poleRadius ) + "\n\n")
+                #f.write( "chrome cylinder mount\n" )
+                #f.write( "0\n" )
+                #f.write( "0\n" )
+                #f.write( "7\n" )
+                #f.write( "0 0 " + str( poleArray.height ) + "\n" )
+                #f.write( str( poleArray.overhang - self.roadScene.poleRadius  ) + " 0 " + str( poleArray.height ) + "\n" )
+                #f.write( str( self.roadScene.poleRadius ) )
                 f.close( )
             
             print '    done ...'

@@ -18,6 +18,6 @@
 	<Poles>
 		<PoleArray Height="5.97" Spacing="39.4" Overhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
 		<!--<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="27.7" Side="Right"/>-->
-		<PoleSingle PoleHeight="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="-9" Side="Right"/>
+		<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="-9" Side="Right"/>
 	</Poles>
 </RoadScene>

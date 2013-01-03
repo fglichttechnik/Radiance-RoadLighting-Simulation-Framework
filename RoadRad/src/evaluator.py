@@ -8,7 +8,7 @@ import csv
 import struct
 import xml.dom as dom
 from xml.dom.minidom import parse
-import classes.RoadScene as modulRoadscene
+import Classes.RoadScene as modulRoadscene
 
 
 #write a few documentation
@@ -365,101 +365,135 @@ class Evaluator:
             print ''
                 
     def evalLuminance( self ):
-    
-        print 'Evaluate luminances...'
+    	print 'Evaluate luminances...'
+    	
+    	if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
+                os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
+    	
+    	lumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Luminance', 'w+' )
+        
         L_m_ = []
         L_min_ = []
         U_0_ = []
         U_l_ = []
         
         for laneInOneDirection in range( self.roadScene.scene.road.numLanes ):
-            
-            print '    Viewer on lane number: ' + str( laneInOneDirection )
-            
-            L_m = 0
-            L_min__ = []
-            L_l_min_ = []
-            L_l_m_ = []
-             
-            for lane in range( self.roadScene.scene.road.numLanes ):
-                print '    lane: ' + str( lane )
-                lumFile = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminances.txt', 'r')
-                lumReader = csv.reader( lumFile, delimiter = ' ' )
-                headerline = lumReader.next()
-                
-                L = []
-                L_l = []
-                
-                L_m_lane = 0
-                L_l_m_lane = 0
-                
-                L_m_values = 0
-                L_l_values = 0
-                
-                for row in lumReader:
-                    if( float( row[1] ) == float( lane ) ) and ( float( row[0] )== float( laneInOneDirection ) ):
-                        L_row = float( row[9] )
-                        L_m_lane += float( row[9] )
-                        L_m_values += 1
-                        L.append( L_row)
-                        
-                        if( float( row[2] ) == 1 ):
-                            L_l_row = float( row[9] )
-                            L_l_values += 1
-                            L_l_m_lane += float( row[9] )
-                            L_l.append( L_l_row )
-                            
-                L_m = L_m + (L_m_lane / L_m_values )
-                L_m_lane = L_m_lane / L_m_values
-                L_min_lane = min( L )
-                L_max_lane = max( L )
-                L_min__.append( L_min_lane )
-                U_0__ = L_min_lane / L_m_lane 
-                
-                print '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane )
-                print '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] )
-                print '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane )
-                print '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__)
-                
-                L_l_m_.append( L_l_m_lane / L_l_values )
-                L_l_m_lane = L_l_m_lane / L_l_values
-                L_l_min_lane = min( L_l )
-                L_l_min_.append( L_l_min_lane )
-                U_l_.append( L_l_min_lane / L_l_m_lane )
-                
-                print '        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane )
-                print '        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] )
-                print '        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) )
-                print '        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] )
-                
-                lumFile.close( )
-            
-            L_m = L_m / self.roadScene.scene.road.numLanes
-            L_m_.append( L_m )
-            L_min_ = min( L_min__ )
-            U_0_.append( L_min_ / L_m )
-            U_l = min( U_l_ )
-            
-            print '    L_m = ' + str( L_m )
-            print '    L_min = ' + str( L_min_ )
-            print '    L_max = ' + str( max( L ) )
-            print '    U_0 = ' + str( L_min_ / L_m )
-            print '    U_l = ' + str( U_l )
+        	print '    Viewer on lane number: ' + str( laneInOneDirection )
+        	lumFid.write('    Viewer on lane number: ' + str( laneInOneDirection ) + '\n' )
+        	
+        	L_m = 0
+        	L_min__ = []
+        	L_l_min_ = []
+        	L_l_m_ = []
+        	
+        	for lane in range( self.roadScene.scene.road.numLanes ):
+        		print '    lane: ' + str( lane )
+        		lumFid.write('    lane: ' + str( lane ) + '\n')
+        		evalLumDir = self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminances.txt'
+        		lumFile = open( evalLumDir, 'r')
+        		lumReader = csv.reader( lumFile, delimiter = ' ' )
+        		headerline = lumReader.next()
+        		
+        		L = []
+        		L_l = []
+        		
+        		L_m_lane = 0
+        		L_l_m_lane = 0
+        		
+        		L_m_values = 0
+        		L_l_values = 0
+        		
+        		for row in lumReader:
+        			if( float( row[1] ) == float( lane ) ) and ( float( row[0] )== float( laneInOneDirection ) ):
+        				L_row = float( row[9] )
+        				L_m_lane += float( row[9] )
+        				L_m_values += 1
+        				L.append( L_row)
+        				
+        				if( float( row[2] ) == 1 ):
+        					L_l_row = float( row[9] )
+        					L_l_values += 1
+        					L_l_m_lane += float( row[9] )
+        					L_l.append( L_l_row )
+        		
+        		L_m = L_m + (L_m_lane / L_m_values )
+        		L_m_lane = L_m_lane / L_m_values
+        		L_min_lane = min( L )
+        		L_max_lane = max( L )
+        		L_min__.append( L_min_lane )
+        		U_0__ = L_min_lane / L_m_lane
+        		
+        		print '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane )
+        		lumFid.write( '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane ) + '\n')
+        		print '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] )
+        		lumFid.write( '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] ) + '\n')
+        		print '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane )
+        		lumFid.write( '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane ) + '\n')
+        		print '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__)
+        		lumFid.write( '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__) + '\n')
+        		
+        		L_l_m_.append( L_l_m_lane / L_l_values )
+        		L_l_m_lane = L_l_m_lane / L_l_values
+        		L_l_min_lane = min( L_l )
+        		L_l_min_.append( L_l_min_lane )
+        		U_l_.append( L_l_min_lane / L_l_m_lane )
+        		
+        		print '        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane )
+        		lumFid.write('        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane ) + '\n')
+        		print '        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] )
+        		lumFid.write('        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] ) + '\n')
+        		print '        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) )
+        		lumFid.write('        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) ) + '\n')
+        		print '        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] )
+        		lumFid.write('        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] ) + '\n')
+        		
+        		lumFile.close( )
+        	
+        	L_m = L_m / self.roadScene.scene.road.numLanes
+        	L_m_.append( L_m )
+        	L_min_ = min( L_min__ )
+        	U_0_.append( L_min_ / L_m )
+        	U_l = min( U_l_ )
+        	
+        	print('    Values of all Lanes:')
+        	lumFid.write('    Values of all Lanes:'+ '\n')
+        	print '    L_m = ' + str( L_m )
+        	lumFid.write('    L_m = ' + str( L_m ) + '\n')
+        	print '    L_min = ' + str( L_min_ )
+        	lumFid.write('    L_min = ' + str( L_min_ ) + '\n')
+        	print '    L_max = ' + str( max( L ) )
+        	lumFid.write('    L_max = ' + str( max( L ) ) + '\n')
+        	print '    U_0 = ' + str( L_min_ / L_m )
+        	lumFid.write('    U_0 = ' + str( L_min_ / L_m ) + '\n')
+        	print '    U_l = ' + str( U_l )
+        	lumFid.write('    U_l = ' + str( U_l ) + '\n')
         
         Evaluator.meanLuminance = min( L_m_ )
         Evaluator.uniformityOfLuminance = min( U_0_)
         Evaluator.lengthwiseUniformityOfLuminance = min( U_l_ )
         
+        print('Min of all Lanes & Viewers:')
+        lumFid.write('Min of all Lanes:'+ '\n')
         print 'L_m = ' + str( Evaluator.meanLuminance )
+        lumFid.write('L_m = ' + str( Evaluator.meanLuminance ) + '\n')
         print 'L_min = ' + str( min( L_min__ ) )
+        lumFid.write('L_min = ' + str( min( L_min__ ) ) + '\n')
         print 'L_max = ' + str( max( L ) )
+        lumFid.write('L_max = ' + str( max( L ) ) + '\n')
         print 'U_0 = ' + str( min( U_0_) )
+        lumFid.write('U_0 = ' + str( min( U_0_) ) + '\n')
         print 'U_l = ' + str( min( U_l_ ) )
+        lumFid.write('U_l = ' + str( min( U_l_ ) ) + '\n')
         
         print "Done."            
         
     def evalIlluminance( self ):
-        print 'Evaluate illuminances...'                
+        print 'Evaluate illuminances...'      
+        
+        if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
+    	
+    	illumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Illuminance', 'w+' )
         
         E_min_ = []
         E_m_ = 0
@@ -467,6 +501,7 @@ class Evaluator:
                 
         for lane in range( self.roadScene.scene.road.numLanes ):
             print '    lane: ' + str( lane )
+            illumFid.write('    lane: ' + str( lane ) + '\n')
             lumFile = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminances.txt', 'r')
             lumReader = csv.reader( lumFile, delimiter = ' ' )
             headerline = lumReader.next()
@@ -489,9 +524,13 @@ class Evaluator:
             g_1_.append( E_min_lane / E_m_lane )
             
             print '        E_m of lane ' + str( lane ) + ':            ' + str( E_m_lane )
+            illumFid.write('        E_m of lane ' + str( lane ) + ':            ' + str( E_m_lane ) + '\n')
             print '        E_min of lane ' + str( lane ) + ':        ' + str( E_min_[lane] )
+            illumFid.write('        E_min of lane ' + str( lane ) + ':        ' + str( E_min_[lane] ) + '\n')
             print '        E_max of lane ' + str( lane ) + ':        ' + str( max( E ) )
+            illumFid.write('        E_max of lane ' + str( lane ) + ':        ' + str( max( E ) ) + '\n')
             print '        g_1 of lane ' + str( lane ) + ':            ' + str( g_1_[lane] )
+            illumFid.write('        g_1 of lane ' + str( lane ) + ':            ' + str( g_1_[lane] ) + '\n')
             
             lumFile.close( )
                 
@@ -500,9 +539,13 @@ class Evaluator:
         g_1 = E_min / E_m
         
         print '    E_m = ' + str( E_m )
+        illumFid.write('    E_m = ' + str( E_m ) + '\n')
         print '    E_min = ' + str( E_min)
+        illumFid.write('    E_min = ' + str( E_min) + '\n')
         print '    E_max = ' + str( max( E ) )
+        illumFid.write('    E_max = ' + str( max( E ) ) + '\n')
         print '    g_1 = ' + str( g_1 )
+        illumFid.write('    g_1 = ' + str( g_1 ) + '\n')
         
         Evaluator.meanIlluminance = E_m
         Evaluator.minIlluminance = E_min        

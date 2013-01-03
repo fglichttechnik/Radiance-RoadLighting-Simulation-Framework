@@ -10,7 +10,7 @@ import struct
 import shutil
 import sys
 from select import select
-import classes.RoadScene as modulRoadscene
+import Classes.RoadScene as modulRoadscene
 #user input ambient calculation timer
 import thread
 import threading
