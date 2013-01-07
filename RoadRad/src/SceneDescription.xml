@@ -9,15 +9,14 @@
 		<Target Size="0.3" Reflectancy="0.04" Specularity="0" Roughness="0" Position="Center" OnLane="2" />
 	</TargetParameters>
 	<LIDCs>
-		<LIDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor="0.1" SPRatio="1.71" />
-		<LIDC Name="lowbeam" LightSource="LED" LightLossFactor="0.1" SPRatio="1.71" />
+		<LIDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor="1" SPRatio="1.71" />
+		<LIDC Name="lowbeam" LightSource="LED" LightLossFactor="1" SPRatio="1.71" />
 	</LIDCs>
 	<Headlights>
 		<Headlight LIDC="lowbeam" HeadlightDistanceMode="fixedHeadlightPosition/FixedTargetDistance" Distance="20" Height="0.7" Width="1.9" SlopeAngle="0" LightDirection="same/opposite" OnLane="2" />
 	</Headlights>
 	<Poles>
-		<PoleArray Height="5.97" Spacing="39.4" Overhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
-		<!--<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="27.7" Side="Right"/>-->
-		<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="-9" Side="Right"/>
+		<PoleArray Height="5.97" Spacing="39.4" Overhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right" />
+		<PoleSingle Height="9" Overhang="-4" LIDC="HellaEcoLight_2070lm_LDT" PositionY="-9" Side="Right" />
 	</Poles>
 </RoadScene>
