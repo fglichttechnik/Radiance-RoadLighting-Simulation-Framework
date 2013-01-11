@@ -12,8 +12,8 @@ class Calculation:
         
     def loadCalculation( self, root ): 
         calcDesc = root.find( 'Scene/Calculation' )
-        self.din13201 = calcDesc.get( 'VeilingLuminance' )
-        self.veilingLuminance = calcDesc.get( 'DIN13201' )
+        self.din13201 = calcDesc.get( 'DIN13201' )
+        self.veilingLuminance = calcDesc.get( 'VeilingLuminance' )
         self.veilingLuminanceMethod = calcDesc.get( 'VeilingLuminanceMethod' )
         self.tresholdLuminanceFactor = calcDesc.get( 'TresholdLuminanceFactor' )
         
