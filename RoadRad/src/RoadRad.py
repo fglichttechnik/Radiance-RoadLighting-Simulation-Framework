@@ -42,6 +42,7 @@ import datetime
 import ConfigGenerator as modulConfigGenerator
 import Simulator as modulSimulator
 import Evaluator as modulEvaluator
+import Videosimulator as modulVideosimulator
 import EnvVarSetter
 
 
@@ -85,10 +86,11 @@ usage = "usage: %prog [options]"
 version = "%prog 0.1"
 
 oparser = OptionParser( )
-oparser.add_option( "--setEnv", action="store", type="string", dest="setEnv" )
-oparser.add_option( "--dir", action ="store", type = "string", dest = "dir" )
-oparser.add_option( "--skipRefPics", action ="store_true", dest = "skipRefPics" )
+oparser.add_option( "--setEnv", action = "store", type = "string", dest = "setEnv" )
+oparser.add_option( "--dir", action = "store", type = "string", dest = "dir" )
+oparser.add_option( "--skipRefPics", action = "store_true", dest = "skipRefPics" )
 oparser.add_option( "--cleanDir", action ="store", type="string", dest = "cleanDir" )
+oparser.add_option( "--video", action = "store", type="string", dest = "video" )
 
 ( options, args ) = oparser.parse_args()
 
@@ -115,6 +117,10 @@ elif( options.dir ):
     ev = modulEvaluator.Evaluator( extractWorkingDir( ) + '/scenes/' + options.dir )
     print 'All Evaluations are successful made ...'
     print '----------------------------------------------------------------'
+    if ( options.video ):
+    	vid = modulVideosimulator.Videosimulator( extractWorkingDir( ) + '/scenes/' + options.dir,  options.video )
+    	print 'Video pics are successful made ...'
+    	print '----------------------------------------------------------------'
 
 else:
     oparser.print_usage( )

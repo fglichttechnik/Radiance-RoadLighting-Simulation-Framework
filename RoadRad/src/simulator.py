@@ -55,7 +55,7 @@ class Simulator:
             os.mkdir( self.xmlConfigPath + self.LMKSetMat )
             
         shutil.copy( self.xmlConfigPath + "/SceneDescription.xml", self.xmlConfigPath + self.LMKSetMat )
-        shutil.copy( os.getcwd() + "/LMKSetMat.dtd", self.xmlConfigPath + self.LMKSetMat ) # copy DTD for LMKSetMat XML
+        shutil.copy( os.getcwd( ) + "/LMKSetMat.dtd", self.xmlConfigPath + self.LMKSetMat ) # copy DTD for LMKSetMat XML
         
         self.checkTargetAndConfig( ) 
         self.makeOct( )
