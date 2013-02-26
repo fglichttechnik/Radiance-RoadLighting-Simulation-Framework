@@ -159,20 +159,77 @@ class Simulator:
                 os.system( cmd0 )
                 print 'done.'
                 print datetime.datetime.now() - starttime
+
+                #include veiling luminance if whished
+                if self.roadScene.scene.calculation.veilingLuminance == 'on':
+                	print 'generating veiling luminance'
+                	starttime = datetime.datetime.now()
+                	glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.xmlConfigPath + self.picDirSuffix +self.picSubDirSuffix ) 
+                	os.system( glareCmd )
+                	glareFile = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
+                	glaresources = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
+                	isGlaresource = 0
+                	for line in glareFile:
+                		begin = 'BEGIN glare source'
+                		if begin in line:
+                			isGlaresource = 1
+                			continue
+                		end = 'END glare source'
+                		if end in line:
+                			isGlaresource = 0
+                			break
+                		if isGlaresource == 1:
+                			glaresources.write( line )
+                	glareFile.close( )
+                	glaresources.close( )                	
+                	
+                	xdirection = []
+                	ydirection = []
+                	zdirection = []
+                	illuminance = []
+                	
+                	glaretable = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'r')
+            		tablereader = csv.reader( glaretable, delimiter = '	' )
+                	for row in tablereader:
+                		direction = row[1].split( ' ' )
+                		xdirection.append( direction[0] )
+                		ydirection.append( direction[1]  )
+                		zdirection.append( direction[2]  )
+                		illuminance.append( float( row[2] ) * float( row[3] ) )
+                	glaretable.close( )
+                	
+                	glares = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal', 'a' )
+                	glares.write( 'SDx(i): select(i, ' + ', '.join( xdirection ) + ' );\n' )
+                	glares.write( 'SDy(i): select(i, ' + ', '.join( ydirection ) + ' );\n' )
+                	glares.write( 'SDz(i): select(i, ' + ', '.join( zdirection ) + ' );\n' )
+                	glares.write( 'I(i): select(i, ' + ', '.join( map( str, illuminance ) ) + ' );\n' )
+                	glares.write( 'N : I(0);' )
+                	glares.close( )
+                	
+                	veilCmd = 'pcomb -f {1}/out{0}_glares.cal -f {2}/veil.cal {1}/out{0}.hdr > {1}/out{0}_veil.hdr'.format( i, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
+                	os.system( veilCmd )                	
+                	
+                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr' )
+                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr' )
+                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal' )
+                	#os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '.hdr' )
+                	
+                	print 'done.'
+                	print datetime.datetime.now() - starttime
             
             #make pic for view up and down the raod
             print 'generating pics for view up and down'
             starttime = datetime.datetime.now()
-            cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix )
+            cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
             os.system( cmdUp )
-            cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix )
+            cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdUpTiff)
-            cmdDown = 'rpict -x 2000 -y 2000 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix )
+            cmdDown = 'rpict -x 2000 -y 2000 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
             os.system( cmdDown )
-            cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix )
+            cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
             os.system( cmdDownTiff)
-            #os.remove( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix + "/out_up.hdr" )
-            #os.remove( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix + "/out_down.hdr" )
+            #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
+            #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
             print 'done.'
             print datetime.datetime.now() - starttime
              
