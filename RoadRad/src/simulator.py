@@ -121,117 +121,117 @@ class Simulator:
     
     #System call to radiance framework for the actual rendering of the images
     def makePic(self):
-            if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix )
-            if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix )
-            if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix )
-                
-            # choosing between high accurate ambient and normal simulation
-            print 'Please enter y(yes) or n(no) for ambient calculation: '
-            timeout = 10
-            print 'You choose:',
-            rlist, _, _ = select([sys.stdin], [], [], timeout)
-            if rlist:
-                ambCalc = sys.stdin.readline()
-                print ambCalc
-            else:
-                print 'No input. None ambient calculation...'
-                ambCalc = 'n'                
+        if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix )
+        if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix )
+        if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix )
             
-            for i in range( self.roadScene.numberOfSubimages ):
-                print 'generating pic# ' + str( i )
-                starttime = datetime.datetime.now()
-                cmd0 = ''
-                
-                if ambCalc == 'y' or ambCalc == 'ye' or ambCalc == 'yes':
-                    if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )                    
-                    else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )                                         
-                else:    
-                    if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-                        cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
-                    else:
-                        cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
-                    
-                os.system( cmd0 )
-                print 'done.'
-                print datetime.datetime.now() - starttime
-
-                #include veiling luminance if whished
-                if self.roadScene.scene.calculation.veilingLuminance == 'on':
-                	print 'generating veiling luminance'
-                	starttime = datetime.datetime.now()
-                	glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.xmlConfigPath + self.picDirSuffix +self.picSubDirSuffix ) 
-                	os.system( glareCmd )
-                	glareFile = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
-                	glaresources = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
-                	isGlaresource = 0
-                	for line in glareFile:
-                		begin = 'BEGIN glare source'
-                		if begin in line:
-                			isGlaresource = 1
-                			continue
-                		end = 'END glare source'
-                		if end in line:
-                			isGlaresource = 0
-                			break
-                		if isGlaresource == 1:
-                			glaresources.write( line )
-                	glareFile.close( )
-                	glaresources.close( )                	
-                	
-                	xdirection = []
-                	ydirection = []
-                	zdirection = []
-                	illuminance = []
-                	
-                	glaretable = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'r')
-            		tablereader = csv.reader( glaretable, delimiter = '	' )
-                	for row in tablereader:
-                		direction = row[1].split( ' ' )
-                		xdirection.append( direction[0] )
-                		ydirection.append( direction[1]  )
-                		zdirection.append( direction[2]  )
-                		illuminance.append( float( row[2] ) * float( row[3] ) )
-                	glaretable.close( )
-                	
-                	glares = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal', 'a' )
-                	glares.write( 'SDx(i): select(i, ' + ', '.join( xdirection ) + ' );\n' )
-                	glares.write( 'SDy(i): select(i, ' + ', '.join( ydirection ) + ' );\n' )
-                	glares.write( 'SDz(i): select(i, ' + ', '.join( zdirection ) + ' );\n' )
-                	glares.write( 'I(i): select(i, ' + ', '.join( map( str, illuminance ) ) + ' );\n' )
-                	glares.write( 'N : I(0);' )
-                	glares.close( )
-                	
-                	veilCmd = 'pcomb -f {1}/out{0}_glares.cal -f {2}/veil.cal {1}/out{0}.hdr > {1}/out{0}_veil.hdr'.format( i, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
-                	os.system( veilCmd )                	
-                	
-                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr' )
-                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr' )
-                	os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal' )
-                	#os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '.hdr' )
-                	
-                	print 'done.'
-                	print datetime.datetime.now() - starttime
-            
-            #make pic for view up and down the raod
-            print 'generating pics for view up and down'
+        # choosing between high accurate ambient and normal simulation
+        print 'Please enter y(yes) or n(no) for ambient calculation: '
+        timeout = 10
+        print 'You choose:',
+        rlist, _, _ = select([sys.stdin], [], [], timeout)
+        if rlist:
+            ambCalc = sys.stdin.readline()
+            print ambCalc
+        else:
+            print 'No input. None ambient calculation...'
+            ambCalc = 'n'                
+        
+        for i in range( self.roadScene.numberOfSubimages ):
+            print 'generating pic# ' + str( i )
             starttime = datetime.datetime.now()
-            cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
-            os.system( cmdUp )
-            cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
-            os.system( cmdUpTiff)
-            cmdDown = 'rpict -x 2000 -y 2000 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
-            os.system( cmdDown )
-            cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
-            os.system( cmdDownTiff)
-            #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
-            #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
+            cmd0 = ''
+            
+            if ambCalc == 'y' or ambCalc == 'ye' or ambCalc == 'yes':
+                if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )                    
+                else:
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} -ps 1 -pt 0 -pj 1 -dj 1 -dp 0 -ds .01 -dt 0 -dc 1 -dr 6 -sj 1 -st 0 -ab 5 -aa 0 -ad 4096 -as 1024 -ar 0 -lr 16 -lw 0 {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )                                         
+            else:    
+                if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
+                    cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
+                else:
+                    cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.octDirSuffix , i, self.xmlConfigPath + Simulator.picDirSuffix +Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
+                
+            os.system( cmd0 )
             print 'done.'
             print datetime.datetime.now() - starttime
+
+            #include veiling luminance if whished
+            if self.roadScene.scene.calculation.veilingLuminance == 'on':
+                print 'generating veiling luminance'
+                starttime = datetime.datetime.now()
+                glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.xmlConfigPath + self.picDirSuffix +self.picSubDirSuffix ) 
+                os.system( glareCmd )
+                glareFile = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
+                glaresources = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
+                isGlaresource = 0
+                for line in glareFile:
+                    begin = 'BEGIN glare source'
+                    if begin in line:
+                        isGlaresource = 1
+                        continue
+                    end = 'END glare source'
+                    if end in line:
+                        isGlaresource = 0
+                        break
+                    if isGlaresource == 1:
+                        glaresources.write( line )
+                glareFile.close( )
+                glaresources.close( )                    
+                
+                xdirection = []
+                ydirection = []
+                zdirection = []
+                illuminance = []
+                
+                glaretable = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'r')
+                tablereader = csv.reader( glaretable, delimiter = '    ' )
+                for row in tablereader:
+                    direction = row[1].split( ' ' )
+                    xdirection.append( direction[0] )
+                    ydirection.append( direction[1]  )
+                    zdirection.append( direction[2]  )
+                    illuminance.append( float( row[2] ) * float( row[3] ) )
+                glaretable.close( )
+                
+                glares = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal', 'a' )
+                glares.write( 'SDx(i): select(i, ' + ', '.join( xdirection ) + ' );\n' )
+                glares.write( 'SDy(i): select(i, ' + ', '.join( ydirection ) + ' );\n' )
+                glares.write( 'SDz(i): select(i, ' + ', '.join( zdirection ) + ' );\n' )
+                glares.write( 'I(i): select(i, ' + ', '.join( map( str, illuminance ) ) + ' );\n' )
+                glares.write( 'N : I(0);' )
+                glares.close( )
+                
+                veilCmd = 'pcomb -f {1}/out{0}_glares.cal -f {2}/veil.cal {1}/out{0}.hdr > {1}/out{0}_veil.hdr'.format( i, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
+                os.system( veilCmd )                    
+                
+                os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr' )
+                os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr' )
+                os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.cal' )
+                #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '.hdr' )
+                
+                print 'done.'
+                print datetime.datetime.now() - starttime
+        
+        #make pic for view up and down the raod
+        print 'generating pics for view up and down'
+        starttime = datetime.datetime.now()
+        cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
+        os.system( cmdUp )
+        cmdUpTiff = 'ra_tiff -e +8 {0}/out_up.hdr {0}/out_up.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
+        os.system( cmdUpTiff)
+        cmdDown = 'rpict -x 2000 -y 2000 -vf {2}/eye_down.vp {0}/scene.oct > {1}/out_down.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
+        os.system( cmdDown )
+        cmdDownTiff = 'ra_tiff -e +8 {0}/out_down.hdr {0}/out_down.tiff'.format( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix )
+        os.system( cmdDownTiff)
+        #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_up.hdr" )
+        #os.remove( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + "/out_down.hdr" )
+        print 'done.'
+        print datetime.datetime.now() - starttime
              
     #System call to radiance framework for creating a falsecolor image
     def makeFalsecolorPic(self):  

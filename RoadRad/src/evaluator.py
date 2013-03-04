@@ -41,6 +41,7 @@ class Evaluator:
         self.xmlConfigName = "SceneDescription.xml"
         # initialize XML as RoadScene object
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
+        self.viewPoint = self.roadScene.targetParameters.viewPoint
         self.headlights = self.roadScene.headlights.headlights
         self.poles = self.roadScene.poles.poles
         
@@ -48,6 +49,7 @@ class Evaluator:
         self.calcLuminances( )
         self.calcIlluminances( )
         self.calcSideIlluminances( )
+        #self.calcTI()
         self.makePic( )
         #self.makeFalsecolor( )
         self.evalLuminance( )
@@ -56,7 +58,6 @@ class Evaluator:
         self.makeXML( )
         self.checkStandards( )
 
-    
     #system call to radiance framework to generate oct files out of the various rads
     # both for the actual simulated image and the refernce pictures to determine the 
     # pixel position of the target objects
@@ -101,8 +102,6 @@ class Evaluator:
         print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
         print '    measurment field length: ' + str( self.roadScene.measFieldLength )
 
-        
-    
         directionZ = 0 - self.roadScene.targetParameters.viewPoint.height   
         viewerYPosition = - self.roadScene.targetParameters.viewPoint.distance
         viewerZPosition = self.roadScene.targetParameters.viewPoint.height
@@ -117,7 +116,6 @@ class Evaluator:
                 # middle viewer x-position for every lane 
                 viewerXPosition = ( self.roadScene.scene.road.laneWidth * ( laneInOneDirection + 0.5 ) )
                 viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
-                distanceOfMeasRows = self.roadScene.scene.road.laneWidth / 3
                 
                 # three x-position per lanewidth on x = 25%, 50% and 75% 
                 for rowNumber in range( 3 ):
@@ -206,9 +204,9 @@ class Evaluator:
         cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
         os.system( cmd2 )
         with open( self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminances.txt", "r+" ) as illumfile:
-             old = illumfile.read() # read everything in the file
-             illumfile.seek(0) # rewind
-             illumfile.write("measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z illuminance\n" + old) # write the new line before
+             old = illumfile.read( ) # read everything in the file
+             illumfile.seek( 0 ) # rewind
+             illumfile.write( "measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z illuminance\n" + old ) # write the new line before
         
         cmd3 = "{0}/illuminanceLanes.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
         os.remove( cmd3 )
@@ -306,9 +304,9 @@ class Evaluator:
         
         # add heading to the illuminance.txt table 
         with open( self.xmlConfigPath + Evaluator.evalDirSuffix + "/sideIlluminances.txt", "r+" ) as illumfile:
-             old = illumfile.read() # read everything in the file
-             illumfile.seek(0) # rewind
-             illumfile.write("measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight viewPositionUpper_x viewPositionUpper_y viewPositionUpper_z viewDirectionUpper_x viewDirectionUpper_y viewDirectionUpper_z illuminanceUpper\n" + old) # write the new line before
+             old = illumfile.read( ) # read everything in the file
+             illumfile.seek( 0 ) # rewind
+             illumfile.write( "measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight viewPositionUpper_x viewPositionUpper_y viewPositionUpper_z viewDirectionUpper_x viewDirectionUpper_y viewDirectionUpper_z illuminanceUpper\n" + old ) # write the new line before
         
         print "! Delete temporary illumninance files"
         
@@ -331,46 +329,86 @@ class Evaluator:
         print '    done ...'
         print ''
     
-    def makePic(self):
-            if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Evaluator.picDirSuffix )
-            if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )              
-            
-            #make pic without target for later evaluation
-            print 'make out_radiance.hdr'
-            if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-                cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
-                os.system( cmd1 )
-            else:
-                cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
-                os.system( cmd1 )
-            print 'make out_irradiance.hdr'
-            if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-                cmd2 = 'rpict -i -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
-                os.system( cmd2 )
-            else:
-                cmd2 = 'rpict -i -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
-                os.system( cmd2 )
+    def calcTI( self ):
+        print 'Calculating threshold increment value'
+        #according to DIN EN 13201
+        #calculate necessary measures
+        selectedArray = -1
+        #select the first nonSingle pole
+        for index, pole in enumerate( self.poles ):
+            if pole.isSingle == False:
+                selectedArray = index
+                break
+                
+        if selectedArray == -1:
+            print "No Pole array defined, cannot position the object. terminating"
+            sys.exit( 0 )   
+
+        if( self.poles[ selectedArray ].spacing > 30 ):            
+            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
+                Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
+
+        # fixed view direction for threshold increment ( TI )
+        print '    view direction: ' + str( self.viewPoint.viewDirection )
+        # fixed z position 
+        print "    z-position of the observer: " + str( self.viewPoint.height ) 
+        # fixed x position on given lane
+        positionX = self.roadScene.scene.road.laneWidth * ( self.roadScene.targetParameters.target.onLane + 0.5 )
+        print "    x-position of the observer: " + str( positionX ) 
+        
+        fTI = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/thresholdIncrement.pos', "w" )
+        rTI = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/thresholdIncrementRows.pos', "w" )
+    
+        for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
+                positionY =  ( measPointNumber * self.roadScene.measurementStepWidth ) - self.viewPoint.distance
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################
+#DEBUG - HERE ##############################################    
+    def makePic( self ):
+        if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Evaluator.picDirSuffix )
+        if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )              
+        
+        #make pic without target for later evaluation
+        print 'make out_radiance.hdr'
+        if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
+            cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            os.system( cmd1 )
+        else:
+            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            os.system( cmd1 )
+        print 'make out_irradiance.hdr'
+        if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
+            cmd2 = 'rpict -i -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            os.system( cmd2 )
+        else:
+            cmd2 = 'rpict -i -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            os.system( cmd2 )
             
     def makeFalsecolor( self ):
-            print 'falsecolor_luminance.hdr'
-            cmd0 = 'falsecolor -i {0}/out_radiance.hdr -log 5 -l cd/m^2 > {0}/falsecolor_luminance.hdr'.format( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )
-            os.system( cmd0 )
-            print 'falsecolor_illuminance.hdr'
-            cmd1 = 'falsecolor -i {0}/out_irradiance.hdr -log 5 -l lx > {0}/falsecolor_illuminance.hdr'.format( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )
-            os.system( cmd1 )
+        print 'falsecolor_luminance.hdr'
+        cmd0 = 'falsecolor -i {0}/out_radiance.hdr -log 5 -l cd/m^2 > {0}/falsecolor_luminance.hdr'.format( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )
+        os.system( cmd0 )
+        print 'falsecolor_illuminance.hdr'
+        cmd1 = 'falsecolor -i {0}/out_irradiance.hdr -log 5 -l lx > {0}/falsecolor_illuminance.hdr'.format( self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix )
+        os.system( cmd1 )
+        
+        print '    done ...'
+        print ''
             
-            print '    done ...'
-            print ''
-                
     def evalLuminance( self ):
-    	print 'Evaluate luminances...'
-    	
-    	if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
+        print 'Evaluate luminances...'
+        
+        if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
                 os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
-    	
-    	lumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Luminance', 'w+' )
+        
+        lumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Luminance', 'w+' )
         
         L_m_ = []
         L_min_ = []
@@ -378,95 +416,95 @@ class Evaluator:
         U_l_ = []
         
         for laneInOneDirection in range( self.roadScene.scene.road.numLanes ):
-        	print '    Viewer on lane number: ' + str( laneInOneDirection )
-        	lumFid.write('    Viewer on lane number: ' + str( laneInOneDirection ) + '\n' )
-        	
-        	L_m = 0
-        	L_min__ = []
-        	L_l_min_ = []
-        	L_l_m_ = []
-        	
-        	for lane in range( self.roadScene.scene.road.numLanes ):
-        		print '    lane: ' + str( lane )
-        		lumFid.write('    lane: ' + str( lane ) + '\n')
-        		evalLumDir = self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminances.txt'
-        		lumFile = open( evalLumDir, 'r')
-        		lumReader = csv.reader( lumFile, delimiter = ' ' )
-        		headerline = lumReader.next()
-        		
-        		L = []
-        		L_l = []
-        		
-        		L_m_lane = 0
-        		L_l_m_lane = 0
-        		
-        		L_m_values = 0
-        		L_l_values = 0
-        		
-        		for row in lumReader:
-        			if( float( row[1] ) == float( lane ) ) and ( float( row[0] )== float( laneInOneDirection ) ):
-        				L_row = float( row[9] )
-        				L_m_lane += float( row[9] )
-        				L_m_values += 1
-        				L.append( L_row)
-        				
-        				if( float( row[2] ) == 1 ):
-        					L_l_row = float( row[9] )
-        					L_l_values += 1
-        					L_l_m_lane += float( row[9] )
-        					L_l.append( L_l_row )
-        		
-        		L_m = L_m + (L_m_lane / L_m_values )
-        		L_m_lane = L_m_lane / L_m_values
-        		L_min_lane = min( L )
-        		L_max_lane = max( L )
-        		L_min__.append( L_min_lane )
-        		U_0__ = L_min_lane / L_m_lane
-        		
-        		print '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane )
-        		lumFid.write( '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane ) + '\n')
-        		print '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] )
-        		lumFid.write( '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] ) + '\n')
-        		print '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane )
-        		lumFid.write( '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane ) + '\n')
-        		print '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__)
-        		lumFid.write( '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__) + '\n')
-        		
-        		L_l_m_.append( L_l_m_lane / L_l_values )
-        		L_l_m_lane = L_l_m_lane / L_l_values
-        		L_l_min_lane = min( L_l )
-        		L_l_min_.append( L_l_min_lane )
-        		U_l_.append( L_l_min_lane / L_l_m_lane )
-        		
-        		print '        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane )
-        		lumFid.write('        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane ) + '\n')
-        		print '        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] )
-        		lumFid.write('        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] ) + '\n')
-        		print '        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) )
-        		lumFid.write('        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) ) + '\n')
-        		print '        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] )
-        		lumFid.write('        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] ) + '\n')
-        		
-        		lumFile.close( )
-        	
-        	L_m = L_m / self.roadScene.scene.road.numLanes
-        	L_m_.append( L_m )
-        	L_min_ = min( L_min__ )
-        	U_0_.append( L_min_ / L_m )
-        	U_l = min( U_l_ )
-        	
-        	print('    Values of all Lanes:')
-        	lumFid.write('    Values of all Lanes:'+ '\n')
-        	print '    L_m = ' + str( L_m )
-        	lumFid.write('    L_m = ' + str( L_m ) + '\n')
-        	print '    L_min = ' + str( L_min_ )
-        	lumFid.write('    L_min = ' + str( L_min_ ) + '\n')
-        	print '    L_max = ' + str( max( L ) )
-        	lumFid.write('    L_max = ' + str( max( L ) ) + '\n')
-        	print '    U_0 = ' + str( L_min_ / L_m )
-        	lumFid.write('    U_0 = ' + str( L_min_ / L_m ) + '\n')
-        	print '    U_l = ' + str( U_l )
-        	lumFid.write('    U_l = ' + str( U_l ) + '\n')
+            print '    Viewer on lane number: ' + str( laneInOneDirection )
+            lumFid.write('    Viewer on lane number: ' + str( laneInOneDirection ) + '\n' )
+            
+            L_m = 0
+            L_min__ = []
+            L_l_min_ = []
+            L_l_m_ = []
+            
+            for lane in range( self.roadScene.scene.road.numLanes ):
+                print '    lane: ' + str( lane )
+                lumFid.write('    lane: ' + str( lane ) + '\n')
+                evalLumDir = self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminances.txt'
+                lumFile = open( evalLumDir, 'r')
+                lumReader = csv.reader( lumFile, delimiter = ' ' )
+                headerline = lumReader.next()
+                
+                L = []
+                L_l = []
+                
+                L_m_lane = 0
+                L_l_m_lane = 0
+                
+                L_m_values = 0
+                L_l_values = 0
+                
+                for row in lumReader:
+                    if( float( row[1] ) == float( lane ) ) and ( float( row[0] )== float( laneInOneDirection ) ):
+                        L_row = float( row[9] )
+                        L_m_lane += float( row[9] )
+                        L_m_values += 1
+                        L.append( L_row)
+                        
+                        if( float( row[2] ) == 1 ):
+                            L_l_row = float( row[9] )
+                            L_l_values += 1
+                            L_l_m_lane += float( row[9] )
+                            L_l.append( L_l_row )
+                
+                L_m = L_m + (L_m_lane / L_m_values )
+                L_m_lane = L_m_lane / L_m_values
+                L_min_lane = min( L )
+                L_max_lane = max( L )
+                L_min__.append( L_min_lane )
+                U_0__ = L_min_lane / L_m_lane
+                
+                print '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane )
+                lumFid.write( '        L_m of lane ' + str( lane ) + ':            ' + str( L_m_lane ) + '\n')
+                print '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] )
+                lumFid.write( '        L_min of lane ' + str( lane ) + ':        ' + str( L_min__[lane] ) + '\n')
+                print '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane )
+                lumFid.write( '        L_max of lane ' + str( lane ) + ':        ' + str( L_max_lane ) + '\n')
+                print '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__)
+                lumFid.write( '        U_0 of lane ' + str( lane ) + ':            ' + str( U_0__) + '\n')
+                
+                L_l_m_.append( L_l_m_lane / L_l_values )
+                L_l_m_lane = L_l_m_lane / L_l_values
+                L_l_min_lane = min( L_l )
+                L_l_min_.append( L_l_min_lane )
+                U_l_.append( L_l_min_lane / L_l_m_lane )
+                
+                print '        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane )
+                lumFid.write('        L_m lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_m_lane ) + '\n')
+                print '        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] )
+                lumFid.write('        L_min lengthwise of lane ' + str( lane ) + ':    ' + str( L_l_min_[lane] ) + '\n')
+                print '        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) )
+                lumFid.write('        L_max lengthwise of lane ' + str( lane ) + ':    ' + str( max( L_l ) ) + '\n')
+                print '        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] )
+                lumFid.write('        U_l of lane ' + str( lane ) + ':            ' + str( U_l_[lane] ) + '\n')
+                
+                lumFile.close( )
+            
+            L_m = L_m / self.roadScene.scene.road.numLanes
+            L_m_.append( L_m )
+            L_min_ = min( L_min__ )
+            U_0_.append( L_min_ / L_m )
+            U_l = min( U_l_ )
+            
+            print('    Values of all Lanes:')
+            lumFid.write('    Values of all Lanes:'+ '\n')
+            print '    L_m = ' + str( L_m )
+            lumFid.write('    L_m = ' + str( L_m ) + '\n')
+            print '    L_min = ' + str( L_min_ )
+            lumFid.write('    L_min = ' + str( L_min_ ) + '\n')
+            print '    L_max = ' + str( max( L ) )
+            lumFid.write('    L_max = ' + str( max( L ) ) + '\n')
+            print '    U_0 = ' + str( L_min_ / L_m )
+            lumFid.write('    U_0 = ' + str( L_min_ / L_m ) + '\n')
+            print '    U_l = ' + str( U_l )
+            lumFid.write('    U_l = ' + str( U_l ) + '\n')
         
         Evaluator.meanLuminance = min( L_m_ )
         Evaluator.uniformityOfLuminance = min( U_0_)
@@ -492,8 +530,8 @@ class Evaluator:
         
         if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
             os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
-    	
-    	illumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Illuminance', 'w+' )
+        
+        illumFid = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation_Illuminance', 'w+' )
         
         E_min_ = []
         E_m_ = 0
@@ -617,56 +655,56 @@ class Evaluator:
         print ''   
     
     def makeXML( self ):
-            print 'Generating XML: file..'
-            if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
-                os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
-            
-            implement = dom.getDOMImplementation( )
-            doc = implement.createDocument( None, 'Evaluation', None );
-            
-            descr_element = doc.createElement( "Description" )
-            descr_element.setAttribute( "Title", self.roadScene.scene.description.title )
-            doc.documentElement.appendChild( descr_element )
-            
-            lum_element = doc.createElement( "Luminance" )
-            doc.documentElement.appendChild( lum_element )
-            
-            meanLum_element = doc.createElement( "meanLuminance" )
-            meanLum_element.setAttribute( "Lm", str( Evaluator.meanLuminance ) )
-            lum_element.appendChild( meanLum_element )
-            
-            uniformityLum_element = doc.createElement( "uniformityOfLuminance" )
-            uniformityLum_element.setAttribute( "U0", str( Evaluator.uniformityOfLuminance ) )
-            lum_element.appendChild( uniformityLum_element )
-            
-            lengthUniformityLum_element = doc.createElement( "lengthwiseUniformityOfLuminance" )
-            lengthUniformityLum_element.setAttribute( "Ul", str( Evaluator.lengthwiseUniformityOfLuminance ) )
-            lum_element.appendChild( lengthUniformityLum_element )
-            
-            illum_element = doc.createElement( "Illuminance" )
-            doc.documentElement.appendChild( illum_element )
-            
-            meanIllum_element = doc.createElement( "meanIlluminance" )
-            meanIllum_element.setAttribute( "Em", str( Evaluator.meanIlluminance ) )
-            meanIllum_element.setAttribute( "Em_Left", str( Evaluator.meanIlluminanceLeft ) )
-            meanIllum_element.setAttribute( "Em_Right", str( Evaluator.meanIlluminanceRight ) )
-            meanIllum_element.setAttribute( "Em_Upper", str( Evaluator.meanIlluminanceUpper ) )
-            illum_element.appendChild( meanIllum_element )
-            
-            minIllum_element = doc.createElement( "minIlluminance" )
-            minIllum_element.setAttribute( "Emin", str( Evaluator.minIlluminance ) )
-            illum_element.appendChild( minIllum_element )
-            
-            uniformityIllum_element = doc.createElement( "uniformityOfIlluminance" )
-            uniformityIllum_element.setAttribute( "g1", str( Evaluator.uniformityOfIlluminance ) )
-            illum_element.appendChild( uniformityIllum_element )
-            
-            f = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation.xml', "w" )
-            doc.writexml( f, "\n", "    ")
-            f.close( )           
-            
-            print '    done ...'
-            print ''
+        print 'Generating XML: file..'
+        if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
+            os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )
+        
+        implement = dom.getDOMImplementation( )
+        doc = implement.createDocument( None, 'Evaluation', None );
+        
+        descr_element = doc.createElement( "Description" )
+        descr_element.setAttribute( "Title", self.roadScene.scene.description.title )
+        doc.documentElement.appendChild( descr_element )
+        
+        lum_element = doc.createElement( "Luminance" )
+        doc.documentElement.appendChild( lum_element )
+        
+        meanLum_element = doc.createElement( "meanLuminance" )
+        meanLum_element.setAttribute( "Lm", str( Evaluator.meanLuminance ) )
+        lum_element.appendChild( meanLum_element )
+        
+        uniformityLum_element = doc.createElement( "uniformityOfLuminance" )
+        uniformityLum_element.setAttribute( "U0", str( Evaluator.uniformityOfLuminance ) )
+        lum_element.appendChild( uniformityLum_element )
+        
+        lengthUniformityLum_element = doc.createElement( "lengthwiseUniformityOfLuminance" )
+        lengthUniformityLum_element.setAttribute( "Ul", str( Evaluator.lengthwiseUniformityOfLuminance ) )
+        lum_element.appendChild( lengthUniformityLum_element )
+        
+        illum_element = doc.createElement( "Illuminance" )
+        doc.documentElement.appendChild( illum_element )
+        
+        meanIllum_element = doc.createElement( "meanIlluminance" )
+        meanIllum_element.setAttribute( "Em", str( Evaluator.meanIlluminance ) )
+        meanIllum_element.setAttribute( "Em_Left", str( Evaluator.meanIlluminanceLeft ) )
+        meanIllum_element.setAttribute( "Em_Right", str( Evaluator.meanIlluminanceRight ) )
+        meanIllum_element.setAttribute( "Em_Upper", str( Evaluator.meanIlluminanceUpper ) )
+        illum_element.appendChild( meanIllum_element )
+        
+        minIllum_element = doc.createElement( "minIlluminance" )
+        minIllum_element.setAttribute( "Emin", str( Evaluator.minIlluminance ) )
+        illum_element.appendChild( minIllum_element )
+        
+        uniformityIllum_element = doc.createElement( "uniformityOfIlluminance" )
+        uniformityIllum_element.setAttribute( "g1", str( Evaluator.uniformityOfIlluminance ) )
+        illum_element.appendChild( uniformityIllum_element )
+        
+        f = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation.xml', "w" )
+        doc.writexml( f, "\n", "    ")
+        f.close( )           
+        
+        print '    done ...'
+        print ''
             
     def checkStandards( self ):
         print 'Check DIN EN 13201-2 classes...'

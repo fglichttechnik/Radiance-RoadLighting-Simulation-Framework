@@ -118,9 +118,9 @@ elif( options.dir ):
     print 'All Evaluations are successful made ...'
     print '----------------------------------------------------------------'
     if ( options.video ):
-    	vid = modulVideoSimulator.VideoSimulator( extractWorkingDir( ) + '/scenes/' + options.dir,  options.video )
-    	print 'Video pics are successful made ...'
-    	print '----------------------------------------------------------------'
+        vid = modulVideoSimulator.VideoSimulator( extractWorkingDir( ) + '/scenes/' + options.dir,  options.video )
+        print 'Video pics are successful made ...'
+        print '----------------------------------------------------------------'
 
 else:
     oparser.print_usage( )
