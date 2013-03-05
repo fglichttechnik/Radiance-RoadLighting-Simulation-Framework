@@ -360,14 +360,16 @@ class Evaluator:
         rTI = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/thresholdIncrementRows.pos', "w" )
     
         for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
-                positionY =  ( measPointNumber * self.roadScene.measurementStepWidth ) - self.viewPoint.distance
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
-#DEBUG - HERE ##############################################
+            positionY =  ( measPointNumber * self.roadScene.measurementStepWidth ) - self.viewPoint.distance
+            #for poleCounter in range( ): !!! Muss bei rtrace Schritt erfolgen
+                #thetaAll = poleCounter * ( )    
+#DEBUG - rtrace liefert gesamte Beleuchtungstärke evt. alle winkel aufsummieren und dann teilen?
+#DEBUG - viewDirection sensor Ausrichtung
+#DEBUG - winkel theta zwischen sichtlinie und linie zum zentrum der leuchte pro Messschritt
+#DEBUG - y-Abstand = Beobachterstandpunkt + Leuchtenabstand
+#DEBUG - z-Abstand = Beobachterhöhe - Leuchtenhöhe
+#DEBUG - y^2 + z^2 = xyz-abstand ABER evt. Offset der Leuchtenposition, da jetzt Leuchte in fahrbahnmitte!!!
+#DEBUG - cos theta = xyz / y
 #DEBUG - HERE ##############################################    
     def makePic( self ):
         if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix ) ):
