@@ -9,6 +9,7 @@ import struct
 import xml.dom as dom
 from xml.dom.minidom import parse
 import Classes.RoadScene as modulRoadscene
+#import Classes.ThresholdIncrement as modulThresholdIncrement
 
 
 #write a few documentation
@@ -50,6 +51,7 @@ class Evaluator:
         self.calcIlluminances( )
         self.calcSideIlluminances( )
         self.calcTI()
+        # self.TI = modulThresholdIncrement.ThresholdIncrement( self.roadScene )
         self.makePic( )
         #self.makeFalsecolor( )
         self.evalLuminance( )
@@ -365,7 +367,7 @@ class Evaluator:
         
         #view fixed 1 degree by 1.45 height and 83 distance (RP800)
         else:
-            viewDirection = "0 0.999847 -0.017467 " 
+            viewDirection = "0 0.999847 -0.017467" 
         
         print '    view direction: ' + str( viewDirection )
         # fixed z position 
@@ -409,6 +411,10 @@ class Evaluator:
         
         fTI.close( )
         fTheta.close( )
+        
+        # calculate irradiance for TI 
+        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/thresholdIncrement.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/thresholdIncrement.txt"
+        os.system( cmd1 )
 
 #DEBUG - Here #############################################    
 #DEBUG - rtrace liefert gesamte Beleuchtungstärke evt. alle winkel aufsummieren und dann teilen?
