@@ -89,10 +89,16 @@ class Simulator:
             os.mkdir( self.xmlConfigPath + Simulator.octDirSuffix )
 
         if self.roadScene.headlights.headlights.__len__() > 0:
-            for i in range( self.roadScene.numberOfSubimages ):
-                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
-                os.system(cmd)
-                print 'generated oct# ' + str( i )
+            for index, headlightArray in enumerate( self.roadScene.headlights.headlights ):
+                for i in range( self.roadScene.numberOfSubimages ):
+                    if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
+                        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                        os.system(cmd)
+                        print 'generated oct# ' + str( i )
+                    else:
+                        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight{1}.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                        os.system(cmd)
+                        print 'generated oct# ' + str( i )
         else:
             for i in range( self.roadScene.numberOfSubimages ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
@@ -109,12 +115,22 @@ class Simulator:
                 print 'generated reference oct# ' + str( i )
                 
         #make octs for scene without targets
-        if self.roadScene.headlights.headlights.__len__() > 0:
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
-            os.system(cmd)
-        else:
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
-            os.system(cmd)
+        # why is this here, the save path is in the same original scene folder!!! the octs will be overwritten
+        # if( self.roadScene.headlights.headlights.__len__() > 0 ):
+            # for index, headlightArray in enumerate( self.roadScene.headlights.headlights ):
+                    # if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
+                        # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+                        # os.system(cmd)
+                    # else:
+                        # for i in range( self.roadScene.numberOfSubimages ):
+                            # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight0.rad {0}/night_sky.rad > {2}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                            # os.system(cmd)
+                        # # only on car light because its only for view up and down
+                        # print 'generated oct without target# '   
+        # else:
+            # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+            # os.system(cmd)
+        
         cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.refOctDirSuffix )
         os.system(cmd)
         print 'generated oct without targets for view up and down'

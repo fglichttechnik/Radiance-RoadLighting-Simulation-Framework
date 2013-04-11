@@ -239,25 +239,40 @@ class ConfigGenerator:
     # print Headlights from Car 
     def printCarlightsRad( self ):
             print 'Generating: headlight.rad'
-            if self.headlights.__len__() > 0:
-                f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/headlight.rad', "w" )
-                f.write( "######headlight.rad######\n" )
+            if( self.headlights.__len__() > 0 ):
                 for index, headlightArray in enumerate( self.headlights ):
                     print '    Generating: Carlight number: ' + str( index ) + ' with ' + str( headlightArray.lidc )
                     print '    Car on Lane: ' + str( headlightArray.onLane + 1 )
                     print '    Headlight Height: ' + str( headlightArray.height )
-                    print '    Headlight Width: ' + str( headlightArray.width )
+                    print '    Headlight Width: ' + str( headlightArray.width )    
                     print '    Headlight Distance: ' + str( headlightArray.distance )
                     print '    Angle of Slope: ' + str( headlightArray.slopeAngle )
                     print '    Headlight Distance Mode: ' + str( headlightArray.headlightDistanceMode )
-                    #f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/' + str( index ) + '_headlight.rad', "w" )
-                    if headlightArray.lightDirection == 'opposite':
-                        print '    light direction: opposite'
-                        f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
+                    
+                    if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
+                        # open with "a" mean append content to existing file
+                        f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/headlight.rad', "a" )
+                        f.write( "######headlight.rad######\n" )
+
+                        if( headlightArray.lightDirection == 'opposite' ):
+                            print '    light direction: opposite'
+                            f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                        else:
+                            print '    light direction: same'
+                            f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                        f.close( )
                     else:
-                        print '    light direction: same'
-                        f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n" )
-                f.close( )
+                        for i in range( self.roadScene.numberOfSubimages  ):
+                            f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/headlight' + str( i ) + '.rad', "a" )
+                            f.write( "######headlight.rad######\n")
+                            if( headlightArray.lightDirection == 'opposite' ):
+                                print '    light direction: opposite'
+                                f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength - ( i * self.roadScene.measurementStepWidth ) ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                            else:
+                                print '    light direction: same'
+                                f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( ( -1 * headlightArray.distance ) + i * self.roadScene.measurementStepWidth ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                            f.close( )
+                  
             else:
                 print '    no headlights are given in the xml'
                 
@@ -483,7 +498,7 @@ class ConfigGenerator:
             f.write( "rview -vtv -vp " + str( ( self.road.laneWidth * ( self.target.onLane + 0.5 ) ) + self.viewPoint.xOffset ) +" -" + str( self.viewPoint.distance ) + " " + str( self.viewPoint.height ) + " -vd " + viewDirection + " -vh " + str( self.roadScene.verticalAngle ) + " -vv " + str( self.roadScene.horizontalAngle ) + "\n" )
             f.close( )
         else:
-            for i in range( self.numberOfSubimages  ):
+            for i in range( self.roadScene.numberOfSubimages  ):
                 f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye' + str( i ) + '.vp', "w" )
                 f.write( "######eye.vp######\n")
                 f.write( "rview -vtv -vp " + str( ( self.road.laneWidth * ( self.target.onLane + 0.5 ) ) + self.viewPoint.xOffset ) + " " + str( ( -1 * self.viewPoint.distance ) + i * self.roadScene.measurementStepWidth ) + " " + str( self.viewPoint.height ) + " -vd " + viewDirection + " -vh " + str( self.roadScene.verticalAngle ) + " -vv " + str( self.roadScene.horizontalAngle ) + "\n" )

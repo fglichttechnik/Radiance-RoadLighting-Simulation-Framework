@@ -1,0 +1,22 @@
+<RoadScene>
+	<Scene>
+		<Description Title="LED R3 Test Scene" Environment="Grass" FocalLength="25" />
+		<Road NumLanes="2" NumPoleFields="1" LaneWidth="3" SidewalkWidth="1" Surface="R3" qZero="0.00" />
+		<Calculation DIN13201="off" VeilingLuminance="off" VeilingLuminanceMethod="standard" TresholdLuminanceFactor="7" />
+	</Scene>
+	<TargetParameters>
+		<ViewPoint Distance="17" Height="1.2" TargetDistanceMode="fixedTargetDistance" XOffset="0" ViewDirection="last" />
+		<Target Size="0.3" Reflectancy="1.00" Specularity="0.00" Roughness="0.00" Position="Center" OnLane="2" />
+	</TargetParameters>
+	<LIDCs>
+		<LIDC Name="HellaEcoLight_2070lm_LDT" LightSource="LED" LightLossFactor="0" SPRatio="1.71" />
+		<LIDC Name="HeadLight" LightSource="LED" LightLossFactor="1" SPRatio="1.71" />
+	</LIDCs>
+	<Headlights>
+		<Headlight LIDC="HeadLight" HeadlightDistanceMode="fixedTargetDistance" Distance="17" Height="0.7" Width="1.6" SlopeAngle="0" LightDirection="same" OnLane="2" />
+		<Headlight LIDC="HeadLight" HeadlightDistanceMode="fixedViewPointPosition" Distance="17" Height="0.7" Width="1.6" SlopeAngle="0" LightDirection="opposite" OnLane="1" />
+	</Headlights>
+	<Poles>
+		<PoleArray Height="5.97" Spacing="39.4" Overhang="1" IsStaggered="False" LIDC="HellaEcoLight_2070lm_LDT" Side="Right"/>
+	</Poles>
+</RoadScene>
