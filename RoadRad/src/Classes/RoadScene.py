@@ -44,8 +44,8 @@ class RoadScene:
         self.headlights = modulHeadlights.Headlights( self.root )
         self.poles = modulPoles.Poles( self.root )
         
+        # start methods/functions
         self.checkSenseOfParameters( )
-
         self.calcMeasurementField( )
         self.calcOpeningAngle( )
     
@@ -68,7 +68,7 @@ class RoadScene:
     
     ## check parameters of xml are senseless        
     def checkSenseOfParameters( self ):
-    	#check if the scene parameter 'numlane' and 'target lane' make sense
+        #check if the scene parameter 'numlane' and 'target lane' make sense
         if( self.scene.road.numLanes - self.targetParameters.target.onLane < 1 ):
             print 'Numlanes and TargetPosition Parameters are impossible'
             sys.exit( 0 )

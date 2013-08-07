@@ -49,7 +49,7 @@ class Simulator:
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
         
         self.LMKSetMat = '/' + os.path.basename( self.xmlConfigPath ) # '/LMKSetMat'
-        print self.LMKSetMat
+        print '---- DIR of LMKSetMat: ' + str( self.LMKSetMat )
         
         if( not os.path.isdir( self.xmlConfigPath + self.LMKSetMat ) ):
             os.mkdir( self.xmlConfigPath + self.LMKSetMat )
@@ -88,23 +88,57 @@ class Simulator:
         if( not os.path.isdir( self.xmlConfigPath + Simulator.octDirSuffix ) ):
             os.mkdir( self.xmlConfigPath + Simulator.octDirSuffix )
 
-        if self.roadScene.headlights.headlights.__len__() > 0:
+        if ( self.roadScene.headlights.headlights.__len__() > 0 ):
+            fixedHeadlight = False
+            varHeadlight = False
             for index, headlightArray in enumerate( self.roadScene.headlights.headlights ):
+                if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
+                    fixedHeadlight = True
+                else:
+                    varHeadlight = True
+            print '----status of fixedHeadlight: ' + str( fixedHeadlight )
+            print '----status of varHeadlight: ' + str( varHeadlight )
+            
+            if ( fixedHeadlight and varHeadlight ):
                 for i in range( self.roadScene.numberOfSubimages ):
-                    if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
-                        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
-                        os.system(cmd)
-                        print 'generated oct# ' + str( i )
-                    else:
-                        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight{1}.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
-                        os.system(cmd)
-                        print 'generated oct# ' + str( i )
+                    cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/headlight{1}.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                    os.system( cmd )
+                    print 'generated oct# ' + str( i )
+                # without targets in scene.oct
+                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/headlight0.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+                os.system( cmd )
+                
+            elif ( fixedHeadlight and not varHeadlight ):
+                for i in range( self.roadScene.numberOfSubimages ):
+                    cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                    os.system( cmd )
+                    print 'generated oct# ' + str( i )
+                # without targets in scene.oct
+                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+                os.system( cmd )
+                
+            elif ( not fixedHeadlight and varHeadlight ):
+                for i in range( self.roadScene.numberOfSubimages ):
+                    cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight{1}.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
+                    os.system( cmd )
+                    print 'generated oct# ' + str( i )
+                # without targets in scene.oct
+                cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight0.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+                os.system( cmd )
+                
+            else:
+                print 'An error occured at generating oct: invalid headlights data'
+                
         else:
             for i in range( self.roadScene.numberOfSubimages ):
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
                 os.system(cmd)
-                print 'generated oct# ' + str( i )        
+                print 'generated oct# ' + str( i )
+            # without targets in scene.oct
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
+            os.system(cmd)
         
+        # generate octs for reference pics
         if( not self.willSkipRefPic ):
             if( not os.path.isdir( self.xmlConfigPath + Simulator.refOctDirSuffix ) ):
                 os.mkdir( self.xmlConfigPath + Simulator.refOctDirSuffix )
@@ -113,29 +147,11 @@ class Simulator:
                 cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/self_target_{1}.rad {0}/night_sky.rad > {2}/scene{1}.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.refOctDirSuffix )
                 os.system(cmd)
                 print 'generated reference oct# ' + str( i )
-                
-        #make octs for scene without targets
-        # why is this here, the save path is in the same original scene folder!!! the octs will be overwritten
-        # if( self.roadScene.headlights.headlights.__len__() > 0 ):
-            # for index, headlightArray in enumerate( self.roadScene.headlights.headlights ):
-                    # if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
-                        # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
-                        # os.system(cmd)
-                    # else:
-                        # for i in range( self.roadScene.numberOfSubimages ):
-                            # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight0.rad {0}/night_sky.rad > {2}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, i, self.xmlConfigPath + Simulator.octDirSuffix )
-                            # os.system(cmd)
-                        # # only on car light because its only for view up and down
-                        # print 'generated oct without target# '   
-        # else:
-            # cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.octDirSuffix )
-            # os.system(cmd)
-        
-        cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.refOctDirSuffix )
-        os.system(cmd)
-        print 'generated oct without targets for view up and down'
-    
-    #System call to radiance framework for the actual rendering of the images
+            # without targets in scene.oct
+            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/night_sky.rad > {1}/scene.oct'.format( self.xmlConfigPath + Simulator.radDirSuffix, self.xmlConfigPath + Simulator.refOctDirSuffix )
+            os.system(cmd)
+
+    # System call to radiance framework for the actual rendering of the images
     def makePic(self):
         if( not os.path.isdir( self.xmlConfigPath + Simulator.picDirSuffix ) ):
             os.mkdir( self.xmlConfigPath + Simulator.picDirSuffix )
@@ -177,10 +193,10 @@ class Simulator:
             print datetime.datetime.now() - starttime
 
             #include veiling luminance if whished
-            if self.roadScene.scene.calculation.veilingLuminance == 'on':
+            if ( self.roadScene.scene.calculation.veilingLuminance == 'on' ):
                 print 'generating veiling luminance'
                 starttime = datetime.datetime.now()
-                glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.xmlConfigPath + self.picDirSuffix +self.picSubDirSuffix ) 
+                glareCmd = 'findglare -c -r 4000 -p {1}/out{0}.hdr > {1}/out{0}_glares.glr'.format( i, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix ) 
                 os.system( glareCmd )
                 glareFile = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glares.glr', 'r' )
                 glaresources = open( self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix + '/out' + str( i ) + '_glaretable.glr', 'a' )
@@ -197,7 +213,7 @@ class Simulator:
                     if isGlaresource == 1:
                         glaresources.write( line )
                 glareFile.close( )
-                glaresources.close( )                    
+                glaresources.close( )
                 
                 xdirection = []
                 ydirection = []
@@ -233,7 +249,7 @@ class Simulator:
                 print 'done.'
                 print datetime.datetime.now() - starttime
         
-        #make pic for view up and down the raod
+        # make pic for view up and down the road
         print 'generating pics for view up and down'
         starttime = datetime.datetime.now()
         cmdUp = 'rpict -x 500 -y 500 -vf {2}/eye_up.vp {0}/scene.oct > {1}/out_up.hdr '.format( self.xmlConfigPath + self.octDirSuffix, self.xmlConfigPath + self.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + self.radDirSuffix )
@@ -249,7 +265,7 @@ class Simulator:
         print 'done.'
         print datetime.datetime.now() - starttime
              
-    #System call to radiance framework for creating a falsecolor image
+    # System call to radiance framework for creating a falsecolor image
     def makeFalsecolorPic(self):  
         if self.makeFalsecolor == True:
             for i in range( self.roadScene.numberOfSubimages ):
@@ -259,7 +275,7 @@ class Simulator:
                 #cmd1 = 'falsecolor -i {1}/out{0}.hdr -cl -log 5 > {2}/falseContour_out{0}.hdr'.format( i, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.picSubDirSuffix, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix )
                 os.system( cmd0 )
                 #os.system( cmd1 )
-                cmd2 = 'ra_tiff {1}/false_out{0}.hdr {2}/false_out{0}.tiff'.format( i, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix)
+                cmd2 = 'ra_tiff {1}/false_out{0}.hdr {2}/false_out{0}.tiff'.format( i, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix, self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix )
                 os.system( cmd2 )
                 
                 print 'done.'
@@ -270,7 +286,7 @@ class Simulator:
                 if( file.endswith( ".hdr" ) ):
                     os.remove( self.xmlConfigPath + Simulator.picDirSuffix + Simulator.falsecolorSubDirSuffix + "/" + file )
     
-    #system call to render the refernce images
+    # system call to render the refernce images
     def makeRefPic(self):
         if( not os.path.isdir( self.xmlConfigPath + Simulator.refPicDirSuffix ) ):
                 os.mkdir( self.xmlConfigPath + Simulator.refPicDirSuffix )
@@ -280,7 +296,7 @@ class Simulator:
                 starttime = datetime.datetime.now()
                 
                 cmd0 = ''
-                if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
+                if ( self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint' ):
                     cmd0 = 'rpict -vtv -vf {3}/eye.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.refOctDirSuffix , i, self.xmlConfigPath + Simulator.refPicDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
                 else:
                     cmd0 = 'rpict -vtv -vf {3}/eye{1}.vp -x {4} -y {5} {0}/scene{1}.oct > {2}/out{1}.hdr '.format( self.xmlConfigPath + Simulator.refOctDirSuffix , i, self.xmlConfigPath + Simulator.refPicDirSuffix, self.xmlConfigPath + Simulator.radDirSuffix, Simulator.horizontalRes, Simulator.verticalRes )
@@ -298,8 +314,8 @@ class Simulator:
                 #print cmd
                 #os.system( cmd2 )
     
-    #Here the reference pictures are parsed pixel wise using the python image library.
-    #The self glowing target object is isolated and outputted in the defined xml format.
+    # Here the reference pictures are parsed pixel wise using the python image library.
+    # The self glowing target object is isolated and outputted in the defined xml format.
     def processRefPics( self ):
         print "Processing reference pics."
         

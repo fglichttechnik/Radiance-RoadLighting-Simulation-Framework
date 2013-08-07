@@ -99,7 +99,7 @@ class ConfigGenerator:
         f.write( "%d -%d %f\n" % ( 1140, self.roadScene.sceneLength / 2, self.roadScene.sidewalkHeight ) )
         
         #Adds concrete boxes to emulate road side buildings
-        if self.roadScene.scene.description.environment == 'City':
+        if ( self.roadScene.scene.description.environment == 'City' ):
             print '    building city environment'
             f.write( "!genbox house_concrete building_left 1 40 40 | xform -e -t -%d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.road.sidewalkWidth + 2 ) )
             f.write( "!genbox house_concrete building_right 1 40 40 | xform -e -t %d 0 0 | xform -a 20 -t 0 -50 0\n" % ( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth + 2 ) )
@@ -176,9 +176,9 @@ class ConfigGenerator:
     #they are holding
     def printPoleConfig( self ):
             print 'Generating: Light Pole Rad files'
-            print self.poles
+            # print self.poles
             for index, poleArray in enumerate( self.poles ):
-                if poleArray.isSingle:
+                if ( poleArray.isSingle ):
                     print '    build single pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
                 else:
                     print '    build array pole number: ' + str( index ) + ' with ' + str( poleArray.lidc )
@@ -212,21 +212,21 @@ class ConfigGenerator:
             f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/lights_s.rad', "w" )
             f.write( "######lights_s.rad######\n" )
             for index, poleArray in enumerate( self.poles ):
-                if poleArray.isSingle == True:
-                    if poleArray.side == "Left":
+                if ( poleArray.isSingle == True ):
+                    if ( poleArray.side == "Left" ):
                         f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
                     else:
                         f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
-                elif poleArray.side == "Left":
+                elif ( poleArray.side == "Left" ):
                     print "    making left poles"
-                    if firstArrayHandled == False or poleArray.isStaggered == False:
+                    if (( firstArrayHandled == False ) or ( poleArray.isStaggered == False )):
                         f.write( "!xform  -t -" + str( self.road.sidewalkWidth ) + " -" + str( self.roadScene.numberOfLightsBeforeMeasurementArea * poleArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( poleArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
                         f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " -" + str( self.roadScene.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( poleArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                 else:
                     print "    making right poles"
-                    if firstArrayHandled == False or poleArray.isStaggered == False:
+                    if (( firstArrayHandled == False ) or ( poleArray.isStaggered == False )):
                         f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth ) + " -"+ str( self.roadScene.numberOfLightsBeforeMeasurementArea * poleArray.spacing ) +" 0 -a " + str( self.roadScene.numberOfLightsPerArray ) + " -t 0 "+ str( poleArray.spacing ) +" 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
                         firstArrayHandled = True
                     else:
@@ -262,14 +262,17 @@ class ConfigGenerator:
                             f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " -" + str( headlightArray.distance ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
                         f.close( )
                     else:
+                        if( headlightArray.lightDirection == 'opposite' ):
+                            print '    light direction: opposite'
+                        else:
+                            print '    light direction: same'
+                            
                         for i in range( self.roadScene.numberOfSubimages  ):
                             f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/headlight' + str( i ) + '.rad', "a" )
                             f.write( "######headlight.rad######\n")
                             if( headlightArray.lightDirection == 'opposite' ):
-                                print '    light direction: opposite'
                                 f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength - ( i * self.roadScene.measurementStepWidth ) ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
                             else:
-                                print '    light direction: same'
                                 f.write( "!xform -n sameH_" + str( index ) + " -rx " + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( ( -1 * headlightArray.distance ) + i * self.roadScene.measurementStepWidth ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ConfigGenerator.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
                             f.close( )
                   

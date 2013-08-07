@@ -9,7 +9,9 @@ import struct
 import xml.dom as dom
 from xml.dom.minidom import parse
 import Classes.RoadScene as modulRoadscene
-#import Classes.ThresholdIncrement as modulThresholdIncrement
+import Classes.ThresholdIncrement as modulThresholdIncrement
+import Classes.Luminances as modulLuminances
+import Classes.Illuminances as modulIlluminances
 
 
 #write a few documentation
@@ -26,8 +28,7 @@ class Evaluator:
     horizontalRes = 1380
     verticalRes = 1030
 
-    numberOfMeasurementRows = 3
-    numberOfMeasurementPoints = 10
+    #values for calculations
     meanLuminance = 0.0
     uniformityOfLuminance = 0.0
     lengthwiseUniformityOfLuminance = 0.0
@@ -42,384 +43,32 @@ class Evaluator:
         self.xmlConfigName = "SceneDescription.xml"
         # initialize XML as RoadScene object
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
-        self.viewPoint = self.roadScene.targetParameters.viewPoint
-        self.headlights = self.roadScene.headlights.headlights
-        self.poles = self.roadScene.poles.poles
-        
+
         self.makeOct( )
-        self.calcLuminances( )
-        self.calcIlluminances( )
-        self.calcSideIlluminances( )
-        self.calcTI()
-        # self.TI = modulThresholdIncrement.ThresholdIncrement( self.roadScene )
         self.makePic( )
+        
+        # get parameter for evaluation
+        self.Luminances = modulLuminances.Luminances( self.roadScene, self.xmlConfigPath )
+        self.Illuminances = modulIlluminances.Illuminances( self.roadScene, self.xmlConfigPath )
+        self.TI = modulThresholdIncrement.ThresholdIncrement( self.roadScene, self.xmlConfigPath )
+
         #self.makeFalsecolor( )
+        
         self.evalLuminance( )
         self.evalIlluminance( )
         self.evalSideIlluminance( )
+
         self.makeXML( )
         self.checkStandards( )
 
-    #system call to radiance framework to generate oct files out of the various rads
-    # both for the actual simulated image and the refernce pictures to determine the 
-    # pixel position of the target objects
+    # in this function you can make the evaluator as standalone python script, with generating the .oct files with oconv operator
+    # but the needed oct. files and generated pics are also made in the simulator!!! these are the oct's with no target!!!
+    # so if you wish to make it standalone, copy the makeOct( self ) function from simulator.py
     def makeOct( self ):
-        if( not os.path.isdir( self.xmlConfigPath + Evaluator.octDirSuffix ) ):
-            os.mkdir( self.xmlConfigPath + Evaluator.octDirSuffix )        
-        
-        #make oct for scene without targets for din evaluation
-        if self.headlights.__len__() > 0:
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/headlight.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.xmlConfigPath + Evaluator.radDirSuffix, self.xmlConfigPath + Evaluator.octDirSuffix )
-            os.system(cmd)
-        else:    
-            cmd = 'oconv {0}/materials.rad {0}/road.rad {0}/lights_s.rad {0}/night_sky.rad > {1}/scene_din.oct'.format( self.xmlConfigPath + Evaluator.radDirSuffix, self.xmlConfigPath + Evaluator.octDirSuffix )
-            os.system(cmd)
-            
-    #Prints view point files for every lane
-    #Based on the viewpoint mode, one of several viewpoints are written
-    def calcLuminances( self ):
-    
-        if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
-            os.mkdir( self.xmlConfigPath + Evaluator.evalDirSuffix )   
-        
-        #calculate necessary measures
-        selectedArray = -1
-        #select the first nonSingle pole
-        for index, pole in enumerate( self.poles ):
-            if pole.isSingle == False:
-                selectedArray = index
-                break
-                
-        if selectedArray == -1:
-            print "No Pole array defined, cannot position the object. terminating"
-            sys.exit( 0 )   
-
-        if( self.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
-                Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
-        
-        print 'Generating: luminance values according to DIN EN 13201-3'
-        print '    number of measurement points: ' + str( Evaluator.numberOfMeasurementPoints )
-        self.roadScene.measurementStepWidth = self.roadScene.measFieldLength / Evaluator.numberOfMeasurementPoints
-        print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
-        print '    measurment field length: ' + str( self.roadScene.measFieldLength )
-
-        directionZ = 0 - self.roadScene.targetParameters.viewPoint.height   
-        viewerYPosition = - self.roadScene.targetParameters.viewPoint.distance
-        viewerZPosition = self.roadScene.targetParameters.viewPoint.height
-        
-        # open writable position files
-        f = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminanceCoordinates.pos', "w" )
-        l = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/luminanceLanes.pos', "w" )
-        
-        for laneInOneDirection in range( self.roadScene.scene.road.numLanes ):
-            for laneNumber in range( self.roadScene.scene.road.numLanes ):   
-                
-                # middle viewer x-position for every lane 
-                viewerXPosition = ( self.roadScene.scene.road.laneWidth * ( laneInOneDirection + 0.5 ) )
-                viewPoint = '{0} {1} {2}'.format( viewerXPosition, viewerYPosition, viewerZPosition )
-                
-                # three x-position per lanewidth on x = 25%, 50% and 75% 
-                for rowNumber in range( 3 ):
-                    rowXPosition = self.roadScene.scene.road.laneWidth * ( laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
-                    directionX = rowXPosition - viewerXPosition
-                    
-                    for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
-                        directionY = ( ( measPointNumber + 0.5 ) * self.roadScene.measurementStepWidth ) - viewerYPosition
-                        viewDirection = ' {0} {1} {2}'.format( directionX, directionY, directionZ )
-                        
-                        # write data to luminanceCoordinates and luminanceLanes.pos
-                        f.write( str( viewPoint ) + str( viewDirection ) + ' \n')
-                        l.write( str( laneInOneDirection ) + ' ' + str( laneNumber ) + ' ' + str( rowNumber ) + ' \n' )
-                                    
-        f.close( )
-        l.close( )
-        
-        cmd1 = "rtrace -h -oo -od -ov " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/luminanceCoordinates.pos  | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/rawLuminances.txt"
-        os.system( cmd1 )
-        cmd2 = "rlam -t {0}/luminanceLanes.pos {0}/luminanceCoordinates.pos {0}/rawLuminances.txt >  {0}/luminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.system( cmd2 )
-        with open( self.xmlConfigPath + Evaluator.evalDirSuffix + "/luminances.txt", "r+" ) as illumfile:
-             old = illumfile.read() # read everything in the file
-             illumfile.seek(0) # rewind
-             illumfile.write("viewer_onLane measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z luminance\n" + old) # write the new line before
-        cmd3 = "{0}/luminanceLanes.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd3 )
-        cmd4 = "{0}/luminanceCoordinates.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd4 )
-        cmd4 = "{0}/rawLuminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd4 )
-        
-        print '    done ...'
-        print ''
-        
-    #Prints view point files for every lane
-    #Based on the viewpoint mode, one of several viewpoints are written
-    def calcIlluminances( self ):    
-        
-        print 'Generating: illuminance values at measurement points according to DIN EN 13201-3'
-        
-        #according to DIN EN 13201
-        #calculate necessary measures
-        selectedArray = -1
-        #select the first nonSingle pole
-        for index, pole in enumerate( self.poles ):
-            if pole.isSingle == False:
-                selectedArray = index
-                break
-                
-        if selectedArray == -1:
-            print "No Pole array defined, cannot position the object. terminating"
-            sys.exit( 0 )   
-
-        if( self.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
-                Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
-        
-    
-        viewDirection = '0 0 1'
-        positionZ = '0.02'
-        
-        while ( self.roadScene.scene.road.laneWidth / Evaluator.numberOfMeasurementRows ) > 1.5:
-            Evaluator.numberOfMeasurementRows = Evaluator.numberOfMeasurementRows + 1
-            
-        print "    number of measurement points per lane: " + str( Evaluator.numberOfMeasurementPoints )
-        print "    number of measurement rows per lane: " + str( Evaluator.numberOfMeasurementRows )
-        print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
-        
-        f = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceCoordinates.pos', "w" )
-        l = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceLanes.pos', "w" )
-        
-        for laneNumber in range( self.roadScene.scene.road.numLanes ):
-            for rowNumber in range( Evaluator.numberOfMeasurementRows ):
-                positionX = self.roadScene.scene.road.laneWidth * ( laneNumber + ( ( rowNumber + 1 ) * 0.25 ) )
-                for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
-                    positionY = ( ( measPointNumber + 0.5 ) * self.roadScene.measurementStepWidth )
-                    viewPoint = '{0} {1} {2} '.format( positionX, positionY, positionZ )
-                    f.write( str( viewPoint ) + str( viewDirection ) + ' \n' )
-                    l.write( str( laneNumber) + ' ' + str( rowNumber ) + ' \n' )
-                         
-        f.close( )
-        l.close( )
-        
-        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminanceCoordinates.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/rawIlluminances.txt"
-        os.system( cmd1 )
-        cmd2 = "rlam -t  {0}/illuminanceLanes.pos {0}/illuminanceCoordinates.pos {0}/rawIlluminances.txt > {0}/illuminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.system( cmd2 )
-        with open( self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminances.txt", "r+" ) as illumfile:
-             old = illumfile.read( ) # read everything in the file
-             illumfile.seek( 0 ) # rewind
-             illumfile.write( "measPoint_onLane measPoint_row viewPosition_x viewPosition_y viewPosition_z viewDirection_x viewDirection_y viewDirection_z illuminance\n" + old ) # write the new line before
-        
-        cmd3 = "{0}/illuminanceLanes.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd3 )
-        cmd4 = "{0}/illuminanceCoordinates.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd4 )
-        cmd4 = "{0}/rawIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd4 )
-        
-        print '    done ...'
-        print ''
-    
-    #Prints view point files for left and right side
-    #Based on the viewpoint mode, one of several viewpoints are written
-    def calcSideIlluminances( self ):    
-        
-        print 'Generating: illuminance values at left, right and upper side of measurementfield'
-        #according to DIN EN 13201
-        #calculate necessary measures
-        selectedArray = -1
-        #select the first nonSingle pole
-        for index, pole in enumerate( self.poles ):
-            if pole.isSingle == False:
-                selectedArray = index
-                break
-                
-        if selectedArray == -1:
-            print "No Pole array defined, cannot position the object. terminating"
-            sys.exit( 0 )   
-
-        if( self.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
-                Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
-
-        # fixed view direction for illuminance
-        viewDirectionLeftX = '1 0 0'
-        viewDirectionRightX = '-1 0 0'
-        viewDirectionUpperZ = '0 0 -1'
-        
-        # fixed x position depend on lane number and lane width
-        positionLeftX = '0.02'
-        positionRightX = ( self.roadScene.scene.road.numLanes * self.roadScene.scene.road.laneWidth ) - 0.02
-        # fixed z position depend on the middle pole height
-        allHeights = 0
-        for entry in self.poles:
-            allHeights += entry.height
-            positionUpperZ = allHeights / self.poles.__len__()
-        
-        print "    x-position of the left sensor: " + str( positionLeftX )  
-        print "    x-position of the right sensor: " + str( positionRightX ) 
-        print "    z-position of the upper sensor: " + str( positionUpperZ )
-        print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
-        
-        fLeft = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceLeftSideCoordinates.pos', "w" )
-        fRight = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceRightSideCoordinates.pos', "w" )
-        fUpper = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceUpperSideCoordinates.pos', "w" )
-        r = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/illuminanceRows.pos', "w" )
-        
-        for rowNumber in range( Evaluator.numberOfMeasurementRows ):
-            # three z side position for illuminance at 0.66, 1.33 and 2 meters
-            positionZ = ( rowNumber + 1 ) * positionUpperZ / Evaluator.numberOfMeasurementRows
-            # three x upper position for illuminance at x = 25%, 50% and 75% lane width
-            positionUpperX = self.roadScene.scene.road.laneWidth * self.roadScene.scene.road.numLanes * (( rowNumber + 1 ) * 0.25 ) 
-            
-            for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
-                positionY = ( measPointNumber + 0.5 ) * self.roadScene.measurementStepWidth 
-                
-                viewPointLeft = '{0} {1} {2} '.format( positionLeftX, positionY, positionZ )
-                viewPointRight = ' {0} {1} {2} '.format( positionRightX, positionY, positionZ )
-                viewPointUpper = ' {0} {1} {2} '.format( positionUpperX, positionY, positionUpperZ )
-                
-                fLeft.write( str( viewPointLeft ) + str( viewDirectionLeftX ) + ' \n' )
-                fRight.write( str( viewPointRight ) + str( viewDirectionRightX ) + ' \n' )
-                fUpper.write( str( viewPointUpper ) + str( viewDirectionUpperZ ) + ' \n' )
-                r.write( str( rowNumber ) + ' \n' )
-                         
-        fLeft.close( )
-        fRight.close( )
-        fUpper.close( )
-        r.close( )
-        
-        # calculate left side 
-        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminanceLeftSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/rawLeftIlluminances.txt"
-        os.system( cmd1 )
-        
-        # calculate right side
-        cmd2 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminanceRightSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/rawRightIlluminances.txt"
-        os.system( cmd2 )
-        
-        # calculate upper side
-        cmd3 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/illuminanceUpperSideCoordinates.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/rawUpperIlluminances.txt"
-        os.system( cmd3 )
-        
-        # combine all txt files to one
-        cmd4 = "rlam -t  {0}/illuminanceRows.pos {0}/illuminanceLeftSideCoordinates.pos {0}/rawLeftIlluminances.txt {0}/illuminanceRightSideCoordinates.pos {0}/rawRightIlluminances.txt {0}/illuminanceUpperSideCoordinates.pos {0}/rawUpperIlluminances.txt > {0}/sideIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.system( cmd4 )
-        
-        # add heading to the illuminance.txt table 
-        with open( self.xmlConfigPath + Evaluator.evalDirSuffix + "/sideIlluminances.txt", "r+" ) as illumfile:
-             old = illumfile.read( ) # read everything in the file
-             illumfile.seek( 0 ) # rewind
-             illumfile.write( "measPoint_Zrow viewPositionLeft_x viewPositionLeft_y viewPositionLeft_z viewDirectionLeft_x viewDirectionLeft_y viewDirectionLeft_z illuminanceLeft viewPositionRight_x viewPositionRight_y viewPositionRight_z viewDirectionRight_x viewDirectionRight_y viewDirectionRight_z illuminanceRight viewPositionUpper_x viewPositionUpper_y viewPositionUpper_z viewDirectionUpper_x viewDirectionUpper_y viewDirectionUpper_z illuminanceUpper\n" + old ) # write the new line before
-        
-        print "! Delete temporary illumninance files"
-        
-        # delete all useless txt files
-        cmd5 = "{0}/illuminanceRows.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd5 )
-        cmd6 = "{0}/illuminanceLeftSideCoordinates.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd6 )
-        cmd6 = "{0}/illuminanceRightSideCoordinates.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd6 )
-        cmd6 = "{0}/illuminanceUpperSideCoordinates.pos".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd6 )
-        cmd7 = "{0}/rawLeftIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd7 )
-        cmd7 = "{0}/rawRightIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd7 )
-        cmd7 = "{0}/rawUpperIlluminances.txt".format( self.xmlConfigPath + Evaluator.evalDirSuffix )
-        os.remove( cmd7 )
-        
-        print '    done ...'
-        print ''
-    
-    def calcTI( self ):
-        print 'Calculating threshold increment value'
-        #according to DIN EN 13201
-        #calculate necessary measures
-        selectedArray = -1
-        #select the first nonSingle pole
-        for index, pole in enumerate( self.poles ):
-            if pole.isSingle == False:
-                selectedArray = index
-                break
-                
-        if selectedArray == -1:
-            print "No Pole array defined, cannot position the object. terminating"
-            sys.exit( 0 )   
-
-        if( self.poles[ selectedArray ].spacing > 30 ):            
-            while ( self.poles[ selectedArray ].spacing / Evaluator.numberOfMeasurementPoints ) > 3:
-                Evaluator.numberOfMeasurementPoints = Evaluator.numberOfMeasurementPoints + 1
-
-        # fixed view direction for threshold increment ( TI )
-        #view first to self.viewPoint.distance
-        if self.viewPoint.viewDirection == 'first':
-            ViewValueY = self.viewPoint.distance /  math.sqrt( self.viewPoint.distance**2 + self.viewPoint.height**2 )
-            ViewValueZ = self.viewPoint.height / math.sqrt( self.viewPoint.distance**2 + self.viewPoint.height**2 )
-            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )
-        
-        #view last to self.roadScene.measFieldLength
-        elif self.viewPoint.viewDirection == 'last':
-            ViewValueY = ( self.viewPoint.distance + self.roadScene.measFieldLength ) /  math.sqrt( ( self.roadScene.measFieldLength + self.viewPoint.distance )**2 + self.viewPoint.height**2 )
-            ViewValueZ = self.viewPoint.height / math.sqrt( ( self.roadScene.measFieldLength + self.viewPoint.distance )**2 + self.viewPoint.height**2 )
-            viewDirection ="0 " + str( ViewValueY ) +" -" + str( ViewValueZ )    
-        
-        #view fixed 1 degree by 1.45 height and 83 distance (RP800)
+        if( os.path.isfile( str( self.xmlConfigPath ) + str ( Evaluator.octDirSuffix ) + '/scene.oct' ) ):
+            print '.oct file is existing: scene.oct'
         else:
-            viewDirection = "0 0.999847 -0.017467" 
-        
-        print '    view direction: ' + str( viewDirection )
-        # fixed z position 
-        print "    z-position of the observer: " + str( self.viewPoint.height ) 
-        # fixed x position on given lane
-        positionX = self.roadScene.scene.road.laneWidth * ( self.roadScene.targetParameters.target.onLane + 0.5 )
-        print "    x-position of the observer: " + str( positionX )
-        print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
-        
-        fTI = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/thresholdIncrement.pos', "w" )
-        fTheta = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/thresholdIncrementTheta.txt', "w" )
-        
-        for measPointNumber in range( Evaluator.numberOfMeasurementPoints ):
-            positionY =  ( measPointNumber * self.roadScene.measurementStepWidth ) - self.viewPoint.distance
-            print "    " + str( measPointNumber ) + "-y-position of the observer: " + str( positionY )
-            # calculate all theta_k's DIN 13201-3 ( TI ) for lights in 500m measurement area depend on positionY
-            thetaK = 0.0
-            for index, poleArray in enumerate( self.poles ):
-                for poleCounter in range( self.roadScene.numberOfLightsPerArray  ):
-                    if( poleArray.isSingle == True ):
-                        if( poleArray.positionY < 500 ):
-                            if( poleArray.side == 'Left' ):
-                                poleDistance = math.sqrt( ( poleArray.positionY - positionY )**2 + ( positionX + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
-                            elif( poleArray.side == 'Right' ):
-                                poleDistance = math.sqrt( ( poleArray.positionY - positionY )**2 + ( - positionX + self.roadScene.scene.road.laneWidth + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
-                            poleDiffHeight = poleArray.height - self.viewPoint.height
-                            thetaK += math.atan( poleDiffHeight / poleDistance )
-                    elif( poleArray.isSingle == False ):
-                        if( ( poleCounter * poleArray.spacing ) < 500 ):
-                            if( poleArray.side == 'Left' ):
-                                poleDistance = math.sqrt( ( ( poleCounter * poleArray.spacing ) - positionY )**2 + ( positionX + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
-                            elif( poleArray.side == 'Right' ):
-                                poleDistance = math.sqrt( ( ( poleCounter * poleArray.spacing ) - positionY )**2 + ( - positionX + self.roadScene.scene.road.laneWidth + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
-                            poleDiffHeight = poleArray.height - self.viewPoint.height
-                            thetaK += math.atan( poleDiffHeight / poleDistance )
-            
-            viewPoint = '{0} {1} {2} '.format( positionX, positionY, self.viewPoint.height )
-
-            fTI.write( str( viewPoint ) + str( viewDirection ) + ' \n' )
-            fTheta.write( str( thetaK )  + ' \n' )
-        
-        fTI.close( )
-        fTheta.close( )
-        
-        # calculate irradiance for TI 
-        cmd1 = "rtrace -h -I+ -w -ab 1 " + self.xmlConfigPath + Evaluator.octDirSuffix + "/scene_din.oct < " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/thresholdIncrement.pos | rcalc -e ' $1=179*($1*.265+$2*.67+$3*.065) ' > " + self.xmlConfigPath + Evaluator.evalDirSuffix + "/thresholdIncrement.txt"
-        os.system( cmd1 )
-
-#DEBUG - Here #############################################    
-#DEBUG - rtrace liefert gesamte Beleuchtungstärke evt. alle winkel aufsummieren und dann teilen?
-#DEBUG - thetaK in rcalc Schritt einbauen, aber thetaK pro Messchritt anders! Achtung! entweder Schleife oder extra Datei
-#DEBUG - END ##############################################
+            print 'there is a problem with the .oct file, its not simulated with simulator --> it not exist!!!'
 
     def makePic( self ):
         if( not os.path.isdir( self.xmlConfigPath + Evaluator.picDirSuffix ) ):
@@ -430,17 +79,17 @@ class Evaluator:
         #make pic without target for later evaluation
         print 'make out_radiance.hdr'
         if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-            cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd1 )
         else:
-            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd1 )
         print 'make out_irradiance.hdr'
         if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
-            cmd2 = 'rpict -i -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            cmd2 = 'rpict -i -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd2 )
         else:
-            cmd2 = 'rpict -i -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene_din.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            cmd2 = 'rpict -i -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene.oct > {1}/out_irradiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd2 )
             
     def makeFalsecolor( self ):
