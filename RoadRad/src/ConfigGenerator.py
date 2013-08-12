@@ -214,9 +214,9 @@ class ConfigGenerator:
             for index, poleArray in enumerate( self.poles ):
                 if ( poleArray.isSingle == True ):
                     if ( poleArray.side == "Left" ):
-                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index)  + "_light_pole.rad\n" )
+                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str( index )  + "_light_pole.rad\n" )
                     else:
-                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str(index) + "_light_pole.rad\n" )
+                        f.write( "!xform -rz -180 -t "+ str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ConfigGenerator.radDirSuffix + "/" + poleArray.lidc + "_" + str( index ) + "_light_pole.rad\n" )
                 elif ( poleArray.side == "Left" ):
                     print "    making left poles"
                     if (( firstArrayHandled == False ) or ( poleArray.isStaggered == False )):

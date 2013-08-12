@@ -11,7 +11,7 @@ class ThresholdIncrement:
     
     #instance variables which define the relative paths
     octDirSuffix = '/Octs'
-    radDirSuffix = '/Rads'
+    radDirSuffix = '/RadsTemp'
     picDirSuffix = '/Pics'
     picSubDirSuffix = '/pics'
     evalDirSuffix = '/Evaluation'
@@ -37,14 +37,18 @@ class ThresholdIncrement:
         self.xmlConfigName = "SceneDescription.xml"
         # get RoadScene object from Evaluator
         self.roadScene = roadRadObject
+        self.road = self.roadScene.scene.road
+        self.lidcs = self.roadScene.lidcs.lidcs
         self.viewPoint = self.roadScene.targetParameters.viewPoint
         self.headlights = self.roadScene.headlights.headlights
         self.poles = self.roadScene.poles.poles
         
         # start methods/functions
         #self.calcTI()
-        self.calcVeilingLum( )
+        #self.calcVeilingLum( )
         #self.calcTheta( )
+        #self.makeOcts( )
+        self.makeRads( )
     
     # L_seq = (k * E_gl) / theta^n
     # E_gl illuminance of glare source
@@ -148,8 +152,64 @@ class ThresholdIncrement:
         # bedingung1: Leuchten, die in einer Beobachtungsebene liegen, deren Winkel zur Horizontalen größer als
         # 20° ist, den Beobachter enthält und die Straße in Querrichtung kreuzt, müssen von der Berechnung
         # ausgenommen werden.
-        glareSources = 'findglare -vf {0}/eye.vp -c -r 4000 {1}/scene.oct > {2}/scene.glr'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, self.xmlConfigPath + ThresholdIncrement.octDirSuffix, self.xmlConfigPath + ThresholdIncrement.evalDirSuffix ) 
+        # Diese Gleichung gilt für 0,05 < mittlere Leuchtdichte der Fahrbahn < 5 cd/m2 und 1,5 <theta_k <60 Grad eines
+        #Winkels im Raum.
+        glareSources = 'findglare -vf {0}/eye.vp -t 5 -c {1}/scene.oct > {2}/scene.glr'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, self.xmlConfigPath + ThresholdIncrement.octDirSuffix, self.xmlConfigPath + ThresholdIncrement.evalDirSuffix ) 
         os.system( glareSources )
         
-        glareSourcesPic = 'findglare -vf {0}/eye.vp -c -r 4000 -p {1}/out_radiance.hdr > {2}/scenePic.glr'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + ThresholdIncrement.evalDirSuffix ) 
+        glareSourcesPic = 'findglare -vf {0}/eye.vp -r 4000 -c -p {1}/out_radiance.hdr > {2}/scenePic.glr'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, self.xmlConfigPath + self.picDirSuffix + self.picSubDirSuffix, self.xmlConfigPath + ThresholdIncrement.evalDirSuffix ) 
         os.system( glareSourcesPic )
+    
+    def makeRads( self ):
+        positionX = self.roadScene.scene.road.laneWidth * ( self.roadScene.targetParameters.target.onLane + 0.5 )
+        measPointNumber = 0
+        positionY =  ( measPointNumber * self.roadScene.measurementStepWidth ) - self.viewPoint.distance
+        print 'Generating: temporary light rads'
+        for index, poleArray in enumerate( self.poles ):
+            if( poleArray.isSingle == True ):
+                if( poleArray.positionY < 500 ):
+                    f = open( self.xmlConfigPath + ThresholdIncrement.radDirSuffix + '/lights_' + str( index ) + '.rad', "w" )
+                    f.write( "######lights_s.rad######\n" )
+                    if( poleArray.side == 'Left' ):
+                        # make rad config
+                        f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + "_" + str( index )  + "_light_pole.rad\n" )
+                        # calculate theta
+                        poleDistance = math.sqrt( ( poleArray.positionY - positionY )**2 + ( positionX + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
+                    elif( poleArray.side == 'Right' ):
+                        # make rad config
+                        f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth )+" " + str( poleArray.positionY ) + " 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + "_" + str( index ) + "_light_pole.rad\n" )
+                        # calculate theta
+                        poleDistance = math.sqrt( ( poleArray.positionY - positionY )**2 + ( - positionX + self.roadScene.scene.road.laneWidth + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
+                    poleDiffHeight = poleArray.height - self.viewPoint.height
+                    thetaK = math.atan( poleDiffHeight / poleDistance )
+                    f.write( '# thetaK = ' + str( thetaK ) + '\n' )
+                    f.write( '# yPosition = ' + str( poleArray.positionY ) + '\n' )
+                    f.close( )
+            elif( poleArray.isSingle == False ):
+                for poleCounter in range( self.roadScene.numberOfLightsPerArray  ):
+                    if( ( poleCounter * poleArray.spacing ) < 500 ):
+                        f = open( self.xmlConfigPath + ThresholdIncrement.radDirSuffix + '/lights_' + str( index ) + '_' +  str( poleCounter ) + '.rad', "w" )
+                        if( poleArray.side == 'Left' ):
+                            # make rad config 
+                            if ( poleArray.isStaggered == False ):
+                                f.write( "!xform  -t -" + str( self.road.sidewalkWidth ) + " " + str( ( -self.roadScene.numberOfLightsBeforeMeasurementArea * poleArray.spacing ) + ( poleCounter * poleArray.spacing ) ) +" 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
+                            else:
+                                f.write( "!xform -t -" + str( self.road.sidewalkWidth ) + " " + str( ( -self.roadScene.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.spacing ) + ( poleCounter * poleArray.spacing ) ) +" 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
+                            # calculate theta
+                            poleDistance = math.sqrt( ( ( poleCounter * poleArray.spacing ) - positionY )**2 + ( positionX + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
+                        elif( poleArray.side == 'Right' ):
+                            # make rad config
+                            if ( poleArray.isStaggered == False ):
+                                f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth ) + " " + str( ( -self.roadScene.numberOfLightsBeforeMeasurementArea * poleArray.spacing ) + ( poleCounter * poleArray.spacing ) ) +" 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
+                            else:
+                                f.write( "!xform -rz -180 -t " + str( self.road.numLanes * self.road.laneWidth + self.road.sidewalkWidth ) + " " + str( ( -self.roadScene.numberOfLightsBeforeMeasurementArea * 0.5 * poleArray.spacing ) + ( poleCounter * poleArray.spacing ) ) +" 0 " + self.xmlConfigPath + ThresholdIncrement.radDirSuffix + "/" + poleArray.lidc + '_' + str( index )  + "_light_pole.rad\n" )
+                            # calculate theta
+                            poleDistance = math.sqrt( ( ( poleCounter * poleArray.spacing ) - positionY )**2 + ( - positionX + self.roadScene.scene.road.laneWidth + self.roadScene.scene.road.sidewalkWidth - poleArray.overhang )**2 )
+                        poleDiffHeight = poleArray.height - self.viewPoint.height
+                        thetaK = math.atan( poleDiffHeight / poleDistance )
+                        f.write( '# thetaK = ' + str( thetaK ) + '\n' )
+                        f.write( '# yPosition = ' + str( ( -self.roadScene.numberOfLightsBeforeMeasurementArea * poleArray.spacing ) + ( poleCounter * poleArray.spacing ) ) + '\n' )
+                        f.close( )
+        
+        print '    done ...'
+        print ''

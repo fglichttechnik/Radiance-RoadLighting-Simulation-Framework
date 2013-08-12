@@ -44,8 +44,8 @@ class Evaluator:
         # initialize XML as RoadScene object
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
 
-        self.makeOct( )
-        self.makePic( )
+        #self.makeOct( )
+        #self.makePic( )
         
         # get parameter for evaluation
         self.Luminances = modulLuminances.Luminances( self.roadScene, self.xmlConfigPath )
@@ -82,7 +82,7 @@ class Evaluator:
             cmd1 = 'rpict -vtv -vf {2}/eye.vp -x {3} -y {4} {0}/scene.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd1 )
         else:
-            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
+            cmd1 = 'rpict -vtv -vf {2}/eye0.vp -x {3} -y {4} {0}/scene0.oct > {1}/out_radiance.hdr '.format( self.xmlConfigPath + Evaluator.octDirSuffix , self.xmlConfigPath + Evaluator.picDirSuffix + Evaluator.picSubDirSuffix, self.xmlConfigPath + Evaluator.radDirSuffix, Evaluator.horizontalRes, Evaluator.verticalRes )
             os.system( cmd1 )
         print 'make out_irradiance.hdr'
         if self.roadScene.targetParameters.viewPoint.targetDistanceMode == 'fixedViewPoint':
