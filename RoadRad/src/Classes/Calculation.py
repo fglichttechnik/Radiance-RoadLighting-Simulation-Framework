@@ -7,6 +7,7 @@ class Calculation:
         self.veilingLuminance = "" 
         self.veilingLuminanceMethod = "" 
         self.tresholdLuminanceFactor = 0
+        self.age = 20
         
         self.loadCalculation( root )
         
@@ -16,5 +17,6 @@ class Calculation:
         self.veilingLuminance = calcDesc.get( 'VeilingLuminance' )
         self.veilingLuminanceMethod = calcDesc.get( 'VeilingLuminanceMethod' )
         self.tresholdLuminanceFactor = calcDesc.get( 'TresholdLuminanceFactor' )
+        self.age = calcDesc.get( 'Age' )
         
         print '    calculation parameters loaded ...'

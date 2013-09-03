@@ -58,9 +58,10 @@ class Luminances:
             while ( self.poles[ selectedArray ].spacing / Luminances.numberOfMeasurementPoints ) > 3:
                 Luminances.numberOfMeasurementPoints = Luminances.numberOfMeasurementPoints + 1
         
+        self.roadScene.measurementStepWidth = self.roadScene.measFieldLength / Luminances.numberOfMeasurementPoints
+        
         print 'Generating: luminance values according to DIN EN 13201-3'
         print '    number of measurement points: ' + str( Luminances.numberOfMeasurementPoints )
-        self.roadScene.measurementStepWidth = self.roadScene.measFieldLength / Luminances.numberOfMeasurementPoints
         print '    measurement step width: ' + str( self.roadScene.measurementStepWidth ) 
         print '    measurment field length: ' + str( self.roadScene.measFieldLength )
 

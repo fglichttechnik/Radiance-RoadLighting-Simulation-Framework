@@ -35,6 +35,10 @@ class Evaluator:
     meanIlluminance = 0.0
     minIlluminance = 0.0
     uniformityOfIlluminance = 0.0
+    tiDIN13201 = 0.0
+    tiRP800 = 0.0
+    L_v_din13201 = 0.0
+    L_v_rp800 = 0.0
     
     def __init__( self, path ):
         
@@ -44,8 +48,8 @@ class Evaluator:
         # initialize XML as RoadScene object
         self.roadScene = modulRoadscene.RoadScene( self.xmlConfigPath, self.xmlConfigName )
 
-        #self.makeOct( )
-        #self.makePic( )
+        self.makeOct( )
+        self.makePic( )
         
         # get parameter for evaluation
         self.Luminances = modulLuminances.Luminances( self.roadScene, self.xmlConfigPath )
@@ -57,7 +61,9 @@ class Evaluator:
         self.evalLuminance( )
         self.evalIlluminance( )
         self.evalSideIlluminance( )
-
+        self.evalThresholdIncrement( )
+        
+        self.addLvToLMKSetMat( )
         self.makeXML( )
         self.checkStandards( )
 
@@ -354,7 +360,83 @@ class Evaluator:
         
         print '    done ...'
         print ''   
+        
+    def evalThresholdIncrement( self ):
+        print 'Evaluate Threshold Increment'
+        print '    AgeFactor: ' + str( self.TI.ageFactor ) 
+        
+        L_v_measAll_din13201 = 0
+        L_v_measAll_rp800 = 0
+        self.veilingLum_array_rp800 = []
+        
+        for measPointCounter in range( self.TI.numberOfMeasurementPoints ):
+            L_v_meas_din13201 = 0
+            L_v_meas_rp800 = 0
+            for lightsCounter in range( self.TI.tiArray[ measPointCounter ].__len__() ):
+                # calculate exponent n of theta RP800
+                if ( self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ] < 2 ):
+                    n = 2.3 - 0.7 * math.log10( self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ] )
+                else:
+                    n = 2
+
+                L_v_meas_rp800 += self.TI.ageFactor * self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 0 ] / self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ]**n
+                L_v_meas_din13201 += self.TI.ageFactor * self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 0 ] / self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ]**2
+                
+            L_v_measAll_din13201 += L_v_meas_din13201
+            L_v_measAll_rp800 += L_v_meas_rp800
+            self.veilingLum_array_rp800.append( L_v_measAll_rp800 )
+            
+        Evaluator.L_v_din13201 = L_v_measAll_din13201 / self.TI.numberOfMeasurementPoints
+        Evaluator.L_v_rp800 = L_v_measAll_rp800 / self.TI.numberOfMeasurementPoints
+        
+        print '    L_v DIN13201: ' + str( Evaluator.L_v_din13201 )
+        print '    L_v RP800: ' + str( Evaluator.L_v_rp800 )
+        print '    mean Luminance: ' + str( Evaluator.meanLuminance ) 
+         
+        Evaluator.tiDIN13201 = 65 * Evaluator.L_v_din13201 / Evaluator.meanLuminance**0.8
+        Evaluator.tiRP800 = 65 * Evaluator.L_v_rp800 / Evaluator.meanLuminance**0.8
+        
+        print '    Threshold Incremnt DIN13201: ' + "%.2f" % Evaluator.tiDIN13201 + ' %'
+        print '    Threshold Incremnt RP800: ' + "%.2f" % Evaluator.tiRP800 + ' %'
+        
+        print '    done ...'
+        print ''  
     
+    def addLvToLMKSetMat( self ):
+        # problem numberOfSubimages(14) /= numberOfMeasurementPoints(10)
+        # 2 pics before measfield and 2 after, how to add to LMKSetMat
+        # DEBUG check if numberOfSubimages and numberOfMeasurementPoints make sense and fit function!
+        
+        print 'Add Veiling Lum to LMKSetMat'
+        LMKSetMat = '/' + os.path.basename( self.xmlConfigPath ) # '/LMKSetMat'
+        print '    LMKSetMat path: ' + self.xmlConfigPath + LMKSetMat
+        
+        input = open( self.xmlConfigPath + LMKSetMat + '/LMKSetMat.xml', "r" )
+        output = open( self.xmlConfigPath + LMKSetMat + '/LMKSetMat2.xml', "w" )
+        
+        print '    Number of Veiling Luminance Values: ' + str( len( self.veilingLum_array_rp800 ) )
+        print '    Number of SubImages: ' + str( self.roadScene.numberOfSubimages )
+        print '    Number of Measurement Points: ' + str( self.TI.numberOfMeasurementPoints )
+        
+        # DEBUG gibt es Werte die nicht gültig sind???
+        counterMin = self.roadScene.numberOfSubimages - self.TI.numberOfMeasurementPoints
+        counterMax = self.roadScene.numberOfSubimages - counterMin + 1
+        counter = 0
+        for line in input:
+            output.write( line )
+            if ( line.lstrip().startswith( '</RectObject>' )):
+                counter += 1
+                if ( ( counter > counterMin ) and ( counter < counterMax ) ):
+                    output.write( '<veilingLuminance Lv="' + str( self.veilingLum_array_rp800[ counter - ( counterMin + 1 ) ] ) + '"/> \n' )
+                else:
+                    output.write( '<veilingLuminance Lv="0"/> \n' )
+                    
+        input.close()
+        output.close()
+        
+        print '    done ...'
+        print '' 
+            
     def makeXML( self ):
         print 'Generating XML: file..'
         if( not os.path.isdir( self.xmlConfigPath + Evaluator.evalDirSuffix ) ):
@@ -400,8 +482,21 @@ class Evaluator:
         uniformityIllum_element.setAttribute( "g1", str( Evaluator.uniformityOfIlluminance ) )
         illum_element.appendChild( uniformityIllum_element )
         
+        ti_element = doc.createElement( "ThresholdIncremnt" )
+        doc.documentElement.appendChild( ti_element )
+        
+        tiValue_element = doc.createElement( "tiValues" )
+        tiValue_element.setAttribute( "TI_DIN13201", str( Evaluator.tiDIN13201 ) )
+        tiValue_element.setAttribute( "TI_RP800", str( Evaluator.tiRP800 ) )
+        ti_element.appendChild( tiValue_element )
+        
+        veilingLum_element = doc.createElement( "veilingLuminance" )
+        veilingLum_element.setAttribute( "L_v_DIN13201", str( Evaluator.L_v_din13201 ) )
+        veilingLum_element.setAttribute( "L_v_RP800", str( Evaluator.L_v_rp800 ) )
+        ti_element.appendChild( veilingLum_element )
+        
         f = open( self.xmlConfigPath + Evaluator.evalDirSuffix + '/Evaluation.xml', "w" )
-        doc.writexml( f, "\n", "    ")
+        doc.writexml( f, "", "    ")
         f.close( )           
         
         print '    done ...'

@@ -186,6 +186,7 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 		 & VeilingLuminance & String & On, off & switch for veiling luminance \\
 		 & VeilingLuminanceMethod & String & Standard, rp800 & Ask Sandy \\
 		 & TresholdLuminanceFactor & Float & & Ask Sandy \\
+		 & Age & Int & $>$ 0 & age of viewer, used for threshold increment calculation \\
 	\mymidrule
 	\rowcolor{hellgrau}
 		ViewPoint & Distance & Float & & distance to measurementfield in m \\\rowcolor{hellgrau}
@@ -220,7 +221,7 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 		PoleArray & Height & Float & & height of all poles in array must be same in m \\\rowcolor{hellgrau}
 		 & Spacing & Float & & space between all single poles in m \\\rowcolor{hellgrau}
 		 & Overhang & Float & & x-offset of the polearm in m \\\rowcolor{hellgrau}
-		 & IsStaggered & String & True, False & \\\rowcolor{hellgrau}
+		 & IsStaggered & String & True, False & first light begins in the middle of measurement field \\\rowcolor{hellgrau}
 		 & LIDC & String & & name of the declacered LIDC in LIDC \\\rowcolor{hellgrau}
 		 & Side & String & Left, Right & polearray left or right side of lanes \\
 	\mymidrule
@@ -361,5 +362,7 @@ After all rads-data are made you have ten seconds time to choose between normal 
 	\end{longtable} 
 
 \section{Evaluator}
+
+\section{Video Simulator}
 
 \end{document}
