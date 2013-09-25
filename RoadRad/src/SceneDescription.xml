@@ -2,7 +2,7 @@
 	<Scene>
 		<Description Title="LED R1 2070lm 35m VDL" Environment="Grass" FocalLength="25" />
 		<Road NumLanes="2" NumPoleFields="1" LaneWidth="3" SidewalkWidth="1" Surface="plastic" qZero="0.01" />
-		<Calculation DIN13201="off" VeilingLuminance="off" VeilingLuminanceMethod="standard" TresholdLuminanceFactor="7" Age="20"/>
+		<Calculation DIN13201="off" VeilingLuminance="off" VeilingLuminanceMethod="RP800" HeadlightOption="withTarget" TresholdLuminanceFactor="7" Age="20"/>
 	</Scene>
 	<TargetParameters>
 		<ViewPoint Distance="35" Height="1.2" TargetDistanceMode="fixedViewPoint" XOffset="0" ViewDirection="fixedRP800" />

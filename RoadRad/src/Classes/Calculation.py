@@ -16,6 +16,7 @@ class Calculation:
         self.din13201 = calcDesc.get( 'DIN13201' )
         self.veilingLuminance = calcDesc.get( 'VeilingLuminance' )
         self.veilingLuminanceMethod = calcDesc.get( 'VeilingLuminanceMethod' )
+        self.headlightOption = calcDesc.get( 'HeadlightOption' )
         self.tresholdLuminanceFactor = calcDesc.get( 'TresholdLuminanceFactor' )
         self.age = calcDesc.get( 'Age' )
         

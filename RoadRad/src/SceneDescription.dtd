@@ -21,6 +21,7 @@
     DIN13201 CDATA #REQUIRED
     VeilingLuminance CDATA #REQUIRED
     VeilingLuminanceMethod CDATA #REQUIRED
+    HeadlightOption CDATA #IMPLIED
     TresholdLuminanceFactor CDATA #REQUIRED
     Age CDATA #REQUIRED>
 

@@ -12,6 +12,7 @@ import Classes.RoadScene as modulRoadscene
 import Classes.ThresholdIncrement as modulThresholdIncrement
 import Classes.Luminances as modulLuminances
 import Classes.Illuminances as modulIlluminances
+import pdb
 
 
 #write a few documentation
@@ -50,20 +51,24 @@ class Evaluator:
 
         self.makeOct( )
         self.makePic( )
+        #self.makeFalsecolor( )
         
         # get parameter for evaluation
         self.Luminances = modulLuminances.Luminances( self.roadScene, self.xmlConfigPath )
         self.Illuminances = modulIlluminances.Illuminances( self.roadScene, self.xmlConfigPath )
         self.TI = modulThresholdIncrement.ThresholdIncrement( self.roadScene, self.xmlConfigPath )
-
-        #self.makeFalsecolor( )
         
         self.evalLuminance( )
         self.evalIlluminance( )
         self.evalSideIlluminance( )
+        
+        self.filterLightArray( self.roadScene.scene.calculation.veilingLuminanceMethod, self.roadScene.scene.calculation.headlightOption )
+        #self.filterLightArray( "RP800", "withTarget" )
+        #self.filterLightArray( "DIN13201", "fixed" )
+        #self.filterLightArray( "DIN13201", "withTarget" )
+        
         self.evalThresholdIncrement( )
         
-        self.addLvToLMKSetMat( )
         self.makeXML( )
         self.checkStandards( )
 
@@ -360,38 +365,138 @@ class Evaluator:
         
         print '    done ...'
         print ''   
+    
+    def filterLightArray( self, mode, type ):
+        # mode = DIN13201 or RP800
+        # type = fixed or withTarget
+        # function calls "veilingLuminanceForMode" and "evalVeilingLuminance"
+        print 'Generate veiling luminance array for mode: ' + str( mode )
+        print '    filter raw light array with type: ' + str( type )
         
-    def evalThresholdIncrement( self ):
-        print 'Evaluate Threshold Increment'
-        print '    AgeFactor: ' + str( self.TI.ageFactor ) 
-        
-        L_v_measAll_din13201 = 0
-        L_v_measAll_rp800 = 0
-        self.veilingLum_array_rp800 = []
+        veilingLumArray = []
         
         for measPointCounter in range( self.TI.numberOfMeasurementPoints ):
-            L_v_meas_din13201 = 0
-            L_v_meas_rp800 = 0
-            for lightsCounter in range( self.TI.tiArray[ measPointCounter ].__len__() ):
+            helpArray = []
+            
+            # filter array: only with fixed lights and fixed headlights
+            if( type == "fixed" ):
+                for lightsCounter in range( self.TI.tiArray[ measPointCounter ].__len__() ):
+                    if( self.TI.tiArray[ measPointCounter ][ lightsCounter ].type == "light" ):
+                        helpArray.append( self.TI.tiArray[ measPointCounter ][ lightsCounter ] ) 
+                    else:
+                        if( self.TI.tiArray[ measPointCounter ][ lightsCounter ].headlightType == "fixed" ):
+                            helpArray.append( self.TI.tiArray[ measPointCounter ][ lightsCounter ] )
+
+                veilingLumValue = self.veilingLuminanceForMode( helpArray, mode, type )
+                veilingLumArray.append( veilingLumValue )
+
+            else:
+                for lightsCounter in range( self.TI.tiArray[ measPointCounter ].__len__() ):
+                    helpArray.append( self.TI.tiArray[ measPointCounter ][ lightsCounter ] )
+
+                veilingLumValue = self.veilingLuminanceForMode( helpArray, mode, type )
+                veilingLumArray.append( veilingLumValue )
+        
+        self.evalVeilingLuminance( veilingLumArray, mode, type )
+        self.addLvToLMKSetMat( veilingLumArray, mode, type )
+    
+    def veilingLuminanceForMode( self, filteredLightArray, mode, type ):
+        
+        L_v_rp800 = 0
+        L_v_din13201 = 0
+        L_v_perMeasPoint = []
+        
+        if( type == "fixed" ):
+            for lightsCounter in range( filteredLightArray.__len__() ):
                 # calculate exponent n of theta RP800
-                if ( self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ] < 2 ):
-                    n = 2.3 - 0.7 * math.log10( self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ] )
+                if( filteredLightArray[ lightsCounter ].theta < 2 ):
+                    n = 2.3 - 0.7 * math.log10( filteredLightArray[ lightsCounter ].theta )
                 else:
                     n = 2
-
-                L_v_meas_rp800 += self.TI.ageFactor * self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 0 ] / self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ]**n
-                L_v_meas_din13201 += self.TI.ageFactor * self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 0 ] / self.TI.tiArray[ measPointCounter ][ lightsCounter ][ 1 ]**2
                 
-            L_v_measAll_din13201 += L_v_meas_din13201
-            L_v_measAll_rp800 += L_v_meas_rp800
-            self.veilingLum_array_rp800.append( L_v_measAll_rp800 )
-            
-        Evaluator.L_v_din13201 = L_v_measAll_din13201 / self.TI.numberOfMeasurementPoints
-        Evaluator.L_v_rp800 = L_v_measAll_rp800 / self.TI.numberOfMeasurementPoints
+                L_v_rp800 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**n
+                L_v_din13201 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**2
+                
+            if( mode == "RP800"):
+                L_v_perMeasPoint = self.TI.ageFactor * L_v_rp800
+            else:
+                L_v_perMeasPoint = self.TI.ageFactor * L_v_din13201
+
+        else:
+            help_rp800 = []
+            help_din13201 = []
+            for lightsCounter in range( filteredLightArray.__len__() ):
+                # calculate exponent n of theta RP800
+                if( filteredLightArray[ lightsCounter ].theta < 2 ):
+                    n = 2.3 - 0.7 * math.log10( filteredLightArray[ lightsCounter ].theta )
+                else:
+                    n = 2
+                    
+                if( filteredLightArray[ lightsCounter ].type == "light" ):
+                    
+                    L_v_rp800 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**n
+                    L_v_din13201 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**2
+                    
+                else:
+                    if( filteredLightArray[ lightsCounter ].headlightType == "fixed" ):
+                        
+                        L_v_rp800 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**n
+                        L_v_din13201 += filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**2
+                        
+                    else:
+                        
+                        L_v_rp800_value = filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**n
+                        L_v_din13201_value = filteredLightArray[ lightsCounter ].illuminance / filteredLightArray[ lightsCounter ].theta**2
+                        help_rp800.append( L_v_rp800_value )
+                        help_din13201.append( L_v_din13201_value )
+                
+            if( mode == "RP800"):
+                L_v_perMeasPoint = [ x * self.TI.ageFactor + L_v_rp800 for x in help_rp800 ]
+            else:
+                L_v_perMeasPoint = [ x * self.TI.ageFactor + L_v_din13201 for x in help_din13201 ]
+           
+        return L_v_perMeasPoint
+    
+    def evalVeilingLuminance( self, veilingLumArray, mode, type ):
         
-        print '    L_v DIN13201: ' + str( Evaluator.L_v_din13201 )
-        print '    L_v RP800: ' + str( Evaluator.L_v_rp800 )
-        print '    mean Luminance: ' + str( Evaluator.meanLuminance ) 
+        L_v_measAll = 0
+        
+        if( veilingLumArray.__len__() == self.TI.numberOfMeasurementPoints ):
+            if( type == "fixed" ):
+                
+                for measPoint in range( veilingLumArray.__len__() ):
+                    L_v_measAll += veilingLumArray[ measPoint ]
+                    
+                if( mode == "RP800" ):
+                    Evaluator.L_v_rp800 = L_v_measAll / self.TI.numberOfMeasurementPoints
+                    print '    L_v RP800: ' + str( Evaluator.L_v_rp800 )
+                else:
+                    Evaluator.L_v_din13201 = L_v_measAll / self.TI.numberOfMeasurementPoints
+                    print '    L_v DIN13201: ' + str( Evaluator.L_v_din13201 )
+            else:
+                
+                for measPoint in range( veilingLumArray.__len__() ):
+                    valuePerMeas = 0
+                    for drivingCar in range( veilingLumArray[ measPoint ].__len__() ):
+                        valuePerMeas += veilingLumArray[ measPoint ][ drivingCar ]
+                    meanValuePerMeas = valuePerMeas / veilingLumArray[ measPoint ].__len__()
+                    L_v_measAll += meanValuePerMeas
+                    
+                if( mode == "RP800" ):
+                    Evaluator.L_v_rp800 = L_v_measAll / self.TI.numberOfMeasurementPoints
+                    print '    L_v RP800: ' + str( Evaluator.L_v_rp800 )
+                else:
+                    Evaluator.L_v_din13201 = L_v_measAll / self.TI.numberOfMeasurementPoints
+                    print '    L_v DIN13201: ' + str( Evaluator.L_v_din13201 )
+        else:
+            print '! an ERROR occured array length not same length of measurement points'
+        
+        
+
+    def evalThresholdIncrement( self ):
+        print 'Evaluate Threshold Increment'
+        print '    mean Luminance: ' + str( Evaluator.meanLuminance )
+        print '    AgeFactor: ' + str( self.TI.ageFactor ) 
          
         Evaluator.tiDIN13201 = 65 * Evaluator.L_v_din13201 / Evaluator.meanLuminance**0.8
         Evaluator.tiRP800 = 65 * Evaluator.L_v_rp800 / Evaluator.meanLuminance**0.8
@@ -402,19 +507,20 @@ class Evaluator:
         print '    done ...'
         print ''  
     
-    def addLvToLMKSetMat( self ):
+    def addLvToLMKSetMat( self, veilingLumArray, mode, type ):
         # problem numberOfSubimages(14) /= numberOfMeasurementPoints(10)
         # 2 pics before measfield and 2 after, how to add to LMKSetMat
         # DEBUG check if numberOfSubimages and numberOfMeasurementPoints make sense and fit function!
         
         print 'Add Veiling Lum to LMKSetMat'
+        print '    mode: ' + str( mode ) + ' and type: ' + str( type ) 
         LMKSetMat = '/' + os.path.basename( self.xmlConfigPath ) # '/LMKSetMat'
         print '    LMKSetMat path: ' + self.xmlConfigPath + LMKSetMat
         
         input = open( self.xmlConfigPath + LMKSetMat + '/LMKSetMat.xml', "r" )
         output = open( self.xmlConfigPath + LMKSetMat + '/LMKSetMat2.xml', "w" )
         
-        print '    Number of Veiling Luminance Values: ' + str( len( self.veilingLum_array_rp800 ) )
+        print '    Number of Veiling Luminance Values: ' + str( len( veilingLumArray ) )
         print '    Number of SubImages: ' + str( self.roadScene.numberOfSubimages )
         print '    Number of Measurement Points: ' + str( self.TI.numberOfMeasurementPoints )
         
@@ -427,7 +533,13 @@ class Evaluator:
             if ( line.lstrip().startswith( '</RectObject>' )):
                 counter += 1
                 if ( ( counter > counterMin ) and ( counter < counterMax ) ):
-                    output.write( '<veilingLuminance Lv="' + str( self.veilingLum_array_rp800[ counter - ( counterMin + 1 ) ] ) + '"/> \n' )
+                    if ( type == "fixed" ):
+                        output.write( '<veilingLuminance Lv="' + str( veilingLumArray[ counter - ( counterMin + 1 ) ] ) + '"/> \n' )
+                    else:
+                        output.write( '<veilingLuminances> \n' )
+                        for valuesPerMeas in range( veilingLumArray[ counter - ( counterMin + 1 ) ].__len__() ):
+                            output.write( '<veilingLuminance Lv="' + str( veilingLumArray[ counter - ( counterMin + 1 ) ][ valuesPerMeas ] ) + '"/> \n' )
+                        output.write( '</veilingLuminances> \n' )
                 else:
                     output.write( '<veilingLuminance Lv="0"/> \n' )
                     
