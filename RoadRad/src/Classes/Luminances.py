@@ -11,9 +11,6 @@ class Luminances:
     
     #instance variables which define the relative paths
     octDirSuffix = '/Octs'
-    radDirSuffix = '/Rads'
-    picDirSuffix = '/Pics'
-    picSubDirSuffix = '/pics'
     evalDirSuffix = '/Evaluation'
 
     numberOfMeasurementRows = 3

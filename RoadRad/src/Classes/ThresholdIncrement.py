@@ -13,12 +13,9 @@ import pdb
 class ThresholdIncrement:
     
     #instance variables which define the relative paths
-    octDirSuffix = '/Octs'
     octTempDirSuffix = '/TempOcts'
     radDirSuffix = '/Rads'
     radTempDirSuffix = '/TempRads'
-    picDirSuffix = '/Pics'
-    picSubDirSuffix = '/pics'
     evalDirSuffix = '/Evaluation'
     lidcDirSuffix = '/LIDCs'
     

@@ -180,11 +180,12 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 		 & LaneWidth & Float & $>$ 0 & lane width in m \\\rowcolor{hellgrau}
 		 & SidewalkWidth & Float & $\geq$ 0 & width of sidewalk in m \\\rowcolor{hellgrau}
 		 & Surface & String & R1, R2, R3, R4, plastic, C1, C2, C2W3, C2W4, BRDF & typ of road surface / pavement \\\rowcolor{hellgrau}
-	 & qZero & Float & 0 $\geq$ 1 & factor to change integreted $q_0$ in r-table \\
+	 	 & qZero & Float & 0 $\geq$ 1 & factor to change integrated $q_0$ in r-table \\
 	\mymidrule
 		Calculation & DIN13201 & String & on, off & switch for calculation  \\
 		 & VeilingLuminance & String & On, off & switch for veiling luminance \\
-		 & VeilingLuminanceMethod & String & Standard, rp800 & Ask Sandy \\
+		 & VeilingLuminanceMethod & String & RP800, DIN13201 & will calculate the veiling luminance for given standard \\
+		 & HeadlightOption & String & withTarget, fixed & fixed - only fixed headlights for threshold increment calculation and veiling luminance, withTarget - for all headlights included fixedTargetDistance ( veiling luminance will be an array )\\
 		 & TresholdLuminanceFactor & Float & & Ask Sandy \\
 		 & Age & Int & $>$ 0 & age of viewer, used for threshold increment calculation \\
 	\mymidrule
@@ -301,16 +302,19 @@ These fixed scene parameters are listed in the following table. You can change t
 		& LMKSetMatFilename & String & '/LMKSetMat.xml' & name of the LMK Matlab XML file\\
 	\mymidrule
 	\rowcolor{hellgrau}
-	Evaluator & octDirSuffix & String & '/Octs' &  folder suffix for the .oct files \\\rowcolor{hellgrau}
-	& radDirSuffix & String & '/Rads' & folder suffix for the .rad files \\\rowcolor{hellgrau}
-	& picDirSuffix & String & '/Pics' & folder suffix for the .pic files \\\rowcolor{hellgrau}
-	& picSubDirSuffix & String & '/pics' & subfolder suffix for the pic files \\\rowcolor{hellgrau}
-	& evalDirSuffix & String & '/Evaluation' & folder suffix for the calculation files \\\rowcolor{hellgrau}
-	& horizontalRes & Float & 1380 & horizontal component of image resolution\\\rowcolor{hellgrau}
-	& verticalRes & Float & 1030 & vertical component of image resolution\\\rowcolor{hellgrau}
-	
-	& numberOfMeasurementRows & Integer & 3 & number of measurment rows\\\rowcolor{hellgrau}
-	& numberOfMeasurementPoints & Integer & 10 & number of measuremnt point per row\\
+		Evaluator & octDirSuffix & String & '/Octs' &  folder suffix for the .oct files \\\rowcolor{hellgrau}
+		& radDirSuffix & String & '/Rads' & folder suffix for the .rad files \\\rowcolor{hellgrau}
+		& picDirSuffix & String & '/Pics' & folder suffix for the .pic files \\\rowcolor{hellgrau}
+		& picSubDirSuffix & String & '/pics' & subfolder suffix for the pic files \\\rowcolor{hellgrau}
+		& evalDirSuffix & String & '/Evaluation' & folder suffix for the calculation files \\\rowcolor{hellgrau}
+		& horizontalRes & Float & 1380 & horizontal component of image resolution\\\rowcolor{hellgrau}
+		& verticalRes & Float & 1030 & vertical component of image resolution\\
+	\mymidrule
+		Classes/ThresholdIncrement & octTempDirSuffix & String & '/TempOcts' & folder suffix for the temporary .oct files \\
+    	& radDirSuffix & String & '/Rads' & folder suffix for the .rad files \\
+    	& radTempDirSuffix & String & '/TempRads' & folder suffix for the temporary .rad files \\
+    	& evalDirSuffix & String & '/Evaluation' & folder suffix for the calculation files \\
+    	& lidcDirSuffix & String & '/LIDCs' & folder suffix for the .ies files \\
 	\mybottomrule
 	\end{longtable} 
 \end{landscape}
@@ -321,7 +325,7 @@ To simulate your first scene, make sure, that you have the folder structure from
 Now you can configurate your scene by editing the \textit{SceneDescription.xml} in your subfolder like chapter \ref{chap:xml_variables}.
 
 \begin{figure}[H]
-\includegraphics[scale=0.45]{bilder/xml_struc.pdf} 
+\includegraphics[scale=0.45]{bilder/xml_struc2.pdf} 
 \caption{Example of SceneDescription.xml}
 \end{figure}
 
@@ -350,6 +354,7 @@ If you want to simulate a lot of scenes, you can use the \textit{RoadRad\_batch.
 
 \section{Ambient Simulation}
 After all rads-data are made you have ten seconds time to choose between normal or ambient simulation. If you dont take a choice, a normal simulation will start. If you choose \glqq yes\grqq\ for ambient simulation, following \textit{rpict} paramters are used.
+This values can be changed in the simulator.py.
 
 \renewcommand{\arraystretch}{1.5}
 	\begin{longtable}{p{3cm}p{3cm}p{3cm}p{3cm}p{3cm}}
@@ -364,5 +369,10 @@ After all rads-data are made you have ten seconds time to choose between normal 
 \section{Evaluator}
 
 \section{Video Simulator}
+The video simulator is an optional addOn. You can activate the simulator from your terminal. Navigate to your src-folder and type in:
 
+\begin{quote}
+./RoadRad.py --dir YourSubfolder --video first value second value
+\end{quote} 
+The first value is the speed in kmh, the second value are the frames per second
 \end{document}
