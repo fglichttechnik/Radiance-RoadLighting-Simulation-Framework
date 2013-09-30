@@ -534,14 +534,18 @@ class Evaluator:
                 counter += 1
                 if ( ( counter > counterMin ) and ( counter < counterMax ) ):
                     if ( type == "fixed" ):
+                        output.write( '<veilingLuminances> \n' )
                         output.write( '<veilingLuminance Lv="' + str( veilingLumArray[ counter - ( counterMin + 1 ) ] ) + '"/> \n' )
+                        output.write( '</veilingLuminances> \n' )
                     else:
                         output.write( '<veilingLuminances> \n' )
                         for valuesPerMeas in range( veilingLumArray[ counter - ( counterMin + 1 ) ].__len__() ):
                             output.write( '<veilingLuminance Lv="' + str( veilingLumArray[ counter - ( counterMin + 1 ) ][ valuesPerMeas ] ) + '"/> \n' )
                         output.write( '</veilingLuminances> \n' )
                 else:
+                    output.write( '<veilingLuminances> \n' )
                     output.write( '<veilingLuminance Lv="0"/> \n' )
+                    output.write( '</veilingLuminances> \n' )
                     
         input.close()
         output.close()
