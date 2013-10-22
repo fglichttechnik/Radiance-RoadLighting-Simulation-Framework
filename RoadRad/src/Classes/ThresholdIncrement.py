@@ -8,7 +8,6 @@ import csv
 import struct
 import linecache
 import ThresholdIncrementData as modulTIData
-import pdb
 
 class ThresholdIncrement:
     
@@ -33,7 +32,7 @@ class ThresholdIncrement:
         self.target = self.roadScene.targetParameters.target
         self.headlights = self.roadScene.headlights.headlights
         self.poles = self.roadScene.poles.poles
-        # TI[] = measPoint, TI[][] = array of Lights, TI[][].Object = irradiance, theta, type, positionY, headlightType
+        # TI[] = measPoint, TI[][] = array of Lights, TI[][].Object = irradiance, theta, type, positionY, headlightType, position (left /right)
         self.tiArray = []
         self.numberOfMeasurementPoints = 10
         self.ageFactor = 0
@@ -167,17 +166,29 @@ class ThresholdIncrement:
             for index, headlightArray in enumerate( self.headlights ):
                 if( headlightArray.lightDirection == 'opposite' ):
                     if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
-                        f = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_fixed_' + str( index ) + '.rad', "w+" )
-                        f.write( "######headlight.rad######\n" )
-                        f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
-                        f.close( )
+                        left = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_left_fixed_' + str( index ) + '.rad', "w+" )
+                        left.write( "######headlightLeft.rad######\n" )
+                        left.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                        left.close( )
+                        
+                        right = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_right_fixed_' + str( index ) + '.rad', "w+" )
+                        right.write( "######headlightRight.rad######\n" )
+                        right.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) + ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength ) + " " + str( headlightArray.height ) + " " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                        right.close( )
+                        
                         print '    fixed headlight ' + str( index + 1 ) + ' rad generated'
                     else:
                         for measPointNumber in range( self.numberOfMeasurementPoints ):
-                            f = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_var_' + str( index ) + '_' + str( measPointNumber ) + '.rad', "w+" )
-                            f.write( "######headlight.rad######\n" )
-                            f.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength - ( measPointNumber * self.roadScene.measurementStepWidth )) + " " + str( headlightArray.height ) + " -a 2 -t " + str( headlightArray.width ) + " 0 0 " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
-                            f.close( )
+                            left = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_left_var_' + str( index ) + '_' + str( measPointNumber ) + '.rad', "w+" )
+                            left.write( "######headlightLeft.rad######\n" )
+                            left.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) - ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength - ( measPointNumber * self.roadScene.measurementStepWidth )) + " " + str( headlightArray.height ) + " " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                            left.close( )
+                            
+                            right = open( self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix + '/headlight_right_var_' + str( index ) + '_' + str( measPointNumber ) + '.rad', "w+" )
+                            right.write( "######headlightRight.rad######\n" )
+                            right.write( "!xform -n oppositeH_" + str( index ) + " -rx -" + str( 90.0 - headlightArray.slopeAngle ) + " -t " + str( self.road.laneWidth * ( headlightArray.onLane + 0.5 ) + ( headlightArray.width / 2 ) ) + " " + str( headlightArray.distance + self.roadScene.measFieldLength - ( measPointNumber * self.roadScene.measurementStepWidth )) + " " + str( headlightArray.height ) + " " + self.xmlConfigPath + ThresholdIncrement.lidcDirSuffix + "/" + headlightArray.lidc + ".rad\n\n" )
+                            right.close( )
+                            
                             print '    variable headlight ' + str( index + 1 ) + ' on position ' + str( measPointNumber ) + ' rad generated'
                 else:
                     print '    headlight ' + str( index + 1 ) + ' ignored - only opposite direction'
@@ -216,19 +227,29 @@ class ThresholdIncrement:
             for index, headlightArray in enumerate( self.headlights ):
                 if( headlightArray.lightDirection == 'opposite' ):
                     if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
-                        cmd = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_fixed_{1}.rad {0}/night_sky.rad > {2}/tiScene_headlight_fixed_{1}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix )
-                        os.system( cmd )
+                        cmdLeft = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_left_fixed_{1}.rad {0}/night_sky.rad > {2}/tiScene_headlight_left_fixed_{1}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix )
+                        os.system( cmdLeft )
+                        cmdRight = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_right_fixed_{1}.rad {0}/night_sky.rad > {2}/tiScene_headlight_right_fixed_{1}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix )
+                        os.system( cmdRight )
                         print '    generated fixed oct headlight# ' + str( index )
-                        cmd1 = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_fixed_" + str( index ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlight_" + str( index ) + ".txt"
-                        os.system( cmd1 )
+                        
+                        cmd1Left = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_left_fixed_" + str( index ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlightLeft_" + str( index ) + ".txt"
+                        os.system( cmd1Left )
+                        cmd1Right = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_right_fixed_" + str( index ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlightRight_" + str( index ) + ".txt"
+                        os.system( cmd1Right )
                         print '    calculated Irradiance for given octree '
                     else:
                         for measPointNumber in range( self.numberOfMeasurementPoints ):
-                            cmd = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_var_{1}_{4}.rad {0}/night_sky.rad > {2}/tiScene_headlight_var_{1}_{4}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix, measPointNumber )
-                            os.system( cmd )
+                            cmdLeft = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_left_var_{1}_{4}.rad {0}/night_sky.rad > {2}/tiScene_headlight_left_var_{1}_{4}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix, measPointNumber )
+                            os.system( cmdLeft )
+                            cmdRight = 'oconv {0}/materials.rad {0}/road.rad {3}/headlight_right_var_{1}_{4}.rad {0}/night_sky.rad > {2}/tiScene_headlight_right_var_{1}_{4}.oct'.format( self.xmlConfigPath + ThresholdIncrement.radDirSuffix, index, self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix, self.xmlConfigPath + ThresholdIncrement.radTempDirSuffix, measPointNumber )
+                            os.system( cmdRight )
                             print '    generated var oct headlight# ' + str( index ) + ' on Position ' + str( measPointNumber )
-                            cmd1 = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_var_" + str( index ) + "_" + str( measPointNumber ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlight_" + str( index ) + "_" + str( measPointNumber ) + ".txt"
-                            os.system( cmd1 )
+                            
+                            cmd1Left = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_left_var_" + str( index ) + "_" + str( measPointNumber ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlightLeft_" + str( index ) + "_" + str( measPointNumber ) + ".txt"
+                            os.system( cmd1Left )
+                            cmd1Right = "rtrace -h -I+ -w -ab 0 " + self.xmlConfigPath + ThresholdIncrement.octTempDirSuffix + "/tiScene_headlight_right_var_" + str( index ) + "_" + str( measPointNumber ) + ".oct < " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTI.pos | rcalc -e '$1=179*($1*.265+$2*.67+$3*.065)' > " + self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + "/IrradianceTIHeadlightRight_" + str( index ) + "_" + str( measPointNumber ) + ".txt"
+                            os.system( cmd1Right )
                             print '    calculated Irradiance for given octree '
 
         print '    done ...'
@@ -242,7 +263,7 @@ class ThresholdIncrement:
             os.mkdir( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix )
                 
         f = open( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/thresholdIncrementLog.txt', "w+" )
-        f.write( 'measPoint view_x view_y view_z theta typ_light y_pos E_v E_v/theta \n' )
+        f.write( 'measPoint view_x view_y view_z theta typ_light y_pos_luminaire E_v E_v/theta \n' )
         
         positionX = self.road.laneWidth * ( self.target.onLane + 0.5 )
         positionZ = self.viewPoint.height
@@ -268,7 +289,7 @@ class ThresholdIncrement:
                         # write data to thresholdIncrementLog
                         f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaK ) + ' single_' + str( index ) + ' ' + str( poleArray.positionY ) +  ' ' + str( irradiance ) +  ' ' + str( evTheta ) + '\n' )
                         # add new TIDataObject to rawLightArray
-                        rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "light", poleArray.positionY - positionY, "" ) )
+                        rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "light", poleArray.positionY - positionY, "", "" ) )
                 elif( poleArray.isSingle == False ):
                     for poleCounter in range( self.roadScene.numberOfLightsPerArray  ):
                         # distances defined in DIN13201, 500m is from first light --> DEBUG: here from array beginning
@@ -301,25 +322,40 @@ class ThresholdIncrement:
                                 print '    this theta is ignored: ' + "%.2f" % thetaK  + " with distance " + "%.2f" % minDistance
                             else:
                                 f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaK ) + ' array_' + str( index ) + '_' + str( poleCounter ) + ' ' + str( poleYDistance + positionY ) +  ' ' + str( irradiance ) +  ' ' + str( evTheta ) + '\n' )
-                                rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "light", poleYDistance, "" ) )
+                                rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "light", poleYDistance, "", "" ) )
 
             # whats up with the headlights, here we go again!
             if( self.headlights.__len__() > 0 ):
                 for index, headlightArray in enumerate( self.headlights ):
                     if( headlightArray.lightDirection == 'opposite' ):
                         
-                        headlightXDistance = math.fabs( self.target.onLane - headlightArray.onLane ) * self.road.laneWidth
+                        headlightLeftXDistance = math.fabs( self.target.onLane - headlightArray.onLane ) * self.road.laneWidth - ( headlightArray.width / 2 )
+                        headlightRightXDistance = math.fabs( self.target.onLane - headlightArray.onLane ) * self.road.laneWidth + ( headlightArray.width / 2 )
                         poleDiffHeight = math.fabs( headlightArray.height - self.viewPoint.height )
                         
                         if( headlightArray.headlightDistanceMode == 'fixedHeadlightPosition' ):
                             headlightYDistance = headlightArray.distance + self.roadScene.measFieldLength - positionY
-                            headlightDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightXDistance )**2 )
-                            thetaK = 90 -  math.degrees( math.atan( headlightDistance / poleDiffHeight ) )
-                            # get irradiance data from irradianceTIHeadlight.txt
-                            irradiance = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlight_' + str( index ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
-                            evTheta = irradiance / thetaK
-                            f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaK ) + ' headlight_fixed_' + str( index ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradiance ) +  ' ' + str( evTheta ) + '\n' )
-                            rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "headlight", headlightYDistance, "fixed" ) )
+                            ## left headlight
+                            
+                            headlightLeftDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightLeftXDistance )**2 )
+                            thetaKLeft = 90 -  math.degrees( math.atan( headlightLeftDistance / poleDiffHeight ) )
+                            
+                            # get irradiance data from irradianceTIHeadlightLeft.txt
+                            irradianceLeft = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlightLeft_' + str( index ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
+                            evThetaLeft = irradianceLeft / thetaKLeft
+                            f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaKLeft ) + ' headlight_left_fixed_' + str( index ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradianceLeft ) +  ' ' + str( evThetaLeft ) + '\n' )
+                            rawLightArray.append( modulTIData.ThresholdIncrementData( irradianceLeft, thetaKLeft, "headlight", ( headlightYDistance + positionY ), "fixed", "left" ) )
+                            
+                            ## right headlight
+                            
+                            headlightRightDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightRightXDistance )**2 )
+                            thetaKRight = 90 -  math.degrees( math.atan( headlightRightDistance / poleDiffHeight ) )
+                            
+                            # get irradiance data from irradianceTIHeadlightRight.txt
+                            irradianceRight = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlightRight_' + str( index ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
+                            evThetaRight = irradianceRight / thetaKRight
+                            f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaKRight ) + ' headlight_right_fixed_' + str( index ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradianceRight ) +  ' ' + str( evThetaRight ) + '\n' )
+                            rawLightArray.append( modulTIData.ThresholdIncrementData( irradianceRight, thetaKRight, "headlight", ( headlightYDistance + positionY ), "fixed", "right" ) )
                         else:
                             # this "for-counter" is an idea of Jan, at every measPoint you have a driving car / but the result will be only a shift
                             # cause the variable distance of car and viewer has the same measurement stepwidth --> theta is shifted
@@ -328,14 +364,27 @@ class ThresholdIncrement:
                             # measpos 2 55m distance carPos 1 45m distance = 100m
                             for fileCounter in range( self.numberOfMeasurementPoints ):
                                 headlightYDistance = headlightArray.distance + self.roadScene.measFieldLength - positionY - ( fileCounter * self.roadScene.measurementStepWidth )
-                                headlightDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightXDistance )**2 )
-                                thetaK = 90 -  math.degrees( math.atan( headlightDistance / poleDiffHeight ) )
+                                ## left headlight
+                                
+                                headlightLeftDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightLeftXDistance )**2 )
+                                thetaKLeft = 90 -  math.degrees( math.atan( headlightLeftDistance / poleDiffHeight ) )
                                 # get irradiance data from irradianceTIHeadlight.txt
                                 # only one value //irradiance = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlight_' + str( index ) + '_' + str( measPointNumber ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
-                                irradiance = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlight_' + str( index ) + '_' + str( fileCounter ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
-                                evTheta = irradiance / thetaK
-                                f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaK ) + ' headlight_var_' + str( index ) + '_' + str( fileCounter ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradiance ) +  ' ' + str( evTheta ) + '\n' )
-                                rawLightArray.append( modulTIData.ThresholdIncrementData( irradiance, thetaK, "headlight", headlightYDistance, "withTarget" ) )
+                                irradianceLeft = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlightLeft_' + str( index ) + '_' + str( fileCounter ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
+                                evThetaLeft = irradianceLeft / thetaKLeft
+                                f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaKLeft ) + ' headlight_left_var_' + str( index ) + '_' + str( fileCounter ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradianceLeft ) +  ' ' + str( evThetaLeft ) + '\n' )
+                                rawLightArray.append( modulTIData.ThresholdIncrementData( irradianceLeft, thetaKLeft, "headlight", ( headlightYDistance + positionY ), "withTarget", "left" ) )
+                                
+                                ## right headlight
+                                
+                                headlightRightDistance = math.sqrt( ( headlightYDistance )**2 + ( headlightRightXDistance )**2 )
+                                thetaKRight = 90 -  math.degrees( math.atan( headlightRightDistance / poleDiffHeight ) )
+                                # get irradiance data from irradianceTIHeadlight.txt
+                                # only one value //irradiance = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlight_' + str( index ) + '_' + str( measPointNumber ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
+                                irradianceRight = float( linecache.getline( self.xmlConfigPath + ThresholdIncrement.evalDirSuffix + '/IrradianceTIHeadlightRight_' + str( index ) + '_' + str( fileCounter ) + '.txt', measPointNumber + 1 ).rstrip('\n') )
+                                evThetaRight = irradianceRight / thetaKRight
+                                f.write( str( measPointNumber ) + ' ' + str( positionX ) + ' ' + str( positionY ) + ' ' + str( positionZ ) + ' ' + str( thetaKRight ) + ' headlight_right_var_' + str( index ) + '_' + str( fileCounter ) + ' ' + str( headlightYDistance + positionY ) +  ' ' + str( irradianceRight ) +  ' ' + str( evThetaRight ) + '\n' )
+                                rawLightArray.append( modulTIData.ThresholdIncrementData( irradianceRight, thetaKRight, "headlight", ( headlightYDistance + positionY ), "withTarget", "right" ) )
         
             self.tiArray.append( rawLightArray )
         
@@ -343,7 +392,6 @@ class ThresholdIncrement:
         print '    used measurement points: ' + str ( len( self.tiArray ) )
         print '    lights at 1. measurement point: ' + str( len( self.tiArray[0] ) )
         print '    done ...'
-        #pdb.set_trace()
         print ''
         
     def calcAgeFactor( self ):
