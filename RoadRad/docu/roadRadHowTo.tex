@@ -9,10 +9,10 @@
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 \usepackage{pdflscape} 			% für querseite
 \usepackage{longtable} 			% für seitenumbruch im table
-\usepackage{booktabs}			% toprule bottomrule im table
-	\newcommand{\mytoprule}{\specialrule{0.2em}{0em}{0em}}
-	\newcommand{\mymidrule}{\specialrule{0.1em}{0em}{0em}}
-	\newcommand{\mybottomrule}{\specialrule{0.2em}{0em}{0em}} 
+%\usepackage{booktabs}			% toprule bottomrule im table
+%	\newcommand{}{\specialrule{0.2em}{0em}{0em}}
+%	\newcommand{\mymidrule}{\specialrule{0.1em}{0em}{0em}}
+%	\newcommand{}{\specialrule{0.2em}{0em}{0em}} 
 \usepackage{colortbl}			% use collor in table
 \usepackage{color}				% define using colors
 	\definecolor{dunkelgrau}{rgb}{0.8,0.8,0.8}
@@ -58,10 +58,22 @@ by chair :				& \quad Lichttechnik\\[1,5ex]
 \pagenumbering{arabic}
 
 \chapter{Installation}
-At first you need an UNIX running system, for example Linux, Mac OS or cygwin for MS Windows. Make sure, that your working system has an updated python version. Then you have to install the python image library (PIL) (\url{http://www.pythonware.com/products/pil/}) and lxml (\url{http://www.http://lxml.de/}) depend on your python version. The PIL is for generating images and lxml for parsing the xml files.\\
+At first you need an UNIX operating system, for example Linux, Mac OS or cygwin  for MS Windows. Make sure, that your operating system has an updated python version ( eg. python 2.7, windows user get this with cygwin ). Then you have to install the python image library (PIL) (\url{http://www.pythonware.com/products/pil/}) and lxml (\url{http://www.lxml.de/}) depend on your python version and operating system. The PIL is for generating images and lxml for parsing the xml files ( windows user see additional information ).\\
 \\
-The second step is installing RADIANCE on your working system. You get RADIANCE from \url{http://radsite.lbl.gov/radiance/download.html}. Run the makeall script and follow the installation
-description. Then add the following lines to .bashrc in your home directory (if not exist, add to .bash\_profile).
+The second step is installing RADIANCE on your operating system. You get RADIANCE from \url{http://radsite.lbl.gov/radiance/download.html}. Run the makeall script and follow the installation description. Windows user must run this script from cygwin terminal, navigate to the unzipped radiance folder:
+\begin{quote}
+cd /hereIsMyDownloadedFolderWithMakeAllScript \\
+./makeall install
+\end{quote}
+
+It will ask you, where you will install radiance. This is important for your path!
+Use the following standard or you must configure you path after installation.
+\begin{quote}
+bin : /usr/local/ray/bin\\
+lib : /usr/local/ray/lib
+\end{quote}
+
+Then add the following lines to .bashrc in your home directory (if not exist, add to .bash\_profile). ( You can use the bashrc ( docu/helbInstall ) file, which you get from RoadRad Repository )
 
 \begin{quote}
 RAY=/usr/local/ray\\
@@ -166,14 +178,14 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 \pagestyle{empty}
 \renewcommand{\arraystretch}{1.5}
 	\begin{longtable}{lllp{4cm}p{6cm}}
-	\mytoprule
+	
 	\rowcolor{dunkelgrau}
 		XML  Child & XML Parameters & Typ & Values & Description \\
-	\mymidrule
+	
 		Description & Title & String & & title of the scene \\
 	 	& Environment & String & Grass, City & grass only planar scene, city two boxes left and right side \\
 	 	& FocalLength & Float & 0 - 100 & length of ray focus in m \\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		Road & NumLanes & Integereger & $\geq$ 1 & number of  numlanes \\\rowcolor{hellgrau}
 		 & NumPoleField & Integer & $\geq$ 1 & number of measurment fields \\\rowcolor{hellgrau}
@@ -181,43 +193,43 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 		 & SidewalkWidth & Float & $\geq$ 0 & width of sidewalk in m \\\rowcolor{hellgrau}
 		 & Surface & String & R1, R2, R3, R4, plastic, C1, C2, C2W3, C2W4, BRDF & typ of road surface / pavement \\\rowcolor{hellgrau}
 	 	 & qZero & Float & 0 $\geq$ 1 & factor to change integrated $q_0$ in r-table \\
-	\mymidrule
-		Calculation & DIN13201 & String & on, off & switch for calculation  \\
-		 & VeilingLuminance & String & On, off & switch for veiling luminance \\
+	
+		Calculation & DIN13201 & String & on, off & switch for calculation, in the moment the value doesnot matter  \\
+		 & VeilingLuminance & String & On, off & switch for veiling luminance visualization \\
 		 & VeilingLuminanceMethod & String & RP800, DIN13201 & will calculate the veiling luminance for given standard \\
 		 & HeadlightOption & String & withTarget, fixed & fixed - only fixed headlights for threshold increment calculation and veiling luminance, withTarget - for all headlights included fixedTargetDistance ( veiling luminance will be an array )\\
-		 & TresholdLuminanceFactor & Float & & Ask Sandy \\
+		 & TresholdLuminanceFactor & Float & & Used for findglare, to visual glare pics \\
 		 & Age & Int & $>$ 0 & age of viewer, used for threshold increment calculation \\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		ViewPoint & Distance & Float & & distance to measurementfield in m \\\rowcolor{hellgrau}
 		 & Height & Float & & height of the observers eye in m \\\rowcolor{hellgrau}
-		 & TargetDistanceMode & String & fixedViewPoint & observer goes with target or stays at position \\\rowcolor{hellgrau}
+		 & TargetDistanceMode & String & fixedViewPoint, fixedTargetDistance & observer goes with target or stays at position \\\rowcolor{hellgrau}
 		 & XOffset & Float & & offset of the x-position of the observer in m \\\rowcolor{hellgrau}
 		 & ViewDirection & String & first, last, fixedRP800 & viewing point \\
-	\mymidrule
+	
 		Target & Size & Float & 0.3 & size of the target \\
 		 & Reflectancy & Float & 0 $\geq$ 1 & absorption of the target \\
 		 & Specularity & Float & 0 $\geq$ 1 & 0 \= 100 \% diffus, 1 \= 100 \% specular \\
 		 & Roughness & Float & 0 $\geq$ 1 & only for plastic if its non linear \\
 		 & Position & String & Left, Right, Center & x-position on numlane for target and observer \\ 
 		 & OnLane & Integer & $\geq$ NumLanes & target position on numlane \\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		LIDC & Name & String & & name of the LIDC .ies file \\\rowcolor{hellgrau}
 		 & LightSource & String & LED, HPS .. & light source type for rgb color \\\rowcolor{hellgrau}
 		 & LightLossFactor & Float & 0 $\geq$ 1 & LLF light loass factor of RP800 \\\rowcolor{hellgrau}
-		 & SPRatio & Float & & Ask Sandy \\
-	\mymidrule
+		 & SPRatio & Float & & Scotopic to Photopic Ration \\
+	
 		Headlight & LIDC & String & & name of the given LIDC declared in LIDC \\
-		 & HeadlightDistanceMode & String & FixedHeadlightPosition, FixedTargetDistance & goes with target or stays at position \\
+		 & HeadlightDistanceMode & String & fixedHeadlightPosition, fixedTargetDistance & goes with target or stays at position \\
 		 & Distance & Float & & distance of headlights in m \\
 		 & Height & Float & 0.8 & height of the headlights in m \\ 
 		 & Width & Float & 1.8 & width of the headlights in m \\
 		 & SlopeAngle & Float & 0 - 90 & angle of slope in degree \\
 		 & LightDirection & String & same, opposite & headlights in observer view direction or opposite \\
 		 & OnLane & Integer & $\geq$ NumLanes & headlight position on numlane \\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		PoleArray & Height & Float & & height of all poles in array must be same in m \\\rowcolor{hellgrau}
 		 & Spacing & Float & & space between all single poles in m \\\rowcolor{hellgrau}
@@ -225,13 +237,13 @@ There are some specific variables saved by an external xml-file (sceneDescriptio
 		 & IsStaggered & String & True, False & first light begins in the middle of measurement field \\\rowcolor{hellgrau}
 		 & LIDC & String & & name of the declacered LIDC in LIDC \\\rowcolor{hellgrau}
 		 & Side & String & Left, Right & polearray left or right side of lanes \\
-	\mymidrule
+	
 		PoleSingle & Height & Float & & height of pole in m \\
 		 & Overhang & Float & & x-offset of the polearm in m \\
 		 & LIDC & String & & name of the declacered LIDC in LIDC \\
 		 & PositionY & Float & & y position of the single pole \\ 
 		 & Side & String & Left, Right & pole left or right side of lanes \\
-	\mybottomrule
+	
 	\end{longtable} 
 
 \end{landscape}
@@ -265,15 +277,15 @@ These fixed scene parameters are listed in the following table. You can change t
 \pagestyle{empty}
 \renewcommand{\arraystretch}{1.5}
 	\begin{longtable}{lllp{4cm}p{6cm}}
-	\mytoprule
+	
 	\rowcolor{dunkelgrau}
 		Filename.py & Parameters & Typ & Values & Description \\
-	\mymidrule
+	
 		ConfigGenerator & radDirSuffix & String & '/Rads' & folder for saving .rad and .cal files \\
 	 	& lidcDirSuffix & String & '/LIDCs' &  folder for searching .ies files and saving .dat files \\
 	 	& rTableDatSuffix & String & '/3rdParty/' &  folder for searching r-table files in specific subfolder \\
 	 	& self.xmlConfigName & String & 'SceneDescription.xml' &  name of the given xml file, if you change, change in Simulator.py and Evaluator.py too! \\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		RoadScene & sceneLength & Float & 8000 & length of road in m, important for ambient calculation \\\rowcolor{hellgrau}
 		& sidewalkHeight & Float & 0.1 & height of sidewalk in m \\\rowcolor{hellgrau}
@@ -285,7 +297,7 @@ These fixed scene parameters are listed in the following table. You can change t
 		& lidcRotation & Float & -90 & rotation of pole lidc in degree \\\rowcolor{hellgrau}
 		& sensorHeight & Float & 8.9 & height of sensor in mm \\\rowcolor{hellgrau}
 		& sensorWidth & Float & 6.64 & width of sensor in mm \\
-	\mymidrule
+	
 		Simulator & horizontalRes & Float & 1380 & horizontal component of image resolution\\
 		& verticalRes & Float & 1030 & vertical component of image resolution\\
 		& makeFalsecolor & Boolean & True, False & switch to turn on or off falsecolor images\\
@@ -300,7 +312,7 @@ These fixed scene parameters are listed in the following table. You can change t
 		& pfSubDirSuffix & String & '/pfs' & subfolder suffixes for the .pf files\\
 		& lumSubDirSuffix & String & '/lums' & subfolder suffixes for temp lum files\\
 		& LMKSetMatFilename & String & '/LMKSetMat.xml' & name of the LMK Matlab XML file\\
-	\mymidrule
+	
 	\rowcolor{hellgrau}
 		Evaluator & octDirSuffix & String & '/Octs' &  folder suffix for the .oct files \\\rowcolor{hellgrau}
 		& radDirSuffix & String & '/Rads' & folder suffix for the .rad files \\\rowcolor{hellgrau}
@@ -309,13 +321,13 @@ These fixed scene parameters are listed in the following table. You can change t
 		& evalDirSuffix & String & '/Evaluation' & folder suffix for the calculation files \\\rowcolor{hellgrau}
 		& horizontalRes & Float & 1380 & horizontal component of image resolution\\\rowcolor{hellgrau}
 		& verticalRes & Float & 1030 & vertical component of image resolution\\
-	\mymidrule
+	
 		Classes/ThresholdIncrement & octTempDirSuffix & String & '/TempOcts' & folder suffix for the temporary .oct files \\
     	& radDirSuffix & String & '/Rads' & folder suffix for the .rad files \\
     	& radTempDirSuffix & String & '/TempRads' & folder suffix for the temporary .rad files \\
     	& evalDirSuffix & String & '/Evaluation' & folder suffix for the calculation files \\
     	& lidcDirSuffix & String & '/LIDCs' & folder suffix for the .ies files \\
-	\mybottomrule
+	
 	\end{longtable} 
 \end{landscape}
 
@@ -358,12 +370,12 @@ This values can be changed in the simulator.py.
 
 \renewcommand{\arraystretch}{1.5}
 	\begin{longtable}{p{3cm}p{3cm}p{3cm}p{3cm}p{3cm}}
-		\mytoprule
+		
 		\rowcolor{dunkelgrau}
 			ab & aa & ar & ad & as \\
-		\mymidrule
+		
 			2 & .15 & 128 & 4096 & 1024 \\
-		\mybottomrule
+		
 	\end{longtable} 
 
 \section{Evaluator}
