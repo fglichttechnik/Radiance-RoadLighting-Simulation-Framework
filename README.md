@@ -14,7 +14,7 @@ This is the Radiance based simulation part:
 
 This is how the resulting images of the Radiance simulation look like:
 
-![simulation](Documentation/Images/scene50%.gif)
+![simulation](Documentation/Images/scene50.gif)
 
 The images are actually luminance images and are saved in the pf file format defined by luminance imaging device manufacturer TechnoTeam. The pf files can be loaded into their LabSoft Software.
 
@@ -26,7 +26,7 @@ The image series can be evaluated in MATLAB with our evaluation framework [Visib
 
 ## Further Details
 
-For further details have a look into our [help file](Documentation/roadRadHowTo.pdf):
+For further details have a look into our help file: [Documentation/roadRadHowTo.pdf](Documentation/roadRadHowTo.pdf).
 
 
 
