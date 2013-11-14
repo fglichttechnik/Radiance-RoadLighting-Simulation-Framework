@@ -1,3 +1,9 @@
+AUTHOR: Jan Winter, Sandy Buschmann, Robert Franke TU Berlin, FG Lichttechnik
+
+CONTACT: j.winter@tu-berlin.de
+
+LICENSE: free to use at your own risk. Kudos appreciated.
+
 Simulating Luminance Image Series with Radiance
 =========
 
