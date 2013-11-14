@@ -1,7 +1,7 @@
-VisibilityLevel-Evaluation-MATLAB
+Simulating Luminance Image Series with Radiance
 =========
 
-## Measurement / Simulation + Evaluation Framework
+## Measurement / Simulation + Evaluation Framework for Road Lighting
 
 This repository is part of a measurement / simulation framework for evaluating contrasts of a small target between two luminaires. It is possible to evaluate the small target visibility level according to ANSI IESNA RP-8-00.
 
