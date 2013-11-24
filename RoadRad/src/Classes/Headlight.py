@@ -1,3 +1,6 @@
+#AUTHOR: Jan Winter, Sandy Buschmann, Robert Franke TU Berlin, FG Lichttechnik,
+#	j.winter@tu-berlin.de, www.li.tu-berlin.de
+#LICENSE: free to use at your own risk. Kudos appreciated.
 class Headlight:
 
     def __init__( self ):
