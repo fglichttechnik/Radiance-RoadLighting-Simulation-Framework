@@ -1,3 +1,0 @@
-In this data you can define you xy Color for lights, to use the shortcuts in the xml like LED or HPS
-
-This data you must copy in your radiance lib directory!!!

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#AUTHOR: Jan Winter, Sandy Buschmann, Robert Franke TU Berlin, FG Lichttechnik,
+#	j.winter@tu-berlin.de, www.li.tu-berlin.de
+#LICENSE: free to use at your own risk. Kudos appreciated.
 #This Python file uses the following encoding: utf-8
 
 # This is the entry point to the script. Command line arguments are parsed here.
@@ -36,9 +39,6 @@
 import os
 from optparse import OptionParser
 import sys
-#AUTHOR: Jan Winter, Sandy Buschmann, Robert Franke TU Berlin, FG Lichttechnik,
-#	j.winter@tu-berlin.de, www.li.tu-berlin.de
-#LICENSE: free to use at your own risk. Kudos appreciated.
 import shutil
 import datetime
 
