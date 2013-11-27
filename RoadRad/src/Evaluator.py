@@ -470,14 +470,14 @@ class Evaluator:
         print ''
         
         if( ( type == "fixed") and existingFixedHeadlight ):
-            self.addLvToLMKSetMat( L_v_SL_Array, L_v_fixed_Array, headlightFixedArray, False, False, mode, type )
+            self.addLvToLMKSetMat( L_v_SL_Array, L_v_fixed_Array, headlightFixedArray, 'False', 'False', mode, type )
         elif( ( type == "withTarget") and existingVarHeadlight ):
             if( existingFixedHeadlight ):
                 self.addLvToLMKSetMat( L_v_SL_Array, L_v_fixed_Array, headlightFixedArray, veilingLumVarArray, headlightVarArray , mode, type )
             else:
-                self.addLvToLMKSetMat( L_v_SL_Array, False, False, veilingLumVarArray, headlightVarArray , mode, type )
+                self.addLvToLMKSetMat( L_v_SL_Array, 'False', 'False', veilingLumVarArray, headlightVarArray , mode, type )
         else:
-            self.addLvToLMKSetMat( L_v_SL_Array, False, False, False, False, mode, type )
+            self.addLvToLMKSetMat( L_v_SL_Array, 'False', 'False', 'False', 'False', mode, type )
         
     def getVeilingLumArray( self, filteredArray ):
         
@@ -554,10 +554,10 @@ class Evaluator:
                 if( ( counter > counterMin ) and ( counter < counterMax ) ):
                     output.write( '<veilingLuminances> \n' )
                     output.write( '<veilingLuminance Lv="' + str( L_v_SL_Array[ counter - ( counterMin + 1 ) ] ) + '" type="streetlight"/> \n' )
-                    if( type == "fixed" ):
+                    if( ( type == "fixed" ) and ( L_v_fixed_Array != 'False' ) ):
                         output.write( '<veilingLuminance Lv="' + str( L_v_fixed_Array[ counter - ( counterMin + 1 ) ] ) + '" type="fixedHeadlight "/> \n' )
-                    elif( type == "withTarget" ):
-                        if( L_v_fixed_Array == False ):
+                    elif( type == "withTarget" and ( veilingLumVarArray != 'False' ) ):
+                        if( L_v_fixed_Array == 'False' ):
                             for valuesPerMeas in range( veilingLumVarArray[ counter - ( counterMin + 1 ) ].__len__() ):
                                 output.write( '<veilingLuminance Lv="' + str( veilingLumVarArray[ counter - ( counterMin + 1 ) ][ valuesPerMeas ] ) + '" type="variableHeadlight" position="' + str( headlightVarArray[ counter - ( counterMin + 1 ) ][ valuesPerMeas * 2 ].positionY ) + '"/> \n' )
                         else:
@@ -568,7 +568,7 @@ class Evaluator:
                     output.write( '</veilingLuminances> \n' )
                 else:
                     output.write( '<veilingLuminances> \n' )
-                    output.write( '<veilingLuminance Lv="0"/> \n' )
+                    output.write( '<veilingLuminance Lv="0" type="noValue"/> \n' )
                     output.write( '</veilingLuminances> \n' )
                     
         input.close()

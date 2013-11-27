@@ -515,13 +515,13 @@ class ConfigGenerator:
         f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye_down.vp', "w" )
         f.write( "######eye.vp######\n" )
         #f.write( "rview -vtv -vp " + str( self.road.laneWidth ) + " 0 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20\n" )
-        f.write( "rview -vtl -vp " + str( self.road.laneWidth ) + " 1 60 -vd 0 0 -1 -vu -1 0 0 -vh 100 -vv 20 -vs 0 -vl 0\n" )
+        f.write( "rview -vtl -vp " + str( self.road.laneWidth ) + " 1 60 -vd 0.01 0.01 -0.99 -vu -0.99 0 0 -vh 100 -vv 20 -vs 0 -vl 0\n" )
 
         f.close( )
         #view up from the roadway
         f = open( self.xmlConfigPath + ConfigGenerator.radDirSuffix + '/eye_up.vp', "w" )
         f.write( "######eye.vp######\n" )
-        f.write( "rview -vtv -vp " + str( self.road.laneWidth ) + " 0 0 -vd 0 0 1 -vu 0 -1 0 -vh 100 -vv 100\n" )
+        f.write( "rview -vtv -vp " + str( self.road.laneWidth ) + " 0 0 -vd 0.01 0.01 0.99 -vu 0 -0.99 0 -vh 100 -vv 100\n" )
         f.close( )
         
         print '    done ...'
